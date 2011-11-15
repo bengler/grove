@@ -108,7 +108,7 @@ describe "API v1 posts" do
     end
   end
 
-  context "with a logged in god" do
+  context "with no current user" do
     before :each do
       Pebbles::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>nil, :god? => nil}))
     end
