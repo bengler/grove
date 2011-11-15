@@ -51,13 +51,11 @@ class Post < ActiveRecord::Base
   end
 
   def self.cached_find_all_by_uid(uids)
-    result = Hash[
-      $memcached.get_multi(*uids).map do |key, value| 
-        post = Post.instantiate(Yajl::Parser.parse(value))
-        post.readonly!
-        [key, post]
-      end
-    ]
+    result =  Hash[$memcached.get_multi(*uids).map do |key, value| 
+                post = Post.instantiate(Yajl::Parser.parse(value))
+                post.readonly!
+                [key, post]
+              end]
     uncached = uids-result.keys
     uncached.each do |uid|
       post = Post.find_by_uid(uid)
