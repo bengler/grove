@@ -5,10 +5,9 @@ gem 'sinatra-activerecord'
 gem 'activerecord', :require => 'active_record'
 gem 'pg'
 gem 'yajl-ruby', :require => "yajl"
-gem "redis", "~> 2.2.2", :require => ["redis/connection/hiredis", "redis"]
-gem "hiredis", "~> 0.3.1"
 gem 'rabl'
 gem 'pebbles', :git => 'git@github.com:origo/pebblebed.git'
+gem 'dalli'
 
 group :development, :test do
   gem 'rspec', '~> 2.7.0.rc1'
@@ -22,5 +21,4 @@ group :development, :test do
   gem 'timecop'
   gem 'vcr'
   gem 'webmock'
-  gem 'mock_redis'
 end

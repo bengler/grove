@@ -41,4 +41,31 @@ describe Post do
     Post.by_wildcard_uid("post:area51.vaktemsterkontoret.forum2").map(&:document).sort.should eq ['4']
     Post.by_wildcard_uid("post:*$doc1").map(&:document).sort.should eq ['1', '4', '5']
   end
+
+  it "has a fancy method to get a lot of posts with readthrough caching (memcached)" do
+    Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1$doc1", :document => "1")
+    Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1$doc2", :document => "2")
+    posts = Post.cached_find_all_by_uid(["post:area51.vaktemsterkontoret.forum1$doc1", "post:area51.vaktemsterkontoret.forum1$doc2"])
+    posts.first.document.should eq '1'
+    # Have a look in the cache to verify that the documents got there
+    post = JSON.parse($memcached.get("post:area51.vaktemsterkontoret.forum1$doc1"))
+    post['document'].should eq '1'
+    # Verify that the order matches the request
+    posts = Post.cached_find_all_by_uid(["post:area51.vaktemsterkontoret.forum1$doc2", "post:area51.vaktemsterkontoret.forum1$doc1"])
+    posts.first.document.should eq '2'
+    # Change the cached document to verify that it actually reads through the cache
+    post['document'] = "sentinel"    
+    $memcached.set("post:area51.vaktemsterkontoret.forum1$doc1", post.to_json)
+    posts = Post.cached_find_all_by_uid(["post:area51.vaktemsterkontoret.forum1$doc1", "post:area51.vaktemsterkontoret.forum1$doc2"])
+    posts.first.document.should eq 'sentinel'
+    # Delete one of the cached documents to verify that the finder can perform with only partial cache hits
+    $memcached.delete("post:area51.vaktemsterkontoret.forum1$doc1")
+    posts = Post.cached_find_all_by_uid(["post:area51.vaktemsterkontoret.forum1$doc1", "post:area51.vaktemsterkontoret.forum1$doc2"])
+    posts.first.document.should eq '1'
+  end
+
+  it "knows how to handle non-existant posts when using cached_find_all_by_uid" do
+    posts = Post.cached_find_all_by_uid(["post:out.of.this$world"])    
+    posts.should eq [nil]
+  end
 end

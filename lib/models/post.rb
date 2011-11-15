@@ -4,6 +4,8 @@ class Post < ActiveRecord::Base
   validates_presence_of :collection
   validates_presence_of :oid
 
+  after_update :invalidate_cache
+
   scope :by_uid, lambda { |uid|
     _realm, _box, _collection, _oid = Post.parse_uid(uid)
     where("realm = ? and box = ? and collection = ? and oid = ?", _realm, _box, _collection, _oid)
@@ -47,4 +49,26 @@ class Post < ActiveRecord::Base
     _realm, _box, _collection = _path.nil? ? [] : _path.split('.')
     [_realm, _box, _collection, _oid]    
   end
+
+  def self.cached_find_all_by_uid(uids)
+    result = Hash[
+      $memcached.get_multi(*uids).map do |key, value| 
+        post = Post.instantiate(Yajl::Parser.parse(value))
+        post.readonly!
+        [key, post]
+      end
+    ]
+    uncached = uids-result.keys
+    uncached.each do |uid|
+      post = Post.find_by_uid(uid)
+      $memcached.set(uid, post.attributes.to_json) if post
+      result[uid] = post
+    end
+    uids.map{|uid| result[uid]}
+  end
+
+  def invalidate_cache
+    $memcached.delete(self.uid)
+  end
+
 end

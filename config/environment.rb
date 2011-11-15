@@ -1,8 +1,9 @@
 require "bundler"
 Bundler.require
 
-
 set :root, File.dirname(File.dirname(__FILE__))
+
+$memcached = Dalli::Client.new
 
 Dir.glob('./lib/**/*.rb').each{ |lib| require lib }
 

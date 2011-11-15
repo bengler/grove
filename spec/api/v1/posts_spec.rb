@@ -38,6 +38,17 @@ describe "API v1 posts" do
       result['document'].should eq "Hello spaceboy"
     end
 
+    it "can retrieve a list of documents" do
+      10.times do |i|
+        Post.create!(:uid => "post:a.b.c$doc#{i}", :document => i.to_s)
+      end
+      get "/posts/post:a.b.c$doc1,post:a.b.c$doc2,post:n.g.u$doc1"
+      result = JSON.parse(last_response.body)['posts']
+      result.size.should eq 3
+      result.first['post']['document'].should eq '1'      
+      result.last['post']['document'].should eq nil
+    end
+
     it "can retrieve a collection of documents" do
       10.times do |i|
         Post.create!(:uid => "post:a.b.c$doc#{i}", :document => i.to_s)
