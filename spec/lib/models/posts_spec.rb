@@ -43,7 +43,7 @@ describe Post do
   end
 
   it "has a fancy method to get a lot of posts with readthrough caching (memcached)" do
-    Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1$doc1", :document => "1")
+    doc1 = Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1$doc1", :document => "1")
     Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1$doc2", :document => "2")
     posts = Post.cached_find_all_by_uid(["post:area51.vaktemsterkontoret.forum1$doc1", "post:area51.vaktemsterkontoret.forum1$doc2"])
     posts.first.document.should eq '1'
@@ -62,6 +62,11 @@ describe Post do
     $memcached.delete("post:area51.vaktemsterkontoret.forum1$doc1")
     posts = Post.cached_find_all_by_uid(["post:area51.vaktemsterkontoret.forum1$doc1", "post:area51.vaktemsterkontoret.forum1$doc2"])
     posts.first.document.should eq '1'
+    # Update one to verify that the cache is invalidated
+    doc1.document = "watchdog"
+    doc1.save!
+    posts = Post.cached_find_all_by_uid(["post:area51.vaktemsterkontoret.forum1$doc1", "post:area51.vaktemsterkontoret.forum1$doc2"])
+    posts.first.document.should eq 'watchdog'
   end
 
   it "knows how to handle non-existant posts when using cached_find_all_by_uid" do
