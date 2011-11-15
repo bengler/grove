@@ -28,4 +28,17 @@ describe Post do
     p.collection.should eq "forum1"
     p.oid.should eq "name"
   end
+
+  it "can retrieve a collection of posts with a wildcard uid" do
+    Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1$doc1", :document => "1")
+    Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1$doc2", :document => "2")
+    Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1$doc3", :document => "3")
+    Post.create!(:uid => "post:area51.vaktemsterkontoret.forum2$doc1", :document => "4")
+    Post.create!(:uid => "post:area52.vaktemsterkontoret.forum2$doc1", :document => "5")
+    Post.by_wildcard_uid("post:*").map(&:document).sort.should eq ['1', '2', '3', '4', '5']
+    Post.by_wildcard_uid("post:area51.*").map(&:document).sort.should eq ['1', '2', '3', '4']
+    Post.by_wildcard_uid("post:area51.vaktemsterkontoret.forum1").map(&:document).sort.should eq ['1', '2', '3']
+    Post.by_wildcard_uid("post:area51.vaktemsterkontoret.forum2").map(&:document).sort.should eq ['4']
+    Post.by_wildcard_uid("post:*$doc1").map(&:document).sort.should eq ['1', '4', '5']
+  end
 end

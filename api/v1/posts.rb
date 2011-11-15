@@ -13,8 +13,20 @@ class GroveV1 < Sinatra::Base
   end
 
   get "/posts/:uid" do |uid|
-    @post = Post.find_by_uid(uid)
-    halt 404, "No such post" unless @post
-    render :rabl, :post, :format => :json
+    unless uid =~ /\*/ 
+      # Retrieve a single specific post
+      @post = Post.find_by_uid(uid)
+      halt 404, "No such post" unless @post
+      render :rabl, :post, :format => :json
+    else
+      # Retrieve a collection
+      @posts = Post.by_wildcard_uid(uid)
+      @posts = @posts.order("created_at desc")
+      @limit = (params['limit'] || 20).to_i
+      @offset = (params['offset'] || 0).to_i
+      @posts = @posts.limit(@limit).offset(@offset)
+
+      render :rabl, :posts, :format => :json      
+    end
   end
 end

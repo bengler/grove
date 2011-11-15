@@ -38,6 +38,38 @@ describe "API v1 posts" do
       result['document'].should eq "Hello spaceboy"
     end
 
+    it "can retrieve a collection of documents" do
+      10.times do |i|
+        Post.create!(:uid => "post:a.b.c$doc#{i}", :document => i.to_s)
+      end
+      Post.create!(:uid => "post:a.b.d$doc1", :document => "a")
+      get "/posts/post:*"
+      result = JSON.parse(last_response.body)
+      result['posts'].size.should eq 11
+      result['posts'].first['post']['document'].should eq 'a'
+      result['posts'].last['post']['document'].should eq '0'
+
+      get "/posts/post:*", :limit => 2
+      result = JSON.parse(last_response.body)
+      result['posts'].size.should eq 2
+      result['posts'].first['post']['document'].should eq 'a'
+      result['posts'].last['post']['document'].should eq '9'
+      result['pagination']['limit'].should eq 2
+
+      get "/posts/post:a.b.*"
+      result = JSON.parse(last_response.body)
+      result['posts'].size.should eq 11
+
+      get "/posts/post:a.b.d$*"
+      result = JSON.parse(last_response.body)
+      result['posts'].size.should eq 1
+
+      get "/posts/post:*$doc1"
+      result = JSON.parse(last_response.body)
+      result['posts'].size.should eq 2
+
+    end
+
   end
 
   context "with a logged in god" do
