@@ -53,8 +53,7 @@ describe "API v1 posts" do
       result = JSON.parse(last_response.body)
       result['posts'].size.should eq 2
       result['posts'].first['post']['document'].should eq 'a'
-      result['posts'].last['post']['document'].should eq '9'
-      result['pagination']['limit'].should eq 2
+      result['posts'].last['post']['document'].should eq '9'      
 
       get "/posts/post:a.b.*"
       result = JSON.parse(last_response.body)
@@ -67,7 +66,30 @@ describe "API v1 posts" do
       get "/posts/post:*$doc1"
       result = JSON.parse(last_response.body)
       result['posts'].size.should eq 2
+    end
 
+    it "can page through documents" do
+      20.times do |i|
+        Post.create!(:uid => "post:a.b.c$doc#{i}", :document => i.to_s)        
+      end
+
+      get "/posts/post:*", :limit => 10, :offset => 2
+      result = JSON.parse(last_response.body)
+      result['posts'].size.should eq 10
+      result['posts'].first['post']['document'].should eq "17"
+      result['posts'].last['post']['document'].should eq "8"
+      result['pagination']['last_page'].should be_false
+      result['pagination']['limit'].should eq 10
+      result['pagination']['offset'].should eq 2
+
+      get "/posts/post:*", :limit => 10, :offset => 15
+      result = JSON.parse(last_response.body)
+      result['posts'].size.should eq 5
+      result['posts'].first['post']['document'].should eq "4"
+      result['posts'].last['post']['document'].should eq "0"
+      result['pagination']['last_page'].should be_true
+      result['pagination']['limit'].should eq 10
+      result['pagination']['offset'].should eq 15
     end
 
   end
@@ -84,6 +106,17 @@ describe "API v1 posts" do
       result = JSON.parse(last_response.body)['post']
       result['created_by'].should eq 1
     end
-
   end
+
+  context "with a logged in god" do
+    before :each do
+      Pebbles::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>nil, :god? => nil}))
+    end
+
+    it "can't create posts" do
+      post "/posts/post:a.b.c$d", {:document => "hello nobody"}
+      last_response.status.should eq 403
+    end
+  end
+
 end

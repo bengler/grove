@@ -24,8 +24,9 @@ class GroveV1 < Sinatra::Base
       @posts = @posts.order("created_at desc")
       @limit = (params['limit'] || 20).to_i
       @offset = (params['offset'] || 0).to_i
-      @posts = @posts.limit(@limit).offset(@offset)
-
+      @posts = @posts.limit(@limit+1).offset(@offset)
+      @last_page = (@posts.size <= @limit)
+      @posts = @posts[0..@limit-1]
       render :rabl, :posts, :format => :json      
     end
   end
