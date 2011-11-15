@@ -11,6 +11,18 @@ class GroveV1 < Sinatra::Base
     @post.save!
     render :rabl, :post, :format => :json
   end
+  
+  helpers do
+    def limit_offset_collection(collection, options)
+      limit = (options[:limit] || 20).to_i
+      offset = (options[:offset] || 0).to_i
+      collection = collection.limit(limit+1).offset(offset)
+      last_page = (collection.size <= limit)
+      metadata = {:limit => limit, :offset => offset, :last_page => last_page}
+      collection = collection[0..limit-1]
+      [collection, metadata]
+    end
+  end  
 
   get "/posts/:uid" do |uid|
     unless uid =~ /\*/ 
@@ -22,11 +34,7 @@ class GroveV1 < Sinatra::Base
       # Retrieve a collection
       @posts = Post.by_wildcard_uid(uid)
       @posts = @posts.order("created_at desc")
-      @limit = (params['limit'] || 20).to_i
-      @offset = (params['offset'] || 0).to_i
-      @posts = @posts.limit(@limit+1).offset(@offset)
-      @last_page = (@posts.size <= @limit)
-      @posts = @posts[0..@limit-1]
+      @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
       render :rabl, :posts, :format => :json      
     end
   end
