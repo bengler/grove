@@ -34,6 +34,10 @@ describe "API v1 posts" do
       get "/posts/post:*", :tags => "paris"
       result = JSON.parse(last_response.body)['posts']
       result.size.should eq 2
+
+      get "/posts/post:*", :tags => "texas, paris"
+      result = JSON.parse(last_response.body)['posts']
+      result.size.should eq 1
     end
 
     it "can update a document" do
