@@ -19,6 +19,7 @@ ActiveRecord::Schema.define(:version => 20110926230557) do
     t.text     "box"
     t.text     "collection"
     t.text     "oid"
+    t.tsvector "tags_vector"
     t.integer  "created_by"
     t.datetime "synced_at"
     t.datetime "created_at"

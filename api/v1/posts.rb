@@ -8,6 +8,7 @@ class GroveV1 < Sinatra::Base
     end
     @post.created_by ||= identity_id
     @post.document = params['document']
+    @post.tags = params['tags']
     @post.save!
     render :rabl, :post, :format => :json
   end
@@ -34,6 +35,7 @@ class GroveV1 < Sinatra::Base
       # Retrieve a collection by wildcards
       @posts = Post.by_wildcard_uid(uid)
       @posts = @posts.order("created_at desc")
+      @posts = @posts.with_tags(params['tags']) if params['tags']
       @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
       render :rabl, :posts, :format => :json      
     else            

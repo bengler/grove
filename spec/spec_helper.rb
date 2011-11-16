@@ -25,7 +25,6 @@ set :environment, :test
 
 # Run all examples in a transaction
 RSpec.configure do |c|
-  c.mock_with :rspec
   c.around(:each) do |example|
     clear_cookies if respond_to?(:clear_cookies)
     $memcached = Mockcached.new

@@ -17,6 +17,25 @@ describe "API v1 posts" do
       Post.find_by_uid("post:a.b.c$d").document.should eq "hello world"
     end
 
+    it "can post a tagged document" do
+      post "/posts/post:a.b.c$d", {:document => "taggable", :tags => "paris, texas"}
+      Post.first.tags.should eq ['paris', 'texas']
+    end
+
+    it "can retrieve a tagged document" do
+      Post.create!(:uid => "post:a.b.c$doc1", :tags => ["paris", "france"], :document => '1')
+      Post.create!(:uid => "post:a.b.c$doc2", :tags => ["paris", "texas"], :document => '2')
+      Post.create!(:uid => "post:a.b.c$doc3", :tags => ["lyon", "france"], :document => '3')
+      get "/posts/post:*", :tags => "texas"
+      result = JSON.parse(last_response.body)['posts']
+      result.size.should eq 1
+      result.first['post']['document'].should eq "2"
+
+      get "/posts/post:*", :tags => "paris"
+      result = JSON.parse(last_response.body)['posts']
+      result.size.should eq 2
+    end
+
     it "can update a document" do
       post "/posts/post:a.b.c$d", {:document => "hello world"}
       post "/posts/post:a.b.c$d", {:document => "hello universe"}
@@ -128,6 +147,7 @@ describe "API v1 posts" do
       post "/posts/post:a.b.c$d", {:document => "hello nobody"}
       last_response.status.should eq 403
     end
+
   end
 
 end

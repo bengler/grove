@@ -73,4 +73,24 @@ describe Post do
     posts = Post.cached_find_all_by_uid(["post:out.of.this$world"])    
     posts.should eq [nil]
   end
+
+  it "has a virtual tags property that is actually stored as a tsvector in tags_vector" do
+    p = Post.new
+    p.tags.should eq []
+    p.tags = ['bing', 'Bang!']
+    p.tags_vector.should eq "'bing' 'bang'"
+    p.tags.should eq ['bing', 'bang']
+    p.tags = "bing, padunk"
+    p.tags.should eq ['bing', 'padunk']
+  end
+
+  it "can scope posts by tag" do
+    Post.create!(:uid => "post:a.b.c$doc1", :tags => ["france", "paris"], :document => '1')
+    Post.create!(:uid => "post:a.b.c$doc2", :tags => ["capitals", "paris"], :document => '2')
+    Post.create!(:uid => "post:a.b.c$doc3", :tags => ["france", "lyon"], :document => '3')
+    Post.with_tags("paris").all.map(&:document).sort.should eq ['1', '2']
+    Post.with_tags("france").all.map(&:document).sort.should eq ['1', '3']
+    Post.with_tags(["france", "paris"]).all.map(&:document).sort.should eq ['1']
+  end
+
 end

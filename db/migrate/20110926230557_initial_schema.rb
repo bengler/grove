@@ -6,6 +6,7 @@ class InitialSchema < ActiveRecord::Migration
       t.text "box"
       t.text "collection"
       t.text "oid"
+      t.column "tags_vector", :tsvector
       t.integer "created_by"
       t.datetime "synced_at"
       t.datetime "created_at"
