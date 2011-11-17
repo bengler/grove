@@ -9,7 +9,7 @@ describe "API v1 posts" do
 
   context "with a logged in user" do
     before :each do
-      Pebbles::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>1337, :god? => false}))
+      Pebbles::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>1337, :god => false}))
     end
 
     it "can post a document" do
@@ -136,7 +136,7 @@ describe "API v1 posts" do
 
   context "with a logged in god" do
     before :each do
-      Pebbles::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>1337, :god? => true}))
+      Pebbles::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>1337, :god => true}))
     end
 
     it "can update a document created by another user without modifying created_by field" do
@@ -150,7 +150,7 @@ describe "API v1 posts" do
 
   context "with no current user" do
     before :each do
-      Pebbles::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>nil, :god? => nil}))
+      Pebbles::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>nil, :god => nil}))
     end
 
     it "can't create posts" do

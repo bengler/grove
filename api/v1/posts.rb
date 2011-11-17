@@ -22,7 +22,7 @@ class GroveV1 < Sinatra::Base
         end
       end
     end
-    if !current_identity.god? && @post.created_by != identity_id and !@post.new_record?
+    if !current_identity.god && @post.created_by != identity_id and !@post.new_record?
       halt 403, "Post is owned by a different user (#{@post.created_by})" 
     end
     @post.document = params['document']
