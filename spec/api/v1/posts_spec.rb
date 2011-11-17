@@ -13,25 +13,20 @@ describe "API v1 posts" do
     end
 
     it "can post a document" do
-      post "/posts/post:a.b.c$d", {:document => "hello world"}
-      Post.find_by_uid("post:a.b.c$d").document.should eq "hello world"      
+      post "/posts/post:a.b.c", {:document => "hello world"}
+      uid = JSON.parse(last_response.body)['post']['uid']
+      Post.find_by_uid(uid).document.should eq "hello world"      
     end
 
-    it "can post a document and get an automatically generated oid" do
-      post "/posts/post:a.b.c", {:document => "bananas!"}
-      uid = JSON.parse(last_response.body)['post']['uid']
-      Post.find_by_uid(uid).document.should eq "bananas!"
-    end 
-
     it "can post a tagged document" do
-      post "/posts/post:a.b.c$d", {:document => "taggable", :tags => "paris, texas"}
+      post "/posts/post:a.b.c", {:document => "taggable", :tags => "paris, texas"}
       Post.first.tags.should eq ['paris', 'texas']
     end
 
     it "can retrieve a tagged document" do
-      Post.create!(:uid => "post:a.b.c$doc1", :tags => ["paris", "france"], :document => '1')
-      Post.create!(:uid => "post:a.b.c$doc2", :tags => ["paris", "texas"], :document => '2')
-      Post.create!(:uid => "post:a.b.c$doc3", :tags => ["lyon", "france"], :document => '3')
+      Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => '1')
+      Post.create!(:uid => "post:a.b.c", :tags => ["paris", "texas"], :document => '2')
+      Post.create!(:uid => "post:a.b.c", :tags => ["lyon", "france"], :document => '3')
       get "/posts/post:*", :tags => "texas"
       result = JSON.parse(last_response.body)['posts']
       result.size.should eq 1
@@ -47,42 +42,44 @@ describe "API v1 posts" do
     end
 
     it "can update a document" do
-      post "/posts/post:a.b.c$d", {:document => "hello world"}
-      post "/posts/post:a.b.c$d", {:document => "hello universe"}
-      Post.find_by_uid("post:a.b.c$d").document.should eq "hello universe"
+      post "/posts/post:a.b.c", {:document => "hello world"}
+      uid = JSON.parse(last_response.body)['post']['uid']
+      post "/posts/#{uid}", {:document => "hello universe"}
+      Post.find_by_uid(uid).document.should eq "hello universe"
     end
 
     it "can't update a document created by another user" do
-      Post.create!(:uid => "post:a.b.c$d", :created_by => 1, :document => "Hello spaceboy")
-      post "/posts/post:a.b.c$d", {:document => "hello nobody"}
+      p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => "Hello spaceboy")
+      post "/posts/#{p.uid}", {:document => "hello nobody"}
       last_response.status.should eq 403
     end
 
     it "can retrieve a document" do
-      Post.create!(:uid => "post:a.b.c$d", :created_by => 1, :document => "Hello spaceboy")
-      get "/posts/post:a.b.c$d"
+      p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => "Hello spaceboy")
+      get "/posts/#{p.uid}"
       result = JSON.parse(last_response.body)['post']
-      result['uid'].should eq "post:a.b.c$d"
+      result['uid'].should eq "post:a.b.c$#{p.id}"
       result['created_by'].should eq 1
       result['document'].should eq "Hello spaceboy"
     end
 
     it "can retrieve a list of documents" do
       10.times do |i|
-        Post.create!(:uid => "post:a.b.c$doc#{i}", :document => i.to_s)
+        Post.create!(:uid => "post:a.b.c", :document => i.to_s)
       end
-      get "/posts/post:a.b.c$doc1,post:a.b.c$doc2,post:n.g.u$doc1"
+      posts = Post.limit(3).order('created_at desc').all
+      get "/posts/#{[posts.map(&:uid), "post:does.not.exist$99999999"].flatten.join(',')}"
       result = JSON.parse(last_response.body)['posts']
-      result.size.should eq 3
-      result.first['post']['document'].should eq '1'      
+      result.size.should eq 4
+      result.first['post']['document'].should eq posts.first.document
       result.last['post']['document'].should eq nil
     end
 
     it "can retrieve a collection of documents" do
       10.times do |i|
-        Post.create!(:uid => "post:a.b.c$doc#{i}", :document => i.to_s)
+        Post.create!(:uid => "post:a.b.c", :document => i.to_s)
       end
-      Post.create!(:uid => "post:a.b.d$doc1", :document => "a")
+      Post.create!(:uid => "post:a.b.d", :document => "a")
       get "/posts/post:*"
       result = JSON.parse(last_response.body)
       result['posts'].size.should eq 11
@@ -103,14 +100,15 @@ describe "API v1 posts" do
       result = JSON.parse(last_response.body)
       result['posts'].size.should eq 1
 
-      get "/posts/post:*$doc1"
+      post = Post.first
+      get "/posts/post:*$#{post.id}"
       result = JSON.parse(last_response.body)
-      result['posts'].size.should eq 2
+      result['posts'].size.should eq 1
     end
 
     it "can page through documents" do
       20.times do |i|
-        Post.create!(:uid => "post:a.b.c$doc#{i}", :document => i.to_s)        
+        Post.create!(:uid => "post:a.b.c", :document => i.to_s)        
       end
 
       get "/posts/post:*", :limit => 10, :offset => 2
@@ -140,8 +138,8 @@ describe "API v1 posts" do
     end
 
     it "can update a document created by another user without modifying created_by field" do
-      Post.create!(:uid => "post:a.b.c$d", :created_by => 1, :document => "Hello spaceboy")
-      post "/posts/post:a.b.c$d", {:document => "hello nobody"}
+      p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => "Hello spaceboy")
+      post "/posts/#{p.uid}", {:document => "hello nobody"}
       last_response.status.should eq 200
       result = JSON.parse(last_response.body)['post']
       result['created_by'].should eq 1
@@ -154,7 +152,7 @@ describe "API v1 posts" do
     end
 
     it "can't create posts" do
-      post "/posts/post:a.b.c$d", {:document => "hello nobody"}
+      post "/posts/post:a.b.c", {:document => "hello nobody"}
       last_response.status.should eq 403
     end
 

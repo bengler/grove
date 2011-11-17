@@ -2,13 +2,12 @@ class Post < ActiveRecord::Base
   validates_presence_of :realm
   validates_presence_of :box
   validates_presence_of :collection
-  validates_presence_of :oid
 
   after_update :invalidate_cache
 
   scope :by_uid, lambda { |uid|
     _realm, _box, _collection, _oid = Post.parse_uid(uid)
-    where("realm = ? and box = ? and collection = ? and oid = ?", _realm, _box, _collection, _oid)
+    where("id = ?", _oid)
   }
 
   scope :by_wildcard_uid, lambda { |uid| 
@@ -17,7 +16,7 @@ class Post < ActiveRecord::Base
     posts = posts.where(:realm => _realm) if _realm
     posts = posts.where(:box => _box) if _box
     posts = posts.where(:collection => _collection) if _collection
-    posts = posts.where(:oid => _oid) if _oid
+    posts = posts.where(:id => _oid) if _oid
     posts
   }
 
@@ -26,11 +25,12 @@ class Post < ActiveRecord::Base
   end
 
   def uid
-    "post:#{path}$#{oid}"
+    "post:#{path}$#{self.id}"
   end
 
   def uid=(value)
-    self.realm, self.box, self.collection, self.oid = Post.parse_uid(value)
+    self.realm, self.box, self.collection, _oid = Post.parse_uid(value)
+    raise ArgumentError, "Can't assign oid" if _oid && _oid != self.id
   end
 
   def self.find_by_uid(uid)
@@ -51,11 +51,13 @@ class Post < ActiveRecord::Base
   end
 
   def self.cached_find_all_by_uid(uids)
-    result =  Hash[$memcached.get_multi(*uids).map do |key, value| 
-                post = Post.instantiate(Yajl::Parser.parse(value))
-                post.readonly!
-                [key, post]
-              end]
+    result =  Hash[
+      $memcached.get_multi(*uids).map do |key, value| 
+        post = Post.instantiate(Yajl::Parser.parse(value))
+        post.readonly!
+        [key, post]
+      end
+    ]
     uncached = uids-result.keys
     uncached.each do |uid|
       post = Post.find_by_uid(uid)

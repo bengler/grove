@@ -18,7 +18,6 @@ ActiveRecord::Schema.define(:version => 20110926230557) do
     t.text     "realm"
     t.text     "box"
     t.text     "collection"
-    t.text     "oid"
     t.tsvector "tags_vector"
     t.integer  "created_by"
     t.datetime "synced_at"
@@ -26,9 +25,11 @@ ActiveRecord::Schema.define(:version => 20110926230557) do
     t.datetime "updated_at"
   end
 
+  add_index "posts", ["box"], :name => "index_posts_on_box"
+  add_index "posts", ["collection"], :name => "index_posts_on_collection"
   add_index "posts", ["created_at"], :name => "index_posts_on_created_at"
   add_index "posts", ["created_by"], :name => "index_posts_on_created_by"
-  add_index "posts", ["realm", "box", "collection", "oid"], :name => "index_posts_on_realm_and_box_and_collection_and_oid", :unique => true
+  add_index "posts", ["realm"], :name => "index_posts_on_realm"
   add_index "posts", ["updated_at"], :name => "index_posts_on_updated_at"
 
 end
