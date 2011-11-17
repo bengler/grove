@@ -30,7 +30,7 @@ class Post < ActiveRecord::Base
 
   def uid=(value)
     self.realm, self.box, self.collection, _oid = Post.parse_uid(value)
-    raise ArgumentError, "Can't assign oid" if _oid && _oid != self.id
+    raise ArgumentError, "Do not assign oid. It is managed by the model. (omit '...$#{_oid}' from uid)" if _oid && _oid != self.id
   end
 
   def self.find_by_uid(uid)
