@@ -1,12 +1,28 @@
 class GroveV1 < Sinatra::Base
+  helpers do
+    def generate_random_object_id 
+      rand(2**64).to_s(36)
+    end
+  end
+
   post "/posts/:uid" do |uid|
     identity_id = current_identity.try(:id)
     halt 403, "No identity" unless identity_id
-    @post = Post.find_by_uid(uid) || Post.new(:uid => uid)
+    klass, path, oid = Pebbles::Uid.parse(uid)
+    if oid
+      @post = Post.find_by_uid(uid) || Post.new(:uid => uid, :created_by => identity_id)
+    else
+      while @post.nil?
+        begin
+          @post = Post.create!(:uid => "#{klass}:#{path}$#{generate_random_object_id}", :created_by => identity_id)
+        rescue ActiveRecord::RecordNotUnique
+          # Failed to generate a unique id. Try again, fail better!
+        end
+      end
+    end
     if !current_identity.god? && @post.created_by != identity_id and !@post.new_record?
       halt 403, "Post is owned by a different user (#{@post.created_by})" 
     end
-    @post.created_by ||= identity_id
     @post.document = params['document']
     @post.tags = params['tags']
     @post.save!

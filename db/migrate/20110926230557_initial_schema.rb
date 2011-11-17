@@ -12,10 +12,7 @@ class InitialSchema < ActiveRecord::Migration
       t.datetime "created_at"
       t.datetime "updated_at"
     end
-    add_index :posts, :realm
-    add_index :posts, :box
-    add_index :posts, :collection
-    add_index :posts, :oid
+    add_index :posts, [:realm, :box, :collection, :oid], :unique => true
     add_index :posts, :created_by
     add_index :posts, :created_at
     add_index :posts, :updated_at

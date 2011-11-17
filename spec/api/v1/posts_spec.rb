@@ -14,8 +14,14 @@ describe "API v1 posts" do
 
     it "can post a document" do
       post "/posts/post:a.b.c$d", {:document => "hello world"}
-      Post.find_by_uid("post:a.b.c$d").document.should eq "hello world"
+      Post.find_by_uid("post:a.b.c$d").document.should eq "hello world"      
     end
+
+    it "can post a document and get an automatically generated oid" do
+      post "/posts/post:a.b.c", {:document => "bananas!"}
+      uid = JSON.parse(last_response.body)['post']['uid']
+      Post.find_by_uid(uid).document.should eq "bananas!"
+    end 
 
     it "can post a tagged document" do
       post "/posts/post:a.b.c$d", {:document => "taggable", :tags => "paris, texas"}
