@@ -11,10 +11,12 @@ class GroveV1 < Sinatra::Base
     klass, path, oid = Pebbles::Uid.parse(uid)
     if oid
       @post = Post.find_by_uid(uid) || Post.new(:uid => uid, :created_by => identity_id)
+      response.status = 201 if @post.new_record?
     else
       while @post.nil?
         begin
           @post = Post.create!(:uid => "#{klass}:#{path}$#{generate_random_object_id}", :created_by => identity_id)
+          response.status = 201
         rescue ActiveRecord::RecordNotUnique
           # Failed to generate a unique id. Try again, fail better!
         end
