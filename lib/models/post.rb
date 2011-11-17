@@ -12,7 +12,7 @@ class Post < ActiveRecord::Base
   }
 
   scope :by_wildcard_uid, lambda { |uid| 
-    _realm, _box, _collection, _oid = Post.raw_parse_uid(uid).map { |value| value == '*' ? nil : value }
+    _realm, _box, _collection, _oid = Post.parse_uid_without_validation(uid).map { |value| value == '*' ? nil : value }
     posts = self.scoped
     posts = posts.where(:realm => _realm) if _realm
     posts = posts.where(:box => _box) if _box
@@ -43,7 +43,7 @@ class Post < ActiveRecord::Base
     [_realm, _box, _collection, _oid]    
   end
 
-  def self.raw_parse_uid(uid)
+  def self.parse_uid_without_validation(uid)
     _klass, _path, _oid = Pebbles::Uid.raw_parse(uid)
     _oid = nil if _oid == ''
     _realm, _box, _collection = _path.nil? ? [] : _path.split('.')
