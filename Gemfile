@@ -8,6 +8,7 @@ gem 'yajl-ruby', :require => "yajl"
 gem 'rabl'
 gem 'pebbles', :git => 'git@github.com:origo/pebblebed.git'
 gem 'dalli'
+gem 'ts_vector_tags'
 
 group :development, :test do
   gem 'rspec', '~> 2.7.0.rc1'

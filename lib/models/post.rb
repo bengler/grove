@@ -1,4 +1,5 @@
 class Post < ActiveRecord::Base
+
   validates_presence_of :realm
   validates_presence_of :box
   validates_presence_of :collection
@@ -71,4 +72,5 @@ class Post < ActiveRecord::Base
     $memcached.delete(self.uid)
   end
 
+  include TsVectorTags
 end

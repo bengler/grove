@@ -73,16 +73,6 @@ describe Post do
     posts.should eq [nil]
   end
 
-  it "has a virtual tags property that is actually stored as a tsvector in tags_vector" do
-    p = Post.new
-    p.tags.should eq []
-    p.tags = ['bing', 'Bang!']
-    p.tags_vector.should eq "'bing' 'bang'"
-    p.tags.should eq ['bing', 'bang']
-    p.tags = "bing, padunk"
-    p.tags.should eq ['bing', 'padunk']
-  end
-
   it "can scope posts by tag" do
     Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => '1')
     Post.create!(:uid => "post:a.b.c", :tags => ["capitals", "paris"], :document => '2')
