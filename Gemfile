@@ -9,6 +9,7 @@ gem 'rabl'
 gem 'pebbles', :git => 'git@github.com:origo/pebblebed.git'
 gem 'dalli'
 gem 'ts_vector_tags'
+gem 'rake'
 
 group :development, :test do
   gem 'bengler_test_helper',  :git => "git@github.com:origo/bengler_test_helper.git"
