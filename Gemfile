@@ -11,6 +11,7 @@ gem 'dalli'
 gem 'ts_vector_tags'
 
 group :development, :test do
+  gem 'bengler_test_helper',  :git => "git@github.com:origo/bengler_test_helper.git"
   gem 'rspec', '~> 2.7.0.rc1'
   # a monkeypatch in rack 1.3.4 causes :WFKV_ to be declared twice
   # so to silence the warning, adding this line until we upgrade to

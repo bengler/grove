@@ -1,4 +1,10 @@
 GIT
+  remote: git@github.com:origo/bengler_test_helper.git
+  revision: b3640d1406bf00f9b4a6f84e6b778b7c7ebcc5cc
+  specs:
+    bengler_test_helper (0.0.1)
+
+GIT
   remote: git@github.com:origo/pebblebed.git
   revision: ce51b66d5773e3b2289fe73aa8090b6603575301
   specs:
@@ -102,6 +108,7 @@ PLATFORMS
 
 DEPENDENCIES
   activerecord
+  bengler_test_helper!
   capistrano (= 2.5.19)
   capistrano-ext (= 1.2.1)
   dalli
