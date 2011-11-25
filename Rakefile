@@ -8,8 +8,8 @@ namespace :db do
 
   desc "bootstrap db user, recreate, run migrations"
   task :bootstrap do
-    `createuser -sdR checkpoint`
-    `createdb -O checkpoint checkpoint_development`
+    `createuser -sdR grove`
+    `createdb -O grove grove_development`
     Rake::Task['db:migrate'].invoke
   end
 
@@ -19,8 +19,8 @@ namespace :db do
 
   desc "nuke db, recreate, run migrations"
   task :nuke do
-    `dropdb checkpoint_development`
-    `createdb -O checkpoint checkpoint_development`
+    `dropdb grove_development`
+    `createdb -O grove grove_development`
     Rake::Task['db:migrate'].invoke
   end
 
