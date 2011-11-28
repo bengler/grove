@@ -2,6 +2,7 @@ $:.unshift(File.dirname(__FILE__))
 
 require 'config/environment'
 require 'api/v1'
+require 'rack/contrib'
 
 ENV['RACK_ENV'] ||= 'development'
 
@@ -12,6 +13,8 @@ require 'config/logging'
 use Rack::CommonLogger
 
 map "/api/grove/v1" do
+  use Rack::PostBodyContentTypeParser
+  use Rack::MethodOverride
   run GroveV1
 end
 

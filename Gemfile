@@ -1,7 +1,9 @@
 source 'http://rubygems.org'
 
 gem 'sinatra'
+gem 'sinatra-contrib'
 gem 'sinatra-activerecord'
+gem 'rack-contrib', :git => 'git@github.com:rack/rack-contrib.git'
 gem 'activerecord', :require => 'active_record'
 gem 'pg'
 gem 'yajl-ruby', :require => "yajl"
