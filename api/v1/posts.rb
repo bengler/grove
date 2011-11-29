@@ -26,7 +26,7 @@ class GroveV1 < Sinatra::Base
       collection = collection[0..limit-1]
       [collection, metadata]
     end
-  end  
+  end
 
   get "/posts/:uid" do |uid|
     if uid =~ /\,/  

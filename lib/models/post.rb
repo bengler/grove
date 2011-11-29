@@ -5,6 +5,7 @@ class Post < ActiveRecord::Base
   validates_presence_of :collection
 
   after_update :invalidate_cache
+  serialize :document
 
   scope :by_uid, lambda { |uid|
     _realm, _box, _collection, _oid = Post.parse_uid(uid)

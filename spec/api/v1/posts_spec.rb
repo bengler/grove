@@ -13,9 +13,9 @@ describe "API v1 posts" do
     end
 
     it "can post a document" do
-      post "/posts/post:a.b.c", {:document => "hello world"}
+      post "/posts/post:a.b.c", {:document => {content: "hello world"}}
       uid = JSON.parse(last_response.body)['post']['uid']
-      Post.find_by_uid(uid).document.should eq "hello world"      
+      Post.find_by_uid(uid).document['content'].should eq "hello world"
     end
 
     it "can post a tagged document" do
@@ -42,25 +42,25 @@ describe "API v1 posts" do
     end
 
     it "can update a document" do
-      post "/posts/post:a.b.c", {:document => "hello world"}
+      post "/posts/post:a.b.c", {:document => {:title => 'Hello spaceboy'}}
       uid = JSON.parse(last_response.body)['post']['uid']
-      post "/posts/#{uid}", {:document => "hello universe"}
-      Post.find_by_uid(uid).document.should eq "hello universe"
+      post "/posts/#{uid}", {:document =>  {:title => 'Hello universe'}}
+      Post.find_by_uid(uid).document['title'].should eq "Hello universe"
     end
 
     it "can't update a document created by another user" do
-      p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => "Hello spaceboy")
-      post "/posts/#{p.uid}", {:document => "hello nobody"}
+      p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'})
+      post "/posts/#{p.uid}", {:document => '{"title":"Hello nobody"}'}
       last_response.status.should eq 403
     end
 
     it "can retrieve a document" do
-      p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => "Hello spaceboy")
+      p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'})
       get "/posts/#{p.uid}"
       result = JSON.parse(last_response.body)['post']
       result['uid'].should eq "post:a.b.c$#{p.id}"
       result['created_by'].should eq 1
-      result['document'].should eq "Hello spaceboy"
+      result['document']['title'].should eq "Hello spaceboy"
     end
 
     it "can retrieve a list of documents" do
