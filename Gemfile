@@ -12,6 +12,7 @@ gem 'pebbles', :git => 'git@github.com:benglerpebbles/pebblebed.git'
 gem 'dalli'
 gem 'ts_vector_tags'
 gem 'rake'
+gem 'unicorn', '~> 4.1.1'
 
 group :development, :test do
   gem 'bengler_test_helper',  :git => "git@github.com:origo/bengler_test_helper.git"
