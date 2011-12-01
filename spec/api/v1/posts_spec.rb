@@ -13,13 +13,13 @@ describe "API v1 posts" do
     end
 
     it "can post a document" do
-      post "/posts/post:a.b.c", {:document => {content: "hello world"}}
+      post "/posts/post:a.b.c", :post => {:document => {content: "hello world"}}
       uid = JSON.parse(last_response.body)['post']['uid']
       Post.find_by_uid(uid).document['content'].should eq "hello world"
     end
 
     it "can post a tagged document" do
-      post "/posts/post:a.b.c", {:document => "taggable", :tags => "paris, texas"}
+      post "/posts/post:a.b.c", :post => {:document => "taggable", :tags => "paris, texas"}
       Post.first.tags.should eq ['paris', 'texas']
     end
 
@@ -42,15 +42,15 @@ describe "API v1 posts" do
     end
 
     it "can update a document" do
-      post "/posts/post:a.b.c", {:document => {:title => 'Hello spaceboy'}}
+      post "/posts/post:a.b.c", :post => {:document => {:title => 'Hello spaceboy'}}
       uid = JSON.parse(last_response.body)['post']['uid']
-      post "/posts/#{uid}", {:document =>  {:title => 'Hello universe'}}
+      post "/posts/#{uid}", :post => {:document =>  {:title => 'Hello universe'}}
       Post.find_by_uid(uid).document['title'].should eq "Hello universe"
     end
 
     it "can't update a document created by another user" do
       p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'})
-      post "/posts/#{p.uid}", {:document => '{"title":"Hello nobody"}'}
+      post "/posts/#{p.uid}", :post => {:document => '{"title":"Hello nobody"}'}
       last_response.status.should eq 403
     end
 
@@ -108,7 +108,7 @@ describe "API v1 posts" do
 
     it "can page through documents" do
       20.times do |i|
-        Post.create!(:uid => "post:a.b.c", :document => i.to_s)        
+        Post.create!(:uid => "post:a.b.c", :document => i.to_s)
       end
 
       get "/posts/post:*", :limit => 10, :offset => 2
@@ -139,7 +139,7 @@ describe "API v1 posts" do
 
     it "can update a document created by another user without modifying created_by field" do
       p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => "Hello spaceboy")
-      post "/posts/#{p.uid}", {:document => "hello nobody"}
+      post "/posts/#{p.uid}", :post => {:document => "hello nobody"}
       last_response.status.should eq 200
       result = JSON.parse(last_response.body)['post']
       result['created_by'].should eq 1
