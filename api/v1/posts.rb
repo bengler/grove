@@ -10,8 +10,9 @@ class GroveV1 < Sinatra::Base
       halt 403, "Post is owned by a different user (#{@post.created_by})" 
     end
 
-    @post.document = params['document']
-    @post.tags = params['tags']
+    post = params[:post]
+    @post.document = post['document']
+    @post.tags = post['tags']
     @post.save!
     render :rabl, :post, :format => :json
   end
