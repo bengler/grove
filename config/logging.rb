@@ -10,7 +10,6 @@ Log.datetime_format = "%Y-%m-%d %H:%M:%S.%L"
 
 unless Sinatra::Application.environment == :test
   STDERR.reopen(logfile)
-  STDOUT.reopen(logfile)
 end
 
 GroveV1.use Rack::CommonLogger, logfile
