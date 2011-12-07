@@ -1,17 +1,16 @@
 GIT
   remote: git@github.com:benglerpebbles/pebblebed.git
-  revision: 4d66224178e431059ee52821aa643aa540c922c0
+  revision: 7c973383d514f44f7166067cc123717ec76c89c6
   specs:
-    pebbles (0.0.1)
+    pebblebed (0.0.1)
       activesupport
       curb
       deepstruct
+      futurevalue
       i18n
       nokogiri
       pathbuilder
       queryparams
-      rack
-      servolux
       yajl-ruby
 
 GIT
@@ -59,6 +58,7 @@ GEM
     deepstruct (0.0.1)
     diff-lcs (1.1.3)
     eventmachine (0.12.10)
+    futurevalue (0.0.2)
     highline (1.6.8)
     i18n (0.6.0)
     kgio (2.6.0)
@@ -92,7 +92,6 @@ GEM
     rspec-expectations (2.7.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.7.0)
-    servolux (0.9.6)
     simplecov (0.5.4)
       multi_json (~> 1.0.3)
       simplecov-html (~> 0.5.3)
@@ -133,7 +132,7 @@ DEPENDENCIES
   capistrano (= 2.5.19)
   capistrano-ext (= 1.2.1)
   dalli
-  pebbles!
+  pebblebed!
   pg
   rabl
   rack-contrib!

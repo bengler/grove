@@ -1,24 +1,15 @@
 # encoding: utf-8
 require "json"
+require 'pebblebed/sinatra'
 
 Dir.glob("#{File.dirname(__FILE__)}/v1/**/*.rb").each{ |file| require file }
 
 class GroveV1 < Sinatra::Base
+  set :root, "#{File.dirname(__FILE__)}/v1"
+
+  register Sinatra::Pebblebed
+  i_am :grove
+
   Rabl.register!
-
-  helpers do
-    def checkpoint_session
-      params[:session] || request.cookies['checkpoint.session']
-    end
-
-    def pebbles
-      @pebbles ||= Pebbles::Connector.new(checkpoint_session, :host => request.host)
-    end
-
-    def current_identity
-      pebbles.checkpoint.me
-    end
-
-  end
 
 end

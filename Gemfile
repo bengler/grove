@@ -8,7 +8,7 @@ gem 'activerecord', :require => 'active_record'
 gem 'pg'
 gem 'yajl-ruby', :require => "yajl"
 gem 'rabl'
-gem 'pebbles', :git => 'git@github.com:benglerpebbles/pebblebed.git'
+gem 'pebblebed', :git => 'git@github.com:benglerpebbles/pebblebed.git'
 gem 'dalli'
 gem 'ts_vector_tags'
 gem 'rake'

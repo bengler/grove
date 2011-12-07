@@ -40,13 +40,13 @@ class Post < ActiveRecord::Base
   end
 
   def self.parse_uid(uid)
-    _klass, _path, _oid = Pebbles::Uid.parse(uid)
+    _klass, _path, _oid = Pebblebed::Uid.parse(uid)
     _realm, _box, _collection = _path.nil? ? [] : _path.split('.')
     [_realm, _box, _collection, _oid]    
   end
 
   def self.parse_uid_without_validation(uid)
-    _klass, _path, _oid = Pebbles::Uid.raw_parse(uid)
+    _klass, _path, _oid = Pebblebed::Uid.raw_parse(uid)
     _oid = nil if _oid == ''
     _realm, _box, _collection = _path.nil? ? [] : _path.split('.')
     [_realm, _box, _collection, _oid]    
