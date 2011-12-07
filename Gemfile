@@ -22,7 +22,7 @@ group :development, :test do
   # rack v. 1.3.5
   gem 'rack-test'
   gem 'simplecov'
-  gem 'capistrano', '=2.5.19'
+  gem 'capistrano', '=2.0.8'
   gem 'capistrano-ext', '=1.2.1'
   gem 'timecop'
   gem 'vcr'
