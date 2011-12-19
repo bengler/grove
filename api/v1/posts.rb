@@ -14,7 +14,7 @@ class GroveV1 < Sinatra::Base
     @post.document = post['document']
     @post.tags = post['tags']
     @post.save!
-    render :rabl, :post, :format => :json
+    pg :post, :locals => {:mypost=>@post} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
   end
   
   helpers do
@@ -34,19 +34,19 @@ class GroveV1 < Sinatra::Base
       # Retrieve a list of posts      
       uids = uid.split(/\s*,\s*/).compact
       @posts = Post.cached_find_all_by_uid(uids)
-      render :rabl, :posts, :format => :json      
+      pg :posts, :locals => {:posts => @posts, :pagination => nil}
     elsif uid =~ /\*/  
       # Retrieve a collection by wildcards
       @posts = Post.by_wildcard_uid(uid)
       @posts = @posts.order("created_at desc")
       @posts = @posts.with_tags(params['tags']) if params['tags']
       @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
-      render :rabl, :posts, :format => :json      
-    else            
+      pg :posts, :locals => {:posts => @posts, :pagination => @pagination}
+    else
       # Retrieve a single specific post
       @post = Post.cached_find_all_by_uid([uid]).first
       halt 404, "No such post" unless @post
-      render :rabl, :post, :format => :json
+      pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
     end
   end
 end

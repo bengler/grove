@@ -1,0 +1,13 @@
+collection :posts => posts do |post|
+  if post
+    partial :post, :mypost => post
+  else
+    node :post => {}
+  end
+end
+
+if pagination
+  node :pagination => pagination do
+    attributes :limit, :offset, :last_page
+  end
+end
