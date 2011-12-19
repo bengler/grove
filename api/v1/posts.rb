@@ -11,6 +11,7 @@ class GroveV1 < Sinatra::Base
     end
 
     post = params[:post]
+    halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless post
     @post.document = post['document']
     @post.tags = post['tags']
     @post.save!
