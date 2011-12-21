@@ -5,6 +5,7 @@ class Post < ActiveRecord::Base
   validates_presence_of :collection
 
   after_update :invalidate_cache
+  before_destroy :invalidate_cache
   serialize :document
 
   scope :by_uid, lambda { |uid|

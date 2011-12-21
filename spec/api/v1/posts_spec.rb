@@ -41,6 +41,22 @@ describe "API v1 posts" do
       result.size.should eq 1
     end
 
+    it "can delete a document and it is removed from cache" do
+      post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => '1', :created_by => 1337)
+      get "/posts/#{post.uid}"
+      last_response.status.should be 200
+      delete "/posts/#{post.uid}"
+      last_response.status.should be 204
+      get "/posts/#{post.uid}"
+      last_response.status.should be 404
+    end
+
+    it "can not delete someone elses document" do
+      post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => '1', :created_by => 666)
+      delete "/posts/#{post.uid}"
+      last_response.status.should be 403
+    end
+
     it "can update a document" do
       post "/posts/post:a.b.c", :post => {:document => {:title => 'Hello spaceboy'}}
       uid = JSON.parse(last_response.body)['post']['uid']
