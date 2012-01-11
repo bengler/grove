@@ -26,7 +26,8 @@ class GroveV1 < Sinatra::Base
     if !current_identity.god && @post.created_by != identity_id
       halt 403, "Post is owned by a different user (#{@post.created_by})" 
     end
-    @post.destroy
+    @post.deleted = true
+    @post.save!
     response.status = 204
   end
   

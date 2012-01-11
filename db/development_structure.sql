@@ -34,7 +34,7 @@ CREATE TABLE posts (
     collection text,
     tags_vector tsvector,
     created_by integer,
-    synced_at timestamp without time zone,
+    deleted boolean DEFAULT false NOT NULL,
     created_at timestamp without time zone,
     updated_at timestamp without time zone
 );
@@ -109,6 +109,13 @@ CREATE INDEX index_posts_on_created_at ON posts USING btree (created_at);
 --
 
 CREATE INDEX index_posts_on_created_by ON posts USING btree (created_by);
+
+
+--
+-- Name: index_posts_on_deleted; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_posts_on_deleted ON posts USING btree (deleted);
 
 
 --

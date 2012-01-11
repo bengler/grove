@@ -8,6 +8,8 @@ class Post < ActiveRecord::Base
   before_destroy :invalidate_cache
   serialize :document
 
+  default_scope where("not deleted")
+
   scope :by_uid, lambda { |uid|
     _realm, _box, _collection, _oid = Post.parse_uid(uid)
     where("id = ?", _oid)
@@ -37,7 +39,7 @@ class Post < ActiveRecord::Base
   end
 
   def self.find_by_uid(uid)
-    self.by_uid(uid).first
+    self.by_uid(uid).first    
   end
 
   def self.parse_uid(uid)

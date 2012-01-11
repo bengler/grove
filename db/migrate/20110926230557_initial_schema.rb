@@ -7,7 +7,7 @@ class InitialSchema < ActiveRecord::Migration
       t.text "collection"
       t.column "tags_vector", :tsvector
       t.integer "created_by"
-      t.datetime "synced_at"
+      t.boolean "deleted", :default => false, :null => false
       t.datetime "created_at"
       t.datetime "updated_at"
     end
@@ -17,6 +17,7 @@ class InitialSchema < ActiveRecord::Migration
     add_index :posts, :created_by
     add_index :posts, :created_at
     add_index :posts, :updated_at
+    add_index :posts, :deleted
   end
 
   def self.down
