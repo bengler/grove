@@ -28,7 +28,7 @@ class GroveV1 < Sinatra::Base
     end
 
     if failures.empty?
-      halt 200, "checkpoint"
+      halt 200, "grove"
     else
       halt 503, failures.join("\n")
     end
