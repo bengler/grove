@@ -16,6 +16,7 @@ class GroveV1 < Sinatra::Base
     failures = []
 
     begin
+      ActiveRecord::Base.verify_active_connections!
       ActiveRecord::Base.connection.execute("select 1")
     rescue Exception => e
       failures << "ActiveRecord: #{e.message}"
