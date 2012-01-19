@@ -10,6 +10,7 @@ gem 'yajl-ruby', :require => "yajl"
 gem 'petroglyph', :git => 'git@github.com:benglerpebbles/petroglyph.git'
 gem 'pebblebed', :git => 'git@github.com:benglerpebbles/pebblebed.git'
 gem 'dalli'
+gem 'hupper', :git => 'git://github.com/origo/hupper.git'
 gem 'ts_vector_tags'
 gem 'rake'
 gem 'unicorn', '~> 4.1.1'
