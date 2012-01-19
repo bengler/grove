@@ -1,12 +1,6 @@
 GIT
-  remote: git://github.com/origo/hupper.git
-  revision: 4eb51c501d62be1d84e6cd845e4122e21c4b0b62
-  specs:
-    hupper (0.0.1)
-
-GIT
-  remote: git@github.com:benglerpebbles/pebblebed.git
-  revision: 049efc0a47ac897221b27afde4cadbffa7727a6c
+  remote: git://github.com/benglerpebbles/pebblebed.git
+  revision: 139f6e53a95a1911cd3e04160debb7000f814be6
   specs:
     pebblebed (0.0.5)
       activesupport
@@ -20,20 +14,26 @@ GIT
       yajl-ruby
 
 GIT
-  remote: git@github.com:benglerpebbles/petroglyph.git
+  remote: git://github.com/benglerpebbles/petroglyph.git
   revision: da77e59f7dcfb53c43271b33bf55b06e8de6f753
   specs:
     petroglyph (0.0.1)
       tilt
 
 GIT
-  remote: git@github.com:origo/bengler_test_helper.git
+  remote: git://github.com/origo/bengler_test_helper.git
   revision: 388b8545455c4ef1c0c4ee1841c154041241c97f
   specs:
     bengler_test_helper (0.0.1)
 
 GIT
-  remote: git@github.com:rack/rack-contrib.git
+  remote: git://github.com/origo/hupper.git
+  revision: 4eb51c501d62be1d84e6cd845e4122e21c4b0b62
+  specs:
+    hupper (0.0.1)
+
+GIT
+  remote: git://github.com/rack/rack-contrib.git
   revision: af3663ca6200f8292b221acd5a406af33c219249
   specs:
     rack-contrib (1.1.0)

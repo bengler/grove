@@ -3,12 +3,12 @@ source 'http://rubygems.org'
 gem 'sinatra'
 gem 'sinatra-contrib'
 gem 'sinatra-activerecord'
-gem 'rack-contrib', :git => 'git@github.com:rack/rack-contrib.git'
+gem 'rack-contrib', :git => 'git://github.com/rack/rack-contrib.git'
 gem 'activerecord', :require => 'active_record'
 gem 'pg'
 gem 'yajl-ruby', :require => "yajl"
-gem 'petroglyph', :git => 'git@github.com:benglerpebbles/petroglyph.git'
-gem 'pebblebed', :git => 'git@github.com:benglerpebbles/pebblebed.git'
+gem 'petroglyph', :git => 'git://github.com/benglerpebbles/petroglyph.git'
+gem 'pebblebed', :git => 'git://github.com/benglerpebbles/pebblebed.git'
 gem 'dalli'
 gem 'hupper', :git => 'git://github.com/origo/hupper.git'
 gem 'ts_vector_tags'
@@ -16,7 +16,7 @@ gem 'rake'
 gem 'unicorn', '~> 4.1.1'
 
 group :development, :test do
-  gem 'bengler_test_helper',  :git => "git@github.com:origo/bengler_test_helper.git"
+  gem 'bengler_test_helper',  :git => "git://github.com/origo/bengler_test_helper.git"
   gem 'rspec', '~> 2.7.0.rc1'
   # a monkeypatch in rack 1.3.4 causes :WFKV_ to be declared twice
   # so to silence the warning, adding this line until we upgrade to
