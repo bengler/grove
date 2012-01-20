@@ -63,4 +63,17 @@ class GroveV1 < Sinatra::Base
       pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
     end
   end
+
+  # Get current identity's items for a given path
+  get '/posts' do
+    require_identity
+    path = params[:path]
+    halt 500, "Please specify path parameter" unless path
+    scope = Post.by_wildcard_uid "post:#{path}"
+    scope = scope.where('created_by = ?', current_identity.id)
+    @posts, @pagination = limit_offset_collection(scope, :limit => params['limit'], :offset => params['offset'])
+    response.status = 200
+    pg :posts, :locals => {:posts => @posts, :pagination => @pagination}
+  end
+
 end
