@@ -102,6 +102,8 @@ GEM
     rspec-expectations (2.7.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.7.0)
+    sanitize (2.0.3)
+      nokogiri (>= 1.4.4, < 1.6)
     simplecov (0.5.4)
       multi_json (~> 1.0.3)
       simplecov-html (~> 0.5.3)
@@ -150,6 +152,7 @@ DEPENDENCIES
   rack-test
   rake
   rspec (~> 2.7.0.rc1)
+  sanitize
   simplecov
   sinatra
   sinatra-activerecord

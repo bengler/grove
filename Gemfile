@@ -15,6 +15,7 @@ gem 'ts_vector_tags'
 gem 'rake'
 gem 'unicorn', '~> 4.1.1'
 gem 'bengler_test_helper',  :git => "git://github.com/origo/bengler_test_helper.git"
+gem 'sanitize'
 
 group :development, :test do
   gem 'rspec', '~> 2.7.0.rc1'

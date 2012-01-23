@@ -1,3 +1,4 @@
+
 class Post < ActiveRecord::Base
 
   validates_presence_of :realm
@@ -5,10 +6,13 @@ class Post < ActiveRecord::Base
   validates_presence_of :collection
 
   after_update :invalidate_cache
+  before_save :sanitize
   before_destroy :invalidate_cache
   serialize :document
 
   default_scope where("not deleted")
+
+  include TsVectorTags
 
   scope :by_uid, lambda { |uid|
     _realm, _box, _collection, _oid = Post.parse_uid(uid)
@@ -72,9 +76,18 @@ class Post < ActiveRecord::Base
     uids.map{|uid| result[uid]}
   end
 
+  private
+
   def invalidate_cache
     $memcached.delete(self.uid)
   end
 
-  include TsVectorTags
+  # TODO: This is an ugly hack to make dittforslag.no scripthacking-safe. 
+  def sanitize
+    return unless self.document.is_a?(Hash)
+    ['text', 'author_name', 'author_email'].each do |field|
+      self.document[field] = Sanitize.clean(self.document[field])
+    end
+  end
+
 end

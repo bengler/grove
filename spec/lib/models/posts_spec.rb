@@ -82,4 +82,8 @@ describe Post do
     Post.with_tags(["france", "paris"]).all.map(&:document).sort.should eq ['1']
   end
 
+  it "sanitizes some fields if the content is json" do
+    Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
+    Post.first.document['text'].should eq "hei"
+  end
 end
