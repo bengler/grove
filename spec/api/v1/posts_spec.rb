@@ -146,6 +146,17 @@ describe "API v1 posts" do
       result['pagination']['offset'].should eq 15
     end
 
+    it "can count" do
+      20.times do |i|
+        Post.create!(:uid => "post:a.b.c", :document => i.to_s)
+      end
+      10.times do |i|
+        Post.create!(:uid => "post:a.c.c", :document => i.to_s)
+      end
+      get "/posts/post:a.b.*$*/count"
+      JSON.parse(last_response.body)['count'].should eq 20
+    end
+
   end
 
   context "with a logged in god" do

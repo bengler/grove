@@ -64,6 +64,10 @@ class GroveV1 < Sinatra::Base
     end
   end
 
+  get "/posts/:uid/count" do |uid|
+    {:uid => uid, :count => Post.by_wildcard_uid(uid).count}.to_json
+  end
+
   # Get current identity's items for a given path
   get '/posts' do
     require_identity
