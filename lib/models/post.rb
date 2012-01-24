@@ -88,7 +88,7 @@ class Post < ActiveRecord::Base
     ['text', 'author_name', 'author_email'].each do |field|
       self.document[field] = Sanitize.clean(self.document[field])
     end
-    self.document['text'] = self.document['text'][0..139]
+    self.document['text'] = self.document['text'][0..139] unless self.document['text'].nil?
   end
 
 end
