@@ -2,7 +2,7 @@ collection :posts => posts do |post|
   if post
     partial :post, :mypost => post
   else
-    node :post => {}
+    node :post => nil
   end
 end
 
