@@ -36,7 +36,8 @@ CREATE TABLE posts (
     created_by integer,
     deleted boolean DEFAULT false NOT NULL,
     created_at timestamp without time zone,
-    updated_at timestamp without time zone
+    updated_at timestamp without time zone,
+    external_id text
 );
 
 
@@ -123,6 +124,13 @@ CREATE INDEX index_posts_on_deleted ON posts USING btree (deleted);
 --
 
 CREATE INDEX index_posts_on_realm ON posts USING btree (realm);
+
+
+--
+-- Name: index_posts_on_realm_and_external_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE UNIQUE INDEX index_posts_on_realm_and_external_id ON posts USING btree (realm, external_id);
 
 
 --

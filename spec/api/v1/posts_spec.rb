@@ -164,6 +164,23 @@ describe "API v1 posts" do
       JSON.parse(last_response.body)['count'].should eq 20
     end
 
+    it "can post with external_id and avoid duplicates" do
+      post "/posts/post:a.b.c", :post => {:document => {content: "hello world"}, :external_id => "unique"}
+      last_response.status.should eq 201
+      # Posting again with same path and same external id will update the post
+      post "/posts/post:a.b.c", :post => {:document => {content: "hello again"}, :external_id => "unique"}
+      last_response.status.should eq 200
+      Post.count.should eq 1
+      Post.first.document['content'].should eq "hello again"
+      post "/posts/post:a.other.path", :post => {:document => {content: "hello mars"}, :external_id => "unique"}
+      last_response.status.should eq 409 # conflict because of other path
+      Post.first.document['content'].should eq "hello again"
+      # Post to same path with different external_id creates a new document
+      post "/posts/post:a.b.c", :post => {:document => {content: "hello again"}, :external_id => "oter-unique"}
+      Post.count.should eq 2
+      last_response.status.should eq 201
+    end
+
   end
 
   context "with a logged in god" do

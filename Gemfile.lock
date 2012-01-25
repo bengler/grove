@@ -1,19 +1,4 @@
 GIT
-  remote: git://github.com/benglerpebbles/pebblebed.git
-  revision: 139f6e53a95a1911cd3e04160debb7000f814be6
-  specs:
-    pebblebed (0.0.5)
-      activesupport
-      curb
-      deepstruct
-      futurevalue
-      i18n
-      nokogiri
-      pathbuilder
-      queryparams
-      yajl-ruby
-
-GIT
   remote: git://github.com/benglerpebbles/petroglyph.git
   revision: da77e59f7dcfb53c43271b33bf55b06e8de6f753
   specs:
@@ -66,7 +51,7 @@ GEM
     capistrano-ext (1.2.1)
       capistrano (>= 1.0.0)
     crack (0.3.1)
-    curb (0.7.18)
+    curb (0.8.0)
     dalli (1.1.4)
     deepstruct (0.0.1)
     diff-lcs (1.1.3)
@@ -85,6 +70,16 @@ GEM
       net-ssh (>= 1.99.1)
     nokogiri (1.5.0)
     pathbuilder (0.0.2)
+    pebblebed (0.0.6)
+      activesupport
+      curb (~> 0.8.0)
+      deepstruct
+      futurevalue
+      i18n
+      nokogiri
+      pathbuilder
+      queryparams
+      yajl-ruby
     pg (0.12.2)
     queryparams (0.0.3)
     rack (1.4.0)
@@ -145,7 +140,7 @@ DEPENDENCIES
   capistrano-ext (= 1.2.1)
   dalli
   hupper!
-  pebblebed!
+  pebblebed (>= 0.0.6)
   petroglyph!
   pg
   rack-contrib!

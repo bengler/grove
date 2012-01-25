@@ -3,7 +3,24 @@ class GroveV1 < Sinatra::Base
   post "/posts/:uid" do |uid|
     identity_id = current_identity.try(:id)
     halt 403, "No identity" unless identity_id
-    @post = Post.find_by_uid(uid) || Post.new(:uid => uid, :created_by => identity_id)
+
+    # If an external_id is submitted this is considered a sync with an external system.
+    # external_id must be unique across a single realm. If there is a post with the
+    # provided external_id it is updated with the provided content.
+    external_id = params[:post][:external_id]
+    if external_id
+      realm = Pebblebed::Uid.new(uid).realm
+      @post = Post.find_by_realm_and_external_id(realm, external_id)
+      if @post
+        existing_path = Pebblebed::Uid.new(@post.uid).path
+        provided_path = Pebblebed::Uid.new(uid).path
+        if existing_path != provided_path
+          halt 409, "Unable to create. A post with external_id '#{params[:post][:external_id]}' is allready posted in another path (#{@post.uid})."
+        end
+      end
+    end
+
+    @post ||= Post.find_by_uid(uid) || Post.new(:uid => uid, :created_by => identity_id)    
     response.status = 201 if @post.new_record?
 
     if !current_identity.god && @post.created_by != identity_id and !@post.new_record?
@@ -14,6 +31,7 @@ class GroveV1 < Sinatra::Base
     halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless post
     @post.document = post['document']
     @post.tags = post['tags']
+    @post.external_id = post['external_id']
     @post.save!
     pg :post, :locals => {:mypost=>@post} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
   end
