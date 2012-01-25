@@ -51,6 +51,13 @@ describe "API v1 posts" do
       last_response.status.should be 404
     end
 
+    it "cannot undelete a document" do
+      post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], 
+        :document => '1', :created_by => 1337, :deleted => true)
+      post "/posts/#{post.uid}/undelete"
+      last_response.status.should be 403
+    end      
+
     it "can not delete someone elses document" do
       post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => '1', :created_by => 666)
       delete "/posts/#{post.uid}"
@@ -163,6 +170,19 @@ describe "API v1 posts" do
     before :each do
       Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>1337, :god => true}))
     end
+
+    it "can undelete a document" do
+      post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => '1', :created_by => 10)
+      get "/posts/#{post.uid}"
+      last_response.status.should eq 200
+      delete "/posts/#{post.uid}"
+      get "/posts/#{post.uid}"
+      last_response.status.should eq 404
+      post "/posts/#{post.uid}/undelete"
+      last_response.status.should eq 200
+      get "/posts/#{post.uid}"
+      last_response.status.should eq 200
+    end      
 
     it "can update a document created by another user without modifying created_by field" do
       p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => "Hello spaceboy")

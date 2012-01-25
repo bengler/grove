@@ -30,6 +30,14 @@ class GroveV1 < Sinatra::Base
     @post.save!
     response.status = 204
   end
+
+  post "/posts/:uid/undelete" do |uid|
+    halt 403, "Only gods may undelete" unless current_identity.god
+    @post = Post.unscoped.find_by_uid(uid)
+    @post.deleted = false
+    @post.save!
+    [200, "Ok"]
+  end
   
   helpers do
     def limit_offset_collection(collection, options)
@@ -59,6 +67,7 @@ class GroveV1 < Sinatra::Base
     else
       # Retrieve a single specific post
       @post = Post.cached_find_all_by_uid([uid]).first
+      Log.error @post.inspect
       halt 404, "No such post" unless @post
       pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
     end
