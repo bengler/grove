@@ -95,7 +95,7 @@ describe "API v1 posts" do
       result = JSON.parse(last_response.body)['posts']
       result.size.should eq 4
       result.first['post']['document'].should eq posts.first.document
-      result.last['post']['document'].should eq nil
+      result.last['post'].should eq nil
     end
 
     it "can retrieve a collection of documents" do
