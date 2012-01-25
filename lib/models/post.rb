@@ -61,16 +61,16 @@ class Post < ActiveRecord::Base
 
   def self.cached_find_all_by_uid(uids)
     result =  Hash[
-      $memcached.get_multi(*uids).map do |key, value| 
+      $memcached.get_multi(*SchemaVersion.tag_keys(uids)).map do |key, value| 
         post = Post.instantiate(Yajl::Parser.parse(value))
         post.readonly!
-        [key, post]
+        [SchemaVersion.untag_key(key), post]
       end
-    ]
+    ]    
     uncached = uids-result.keys
     uncached.each do |uid|
       post = Post.find_by_uid(uid)
-      $memcached.set(uid, post.attributes.to_json) if post
+      $memcached.set(SchemaVersion.tag_key(uid), post.attributes.to_json) if post
       result[uid] = post
     end
     uids.map{|uid| result[uid]}
@@ -79,7 +79,7 @@ class Post < ActiveRecord::Base
   private
 
   def invalidate_cache
-    $memcached.delete(self.uid)
+    $memcached.delete(SchemaVersion.tag_key(self.uid))
   end
 
   # TODO: This is an ugly hack to make dittforslag.no scripthacking-safe. 
