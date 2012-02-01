@@ -18,7 +18,7 @@ gem 'bengler_test_helper',  :git => "git://github.com/origo/bengler_test_helper.
 gem 'sanitize'
 
 group :development, :test do
-  gem 'rspec', '~> 2.7.0.rc1'
+  gem 'rspec', '~> 2.8'
   # a monkeypatch in rack 1.3.4 causes :WFKV_ to be declared twice
   # so to silence the warning, adding this line until we upgrade to
   # rack v. 1.3.5
