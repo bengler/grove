@@ -85,7 +85,7 @@ class Post < ActiveRecord::Base
   # TODO: This is an ugly hack to make dittforslag.no scripthacking-safe. 
   def sanitize
     return unless self.document.is_a?(Hash)
-    ['text', 'author_name', 'author_email'].each do |field|
+    ['text', 'author_name', 'email'].each do |field|
       self.document[field] = Sanitize.clean(self.document[field])
     end
     self.document['text'] = self.document['text'][0..139] unless self.document['text'].nil?
