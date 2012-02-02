@@ -71,23 +71,23 @@ class GroveV1 < Sinatra::Base
 
   get "/posts/:uid" do |uid|
     if uid =~ /\,/  
-      # Retrieve a list of posts      
+      # Retrieve a list of posts
       uids = uid.split(/\s*,\s*/).compact
       @posts = Post.cached_find_all_by_uid(uids)
-      pg :posts, :locals => {:posts => @posts, :pagination => nil}
+      pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => nil}
     elsif uid =~ /\*/  
       # Retrieve a collection by wildcards
       @posts = Post.by_wildcard_uid(uid)
       @posts = @posts.order("created_at desc")
       @posts = @posts.with_tags(params['tags']) if params['tags']
       @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
-      pg :posts, :locals => {:posts => @posts, :pagination => @pagination}
+      pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => @pagination}
     else
       # Retrieve a single specific post
       @post = Post.cached_find_all_by_uid([uid]).first
       Log.error @post.inspect
       halt 404, "No such post" unless @post
-      pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
+      pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
     end
   end
 
@@ -104,7 +104,19 @@ class GroveV1 < Sinatra::Base
     scope = scope.where('created_by = ?', current_identity.id)
     @posts, @pagination = limit_offset_collection(scope, :limit => params['limit'], :offset => params['offset'])
     response.status = 200
-    pg :posts, :locals => {:posts => @posts, :pagination => @pagination}
+    pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => @pagination}
   end
 
+  ### TODO: HACK ALERT for DittForslag: Avoid leaking e-mail addresses
+  private
+  def safe_posts(posts)
+    posts.map {|p| safe_post(p)}
+  end
+
+  def safe_post(post)
+    unless current_identity.try(:god)
+      post.document.delete 'email' if post.respond_to? :document
+    end
+    post
+  end
 end
