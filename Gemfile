@@ -24,8 +24,8 @@ group :development, :test do
   # rack v. 1.3.5
   gem 'rack-test'
   gem 'simplecov'
-  gem 'capistrano', '=2.8.0'
-  gem 'capistrano-ext', '=1.2.1'
+  gem 'capistrano', '~> 2.9.0'
+  gem 'capistrano-bengler', :git => "git@github.com:origo/capistrano-bengler.git"
   gem 'timecop'
   gem 'vcr'
   gem 'webmock'
