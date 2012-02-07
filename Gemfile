@@ -16,6 +16,7 @@ gem 'rake'
 gem 'unicorn', '~> 4.1.1'
 gem 'bengler_test_helper',  :git => "git://github.com/origo/bengler_test_helper.git"
 gem 'sanitize'
+gem 'pingable'
 
 group :development, :test do
   gem 'rspec', '~> 2.8'
