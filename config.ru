@@ -22,7 +22,7 @@ Pingable.add_check lambda {
 }
 
 map "/api/grove/v1/ping" do
-  use Pingable::Handler, "grove"
+  run Pingable::Handler.new("grove")
 end
 
 map "/api/grove/v1" do
