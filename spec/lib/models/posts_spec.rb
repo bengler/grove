@@ -1,31 +1,32 @@
 require 'spec_helper'
 
 describe Post do
-  it "can generate a path" do
-    p = Post.new(:realm => "area51", :box => "vaktmesterkontoret", :collection => "forum1")
-    p.path.should eq "area51.vaktmesterkontoret.forum1"
+  it "gets attached to a location" do
+    p = Post.create!(:canonical_path => "area51.vaktmesterkontoret.forum1")
+    p.locations.count.should eq 1
+    p.locations.first.path.to_s.should eq "area51.vaktmesterkontoret.forum1"
+    p.realm.should eq "area51"
   end
 
   it "can genereate an uid" do
-    p = Post.create!(:realm => "area51", :box => "vaktmesterkontoret", :collection => "forum1")
+    p = Post.create!(:canonical_path => "area51.vaktmesterkontoret.forum1")
     p.uid.should eq "post:area51.vaktmesterkontoret.forum1$#{p.id}"
   end
 
   it "can retrieve one by uid" do
-    p1 = Post.create!(:realm => "area51", :box => "vaktmesterkontoret", :collection => "forum1", :document => "1")
-    p2 = Post.create!(:realm => "area51", :box => "vaktmesterkontoret", :collection => "forum1", :document => "2")
-    p3 = Post.create!(:realm => "area51", :box => "vaktmesterkontoret", :collection => "forum2", :document => "3")
+    p1 = Post.create!(:canonical_path => "area51.vaktmesterkontoret.forum1", :document => "1")
+    p2 = Post.create!(:canonical_path => "area51.vaktmesterkontoret.forum2", :document => "2")
+    p3 = Post.create!(:canonical_path => "area51.vaktmesterkontoret.forum3", :document => "3")
     Post.find_by_uid(p1.uid).document.should eq '1'
     Post.find_by_uid(p2.uid).document.should eq '2'
     Post.find_by_uid(p3.uid).document.should eq '3'
-    Post.find_by_uid("post:area51.vaktmesterkontoret.forum2$2").should be_nil
+    Post.find_by_uid("post:area51.vaktmesterkontoret.forumX$2").should be_nil
   end
 
-  it "can assign realm, box, collection by assigning uid" do
-    p = Post.new(:uid => "post:area51.vaktmesterkontoret.forum1")
+  it "can assign realm, canonical_path by assigning uid" do
+    p = Post.create!(:uid => "post:area51.vaktmesterkontoret.forum1")
     p.realm.should eq "area51"
-    p.box.should eq "vaktmesterkontoret"
-    p.collection.should eq "forum1"
+    p.canonical_path.should eq "area51.vaktmesterkontoret.forum1"
   end
 
   it "can retrieve a collection of posts with a wildcard uid" do
@@ -34,10 +35,10 @@ describe Post do
     Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1", :document => "3")
     Post.create!(:uid => "post:area51.vaktemsterkontoret.forum2", :document => "4")
     Post.create!(:uid => "post:area52.vaktemsterkontoret.forum2", :document => "5")
-    Post.by_wildcard_uid("post:*").map(&:document).sort.should eq ['1', '2', '3', '4', '5']
-    Post.by_wildcard_uid("post:area51.*").map(&:document).sort.should eq ['1', '2', '3', '4']
-    Post.by_wildcard_uid("post:area51.vaktemsterkontoret.forum1").map(&:document).sort.should eq ['1', '2', '3']
-    Post.by_wildcard_uid("post:area51.vaktemsterkontoret.forum2").map(&:document).sort.should eq ['4']
+    Post.by_uid("post:*").map(&:document).sort.should eq ['1', '2', '3', '4', '5']
+    Post.by_uid("post:area51.*").map(&:document).sort.should eq ['1', '2', '3', '4']
+    Post.by_uid("post:area51.vaktemsterkontoret.forum1").map(&:document).sort.should eq ['1', '2', '3']
+    Post.by_uid("post:area51.vaktemsterkontoret.forum2").map(&:document).sort.should eq ['4']
   end
 
   it "has a fancy method to get a lot of posts with readthrough caching (memcached)" do
@@ -82,6 +83,23 @@ describe Post do
     Post.with_tags(["france", "paris"]).all.map(&:document).sort.should eq ['1']
   end
 
+  it "can put a post in several locations" do
+    doc1 = Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1", :document => "1")
+    Location.declare!("area51.vikarkontoret.forum1").posts << doc1
+    Location.declare!("area51.vikarkontoret.forum2").posts << doc1
+    Post.create!(:uid => "post:area51.somewhereelse.forum1", :document => "2")
+    Post.by_uid("post:area51.*").all.map(&:document).sort.should eq ['1', '2']
+    Post.by_uid("post:highway61.*").count.should eq 0
+    Post.by_uid("post:area51.vikarkontoret.*").first.document.should eq '1'
+  end
+
+  it "will only find by uids that are fully constrained (with an oid)" do
+    doc = Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1", :document => "1")
+    Post.find_by_uid(doc.uid).should_not be_nil
+    Post.find_by_uid("post:area51.vaktemsterkontoret.forum1").should be_nil
+  end
+
+  # TODO: This should be configurable
   it "sanitizes some fields if the content is json" do
     Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
     Post.first.document['text'].should eq "hei"
