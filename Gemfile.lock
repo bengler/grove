@@ -89,6 +89,8 @@ GEM
       queryparams
       yajl-ruby
     pg (0.12.2)
+    pingable (0.0.9)
+      rack (>= 1.0.0)
     queryparams (0.0.3)
     rack (1.4.0)
     rack-protection (1.2.0)
@@ -151,6 +153,7 @@ DEPENDENCIES
   pebblebed (>= 0.0.6)
   petroglyph!
   pg
+  pingable
   rack-contrib!
   rack-test
   rake
