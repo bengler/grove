@@ -1,4 +1,4 @@
 node :post => mypost do
-  attributes :uid, :created_by, :document, :created_at, :updated_at, :tags, :external_id
+  attributes :uid, :created_by, :document, :created_at, :updated_at, :tags, :external_id, :paths
   node :id => mypost.uid
 end

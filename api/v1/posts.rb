@@ -16,7 +16,7 @@ class GroveV1 < Sinatra::Base
         existing_path = Pebblebed::Uid.new(@post.uid).path
         provided_path = Pebblebed::Uid.new(uid).path
         if existing_path != provided_path
-          halt 409, "Unable to create. A post with external_id '#{params[:post][:external_id]}' is allready posted in another path (#{@post.uid})."
+          halt 409, "Unable to create. A post with external_id '#{params[:post][:external_id]}' is allready posted with another canonical path (#{@post.uid})."
         end
       end
     end
@@ -31,6 +31,7 @@ class GroveV1 < Sinatra::Base
     post = params[:post]
     halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless post
     @post.document = post['document']
+    @post.paths = post['paths'] if post['paths']
     @post.tags = post['tags']
     @post.external_id = post['external_id']
     @post.save!
@@ -113,10 +114,9 @@ class GroveV1 < Sinatra::Base
   def safe_posts(posts)
     posts.map {|p| safe_post(p)}
   end
-
   def safe_post(post)
     unless current_identity.try(:god)
-      post.document.delete 'email' if post.respond_to? :document
+      post.document.delete 'email' if post && !post.document.nil?
     end
     post
   end

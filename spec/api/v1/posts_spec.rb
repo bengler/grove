@@ -181,6 +181,14 @@ describe "API v1 posts" do
       last_response.status.should eq 201
     end
 
+    it "can post to multiple paths" do
+      post "/posts/post:a.b.c", :post => {:document => {}, :paths => ['a.b.secondary']}
+      Post.by_path('a.b.c').count.should eq 1
+      Post.by_path('a.b.secondary').count.should eq 1
+      get "/posts/#{Post.first.uid}"
+      JSON.parse(last_response.body)['post']['paths'].sort.should eq ['a.b.secondary', 'a.b.c'].sort
+    end
+
   end
 
   context "with a logged in god" do
