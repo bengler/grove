@@ -7,15 +7,14 @@ class Post < ActiveRecord::Base
 
   before_save :sanitize
   before_validation :assign_realm
-  after_save :attach_canonical_path
+  before_save :attach_canonical_path
   after_update :invalidate_cache
-
   before_destroy :invalidate_cache
-  serialize :document
 
   default_scope where("not deleted")
 
   include TsVectorTags
+  serialize :document
 
   scope :by_path, lambda { |path| 
     select("distinct posts.*").joins(:locations).where(:locations => Location.parse_path(path)) unless path == '*'
@@ -60,7 +59,7 @@ class Post < ActiveRecord::Base
     uids.map{|uid| result[uid]}
   end
 
-  private
+  private 
 
   def invalidate_cache
     $memcached.delete(SchemaVersion.tag_key(self.uid))
@@ -81,7 +80,7 @@ class Post < ActiveRecord::Base
 
   # Ensures that the post is attached to its canonical path
   def attach_canonical_path
-    Location.declare!(self.canonical_path).posts |= [self] if self.canonical_path && !self.deleted?
+    self.paths |= [self.canonical_path]
   end
 
   def canonical_path_must_be_valid
@@ -89,5 +88,6 @@ class Post < ActiveRecord::Base
       error.add :base, "{self.canonical_path.inspect} is an invalid path."
     end
   end
+
 
 end

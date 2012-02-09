@@ -11,7 +11,7 @@ class Location < ActiveRecord::Base
     Location.where(Location.parse_path(path))
   }
 
-  class PathAccessor
+  class PathLabelsAccessor
     include Enumerable
 
     def initialize(location)
@@ -51,7 +51,7 @@ class Location < ActiveRecord::Base
   end
 
   def path
-    @path ||= PathAccessor.new(self)
+    @path ||= PathLabelsAccessor.new(self)
   end
 
   # Converts an oid-path to a hash with attributes for 
