@@ -29,8 +29,6 @@ describe Post::LocationsAccessor do
     z = Post.find(p.id)
     z.paths.to_a.sort.should eq ['a.b.c', 'anton.kaanan', 'ranveig.banan'].sort
     # Reheat model from json with stale path data
-    puts json
-    p JSON.parse(json)['post']
     q = Post.instantiate(JSON.parse(json)['post'])
     # Check that we got the old path in the stale model
     q.paths.to_a.should eq ['only.in.json']
