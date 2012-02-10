@@ -1,4 +1,4 @@
-# Lets you access the Post#has_many :occurences relation
+# Lets you access the Post#has_many :occurence_entries relation
 # as if it was a hash of array of Time. This supports persisting and retrieving
 # a Post from json without hitting the database as would happen when
 # reading through memcached.
@@ -8,7 +8,7 @@ class Post < ActiveRecord::Base
 
   after_save :sync_occurences_property
 
-  # A proxy class to present the occurences relation as a hash of timestamps
+  # A proxy class to present the occurence_entries relation as a hash of timestamps
   class OccurencesAccessor < Hash
     def initialize(object, initial_value = nil)
       super()
@@ -23,8 +23,9 @@ class Post < ActiveRecord::Base
       self.replace(result)
     end
 
-    # Syncs this hash of occurences with the occurences relation
+    # Syncs this hash of occurences with the occurence_entriess relation
     def save!
+      parse_timestamps
       # Create a deep copy of self and convert all timestamps to rfc822 to avoid OS specific rounding aberrations
       to_sync = Hash[self.keys.map { |label| [label, self[label].map(&:rfc822)] }]
       # Check existing occurence_entries
@@ -38,6 +39,16 @@ class Post < ActiveRecord::Base
       to_sync.each do |label, timestamps|
         timestamps.each do |rfc822_timestring|
           OccurenceEntry.create!(:post => @object, :label => label, :at => Time.rfc822(rfc822_timestring))
+        end
+      end
+    end
+
+    # If the values of this hash contains strings that can be parsed Time.parse, they are parsed and replaced
+    # with an instance of Time.
+    def parse_timestamps
+      self.keys.each do |key|
+        self[key].map! do |timestamp| 
+          timestamp.is_a?(Time) ? timestamp : Time.parse(timestamp)
         end
       end
     end

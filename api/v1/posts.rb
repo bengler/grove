@@ -1,5 +1,6 @@
 class GroveV1 < Sinatra::Base
 
+
   post "/posts/:uid" do |uid|
     identity_id = current_identity.try(:id)
     halt 403, "No identity" unless identity_id
@@ -29,14 +30,15 @@ class GroveV1 < Sinatra::Base
     end
 
     post = params[:post]
+
     halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless post
-    @post.document = post['document']
-    @post.paths = post['paths'] if post['paths']
-    @post.occurences = post['occurences'] if post['occurences']
-    @post.tags = post['tags']
-    @post.external_id = post['external_id']
+
+    (['document', 'paths', 'occurences', 'tags', 'external_id'] & post.keys).each do |field|
+      @post.send(:"#{field}=", post[field])
+    end
     @post.save!
-    pg :post, :locals => {:mypost=>@post} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
+    
+    pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
   end
 
   delete "/posts/:uid" do |uid|
