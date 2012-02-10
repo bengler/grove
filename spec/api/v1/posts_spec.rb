@@ -189,11 +189,11 @@ describe "API v1 posts" do
       JSON.parse(last_response.body)['post']['paths'].sort.should eq ['a.b.secondary', 'a.b.c'].sort
     end
 
-    it "can contain occurences in time" do
+    it "can contain occurrences in time" do
       timestamp = Time.now
-      post "/posts/post:a.b.c", :post => {:document => {}, :occurences => {:due => [timestamp.iso8601]}}
-      Post.first.occurences['due'].size.should eq 1
-      Post.first.occurences['due'].first.should be_within(1.0).of(timestamp)
+      post "/posts/post:a.b.c", :post => {:document => {}, :occurrences => {:due => [timestamp.iso8601]}}
+      Post.first.occurrences['due'].size.should eq 1
+      Post.first.occurrences['due'].first.should be_within(1.0).of(timestamp)
     end
 
   end

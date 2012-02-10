@@ -33,7 +33,7 @@ class GroveV1 < Sinatra::Base
 
     halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless post
 
-    (['document', 'paths', 'occurences', 'tags', 'external_id'] & post.keys).each do |field|
+    (['document', 'paths', 'occurrences', 'tags', 'external_id'] & post.keys).each do |field|
       @post.send(:"#{field}=", post[field])
     end
     @post.save!
