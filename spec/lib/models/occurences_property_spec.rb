@@ -14,7 +14,7 @@ describe Post::OccurencesAccessor do
     p = Post.create!(:uid => "post:a.b.c", :occurences => {:due => [time, other_time]})
     q = Post.find(p)
     q.occurences['due'].size.should eq 2
-    q.occurences['due'].delete(time)
+    q.occurences['due'].pop
     q.save!
     r = Post.find(p)
     r.occurences['due'].size.should eq 1

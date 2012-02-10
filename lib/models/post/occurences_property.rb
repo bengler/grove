@@ -25,17 +25,19 @@ class Post < ActiveRecord::Base
 
     # Syncs this hash of occurences with the occurences relation
     def save!
-      to_sync = Marshal.load(Marshal.dump(self)) # <- deep dup
+      # Create a deep copy of self and convert all timestamps to rfc822 to avoid OS specific rounding aberrations
+      to_sync = Hash[self.keys.map { |label| [label, self[label].map(&:rfc822)] }]
+      # Check existing occurence_entries
       @object.occurence_entries.each do |occurence|
         # Delete occurences that are not in this hash
-        occurence.destroy unless to_sync.has_key?(occurence.label) && to_sync[occurence.label].include?(occurence.at)
-        # Remove existing occurences from the hash of occurences to sync
-        to_sync[occurence.label].delete(occurence.at) if to_sync.has_key?(occurence.label)
+        occurence.destroy unless to_sync.has_key?(occurence.label) && to_sync[occurence.label].include?(occurence.at.rfc822)
+        # Remove existing occurences from the hash of occurences to create
+        to_sync[occurence.label].delete(occurence.at.rfc822) if to_sync.has_key?(occurence.label)
       end
       # Create missing occurences
       to_sync.each do |label, timestamps|
-        timestamps.each do |timestamp|
-          OccurenceEntry.create!(:post => @object, :label => label, :at => timestamp)
+        timestamps.each do |rfc822_timestring|
+          OccurenceEntry.create!(:post => @object, :label => label, :at => Time.rfc822(rfc822_timestring))
         end
       end
     end

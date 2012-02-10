@@ -32,6 +32,7 @@ class GroveV1 < Sinatra::Base
     halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless post
     @post.document = post['document']
     @post.paths = post['paths'] if post['paths']
+    @post.occurences = post['occurences'] if post['occurences']
     @post.tags = post['tags']
     @post.external_id = post['external_id']
     @post.save!
