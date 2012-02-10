@@ -2,7 +2,6 @@ $:.unshift(File.dirname(__FILE__))
 
 require 'config/environment'
 require 'api/v1'
-require 'config/logging'
 require 'rack/contrib'
 
 ENV['RACK_ENV'] ||= 'development'

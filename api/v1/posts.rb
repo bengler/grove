@@ -10,12 +10,13 @@ class GroveV1 < Sinatra::Base
     external_id = params[:post][:external_id]
     if external_id
       realm = Pebblebed::Uid.new(uid).realm
-      @post = Post.find_by_realm_and_external_id(realm, external_id)
+      @post = Post.unscoped.find_by_realm_and_external_id(realm, external_id)
       if @post
+        @post.deleted = false
         existing_path = Pebblebed::Uid.new(@post.uid).path
         provided_path = Pebblebed::Uid.new(uid).path
         if existing_path != provided_path
-          halt 409, "Unable to create. A post with external_id '#{params[:post][:external_id]}' is allready posted in another path (#{@post.uid})."
+          halt 409, "Unable to create. A post with external_id '#{params[:post][:external_id]}' is allready posted with another canonical path (#{@post.uid})."
         end
       end
     end
@@ -30,6 +31,7 @@ class GroveV1 < Sinatra::Base
     post = params[:post]
     halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless post
     @post.document = post['document']
+    @post.paths = post['paths'] if post['paths']
     @post.tags = post['tags']
     @post.external_id = post['external_id']
     @post.save!
@@ -77,7 +79,7 @@ class GroveV1 < Sinatra::Base
       pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => nil}
     elsif uid =~ /\*/  
       # Retrieve a collection by wildcards
-      @posts = Post.by_wildcard_uid(uid)
+      @posts = Post.by_uid(uid)
       @posts = @posts.order("created_at desc")
       @posts = @posts.with_tags(params['tags']) if params['tags']
       @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
@@ -92,7 +94,7 @@ class GroveV1 < Sinatra::Base
   end
 
   get "/posts/:uid/count" do |uid|
-    {:uid => uid, :count => Post.by_wildcard_uid(uid).count}.to_json
+    {:uid => uid, :count => Post.by_uid(uid).count}.to_json
   end
 
   # Get current identity's posts for a given path
@@ -100,7 +102,7 @@ class GroveV1 < Sinatra::Base
     require_identity
     path = params[:path]
     halt 500, "Please specify path parameter" unless path
-    scope = Post.by_wildcard_uid "post:#{path}"
+    scope = Post.by_uid "post:#{path}"
     scope = scope.where('created_by = ?', current_identity.id)
     @posts, @pagination = limit_offset_collection(scope, :limit => params['limit'], :offset => params['offset'])
     response.status = 200
@@ -112,10 +114,9 @@ class GroveV1 < Sinatra::Base
   def safe_posts(posts)
     posts.map {|p| safe_post(p)}
   end
-
   def safe_post(post)
     unless current_identity.try(:god)
-      post.document.delete 'email' if post.respond_to? :document
+      post.document.delete 'email' if post && !post.document.nil?
     end
     post
   end

@@ -1,5 +1,9 @@
+$:.unshift(File.expand_path(File.join(File.dirname(__FILE__), '..')))
+
 require "bundler"
 Bundler.require
+
+require 'config/logging'
 
 $memcached = Dalli::Client.new
 

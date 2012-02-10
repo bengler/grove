@@ -23,6 +23,56 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: locations; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE locations (
+    id integer NOT NULL,
+    label_0 text,
+    label_1 text,
+    label_2 text,
+    label_3 text,
+    label_4 text,
+    label_5 text,
+    label_6 text,
+    label_7 text,
+    label_8 text,
+    label_9 text,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone
+);
+
+
+--
+-- Name: locations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE locations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: locations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE locations_id_seq OWNED BY locations.id;
+
+
+--
+-- Name: locations_posts; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE locations_posts (
+    location_id integer NOT NULL,
+    post_id integer NOT NULL
+);
+
+
+--
 -- Name: posts; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -30,14 +80,13 @@ CREATE TABLE posts (
     id integer NOT NULL,
     document text,
     realm text,
-    box text,
-    collection text,
     tags_vector tsvector,
     created_by integer,
     deleted boolean DEFAULT false NOT NULL,
     created_at timestamp without time zone,
     updated_at timestamp without time zone,
-    external_id text
+    external_id text,
+    canonical_path text
 );
 
 
@@ -73,7 +122,22 @@ CREATE TABLE schema_migrations (
 -- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
+ALTER TABLE locations ALTER COLUMN id SET DEFAULT nextval('locations_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
+--
+
 ALTER TABLE posts ALTER COLUMN id SET DEFAULT nextval('posts_id_seq'::regclass);
+
+
+--
+-- Name: locations_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY locations
+    ADD CONSTRAINT locations_pkey PRIMARY KEY (id);
 
 
 --
@@ -85,17 +149,17 @@ ALTER TABLE ONLY posts
 
 
 --
--- Name: index_posts_on_box; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+-- Name: index_locations_on_labels; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
-CREATE INDEX index_posts_on_box ON posts USING btree (box);
+CREATE UNIQUE INDEX index_locations_on_labels ON locations USING btree (label_0, label_1, label_2, label_3, label_4, label_5, label_6, label_7, label_8, label_9);
 
 
 --
--- Name: index_posts_on_collection; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+-- Name: index_locations_posts_on_location_id_and_post_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
-CREATE INDEX index_posts_on_collection ON posts USING btree (collection);
+CREATE UNIQUE INDEX index_locations_posts_on_location_id_and_post_id ON locations_posts USING btree (location_id, post_id);
 
 
 --

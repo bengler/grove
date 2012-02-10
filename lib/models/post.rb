@@ -1,65 +1,48 @@
-
 class Post < ActiveRecord::Base
+  has_and_belongs_to_many :locations, :uniq => true
 
   validates_presence_of :realm
-  validates_presence_of :box
-  validates_presence_of :collection
 
-  after_update :invalidate_cache
+  validate :canonical_path_must_be_valid
+
   before_save :sanitize
+  before_validation :assign_realm
+  before_save :attach_canonical_path
+  after_update :invalidate_cache
   before_destroy :invalidate_cache
-  serialize :document
 
   default_scope where("not deleted")
 
   include TsVectorTags
+  serialize :document
+
+  scope :by_path, lambda { |path| 
+    select("distinct posts.*").joins(:locations).where(:locations => Location.parse_path(path)) unless path == '*'
+  }
 
   scope :by_uid, lambda { |uid|
-    _realm, _box, _collection, _oid = Post.parse_uid(uid)
-    where("id = ?", _oid)
+    _klass, _path, _oid = Pebblebed::Uid.raw_parse(uid)
+    scope = by_path(_path)
+    scope = scope.where("posts.id = ?", _oid) unless _oid == '' || _oid == '*'
+    scope
   }
 
-  scope :by_wildcard_uid, lambda { |uid| 
-    _realm, _box, _collection, _oid = Post.parse_uid_without_validation(uid).map { |value| value == '*' ? nil : value }
-    posts = self.scoped
-    posts = posts.where(:realm => _realm) if _realm
-    posts = posts.where(:box => _box) if _box
-    posts = posts.where(:collection => _collection) if _collection
-    posts = posts.where(:id => _oid) if _oid
-    posts
-  }
-
-  def path
-    "#{realm}.#{box}.#{collection}"
-  end
-
-  def uid
-    "post:#{path}$#{self.id}"
+  def uid    
+    "post:#{canonical_path}$#{self.id}"
   end
 
   def uid=(value)
-    self.realm, self.box, self.collection, _oid = Post.parse_uid(value)
-    raise ArgumentError, "Do not assign oid. It is managed by the model. (omit '...$#{_oid}' from uid)" if _oid && _oid != self.id
+    _klass, self.canonical_path, _oid = Pebblebed::Uid.raw_parse(value)
+    raise ArgumentError, "Do not assign oid. It is managed by the model. (omit '...$#{_oid}' from uid)" if _oid != '' && _oid != self.id
   end
 
   def self.find_by_uid(uid)
+    return nil unless Pebblebed::Uid.new(uid).oid
     self.by_uid(uid).first    
   end
 
-  def self.parse_uid(uid)
-    _klass, _path, _oid = Pebblebed::Uid.parse(uid)
-    _realm, _box, _collection = _path.nil? ? [] : _path.split('.')
-    [_realm, _box, _collection, _oid]    
-  end
-
-  def self.parse_uid_without_validation(uid)
-    _klass, _path, _oid = Pebblebed::Uid.raw_parse(uid)
-    _oid = nil if _oid == ''
-    _realm, _box, _collection = _path.nil? ? [] : _path.split('.')
-    [_realm, _box, _collection, _oid]    
-  end
-
   def self.cached_find_all_by_uid(uids)
+    raise ArgumentError, "No wildcards allowed" if uids.join =~ /\*/
     result =  Hash[
       $memcached.get_multi(*SchemaVersion.tag_keys(uids)).map do |key, value| 
         post = Post.instantiate(Yajl::Parser.parse(value))
@@ -76,13 +59,13 @@ class Post < ActiveRecord::Base
     uids.map{|uid| result[uid]}
   end
 
-  private
+  private 
 
   def invalidate_cache
     $memcached.delete(SchemaVersion.tag_key(self.uid))
   end
 
-  # TODO: This is an ugly hack to make dittforslag.no scripthacking-safe. 
+  # TODO: Replace with something general. This is an ugly hack to make dittforslag.no scripthacking-safe. 
   def sanitize
     return unless self.document.is_a?(Hash)
     ['text', 'author_name', 'email'].each do |field|
@@ -90,5 +73,21 @@ class Post < ActiveRecord::Base
     end
     self.document['text'] = self.document['text'][0..139] unless self.document['text'].nil?
   end
+
+  def assign_realm
+    self.realm = self.canonical_path[/^[^\.]*/] if self.canonical_path    
+  end
+
+  # Ensures that the post is attached to its canonical path
+  def attach_canonical_path
+    self.paths |= [self.canonical_path]
+  end
+
+  def canonical_path_must_be_valid
+    unless Pebblebed::Uid.valid_path?(self.canonical_path)
+      error.add :base, "{self.canonical_path.inspect} is an invalid path."
+    end
+  end
+
 
 end
