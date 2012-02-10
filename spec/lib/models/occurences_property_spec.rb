@@ -8,6 +8,17 @@ describe Post::OccurencesAccessor do
     q.occurences['due'].first.should be_within(1.0).of(time)
   end
 
+  it "can be recovered from json without persisting" do
+    p = Post.create!(:uid => "post:a.b.c", :occurences => {:due => [Time.now]})
+    p.occurences['onlyjson'] = [Time.now]
+    json = p.to_json
+    q = Post.instantiate(JSON.parse(json)['post'])
+    q.occurences['onlyjson'].size.should eq 1
+    q.occurences['due'].size.should eq 1
+    r = Post.find(p)
+    r.occurences.keys.should eq ['due']
+  end
+
   it "deletes occurences" do
     time = Time.now
     other_time = Time.now-1000
