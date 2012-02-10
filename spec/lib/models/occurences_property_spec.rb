@@ -5,7 +5,7 @@ describe Post::OccurencesAccessor do
     time = Time.now
     p = Post.create!(:uid => "post:a.b.c", :occurences => {:due => [time]})
     q = Post.find(p.id)
-    q.occurences['due'].first.should eq time
+    q.occurences['due'].first.should be_within(1.0).of(time)
   end
 
   it "deletes occurences" do
