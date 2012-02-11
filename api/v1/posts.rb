@@ -84,6 +84,7 @@ class GroveV1 < Sinatra::Base
       # Retrieve a collection by wildcards
       @posts = Post.by_uid(uid)
       @posts = @posts.order("created_at desc")
+      @posts = @posts.where("klass in (?)", params['klass'].split(','.map(&:strip))) if params['klass']
       @posts = @posts.with_tags(params['tags']) if params['tags']
       @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
       pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => @pagination}

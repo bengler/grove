@@ -8,7 +8,12 @@ gem 'activerecord', :require => 'active_record'
 gem 'pg'
 gem 'yajl-ruby', :require => "yajl"
 gem 'petroglyph', :git => 'git://github.com/benglerpebbles/petroglyph.git'
-gem 'pebblebed', '>=0.0.6'
+
+# TODO: If you are reading this, I made a boo boo and pushed this pointer to my own
+# file system. I owe you one premium grade takeout coffee (or your choice of available teas) 
+# from Vespa. 
+
+gem 'pebblebed', :path => '/Users/simenss/_dev/platform/pebblebed' #'>=0.0.8'
 gem 'dalli'
 gem 'hupper', :git => 'git://github.com/origo/hupper.git'
 gem 'ts_vector_tags'

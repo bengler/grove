@@ -38,6 +38,20 @@ GIT
       capistrano (>= 2.9)
       capistrano-ext (>= 1.2.1)
 
+PATH
+  remote: /Users/simenss/_dev/platform/pebblebed
+  specs:
+    pebblebed (0.0.8)
+      activesupport
+      curb (~> 0.8.0)
+      deepstruct
+      futurevalue
+      i18n
+      nokogiri
+      pathbuilder
+      queryparams
+      yajl-ruby
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -84,16 +98,6 @@ GEM
       net-ssh (>= 1.99.1)
     nokogiri (1.5.0)
     pathbuilder (0.0.2)
-    pebblebed (0.0.6)
-      activesupport
-      curb (~> 0.8.0)
-      deepstruct
-      futurevalue
-      i18n
-      nokogiri
-      pathbuilder
-      queryparams
-      yajl-ruby
     pg (0.12.2)
     pingable (0.0.9)
       rack (>= 1.0.0)
@@ -157,7 +161,7 @@ DEPENDENCIES
   dalli
   hupper!
   o5-logging!
-  pebblebed (>= 0.0.6)
+  pebblebed!
   petroglyph!
   pg
   pingable

@@ -196,6 +196,16 @@ describe "API v1 posts" do
       Post.first.occurrences['due'].first.should be_within(1.0).of(timestamp)
     end
 
+    it "can have a klass path" do
+      post "/posts/post.blog:a.b", :post => {:document => {}, :occurrences => {:due => [timestamp.iso8601]}}
+      post "/posts/post.comment:a.b.c", :post => {:document => {}, :occurrences => {:due => [timestamp.iso8601]}}
+      post "/posts/post.comment:a.b.c", :post => {:document => {}, :occurrences => {:due => [timestamp.iso8601]}}
+      get "/posts", :klass => "post.blog"
+      JSON.parse(last_response.body)['posts'].size.should eq 1
+      get "/posts", :klass => "post.comment"
+      JSON.parse(last_response.body)['posts'].size.should eq 2
+    end
+
   end
 
   context "with a logged in god" do

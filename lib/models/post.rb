@@ -4,6 +4,7 @@ class Post < ActiveRecord::Base
   validates_presence_of :realm
 
   validate :canonical_path_must_be_valid
+  validates_format_of :klass, :with => /^post(\.|$)/
 
   before_save :sanitize
   before_validation :assign_realm
@@ -32,7 +33,7 @@ class Post < ActiveRecord::Base
   end
 
   def uid=(value)
-    _klass, self.canonical_path, _oid = Pebblebed::Uid.raw_parse(value)
+    self.klass, self.canonical_path, _oid = Pebblebed::Uid.raw_parse(value)
     raise ArgumentError, "Do not assign oid. It is managed by the model. (omit '...$#{_oid}' from uid)" if _oid != '' && _oid != self.id
   end
 
