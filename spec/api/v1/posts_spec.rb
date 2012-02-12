@@ -210,6 +210,15 @@ describe "API v1 posts" do
       JSON.parse(last_response.body)['posts'].size.should eq 3
     end
 
+    it "can filter posts by creator" do
+      Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => '1')
+      Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => '2')
+      get "/posts/*:*", :created_by => 1
+      JSON.parse(last_response.body)['posts'].first['post']['document'].should eq '1'
+      get "/posts/*:*", :created_by => 2
+      JSON.parse(last_response.body)['posts'].first['post']['document'].should eq '2'
+    end
+
   end
 
   context "with a logged in god" do
