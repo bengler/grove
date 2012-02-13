@@ -189,6 +189,36 @@ describe "API v1 posts" do
       JSON.parse(last_response.body)['post']['paths'].sort.should eq ['a.b.secondary', 'a.b.c'].sort
     end
 
+    it "can contain occurrences in time" do
+      timestamp = Time.now
+      post "/posts/post:a.b.c", :post => {:document => {}, :occurrences => {:due => [timestamp.iso8601]}}
+      Post.first.occurrences['due'].size.should eq 1
+      Post.first.occurrences['due'].first.should be_within(1.0).of(timestamp)
+    end
+
+    it "can have a klass path" do
+      post "/posts/post.blog:a.b", {:post => {:document => {content: "1"}}}
+      post "/posts/post.comment:a.b.c", {:post => {:document => {content: "2"}}}
+      post "/posts/post.comment:a.b.c", {:post => {:document => {content: "3"}}}
+      get "/posts/*:*", :klass => "post.blog"
+      JSON.parse(last_response.body)['posts'].size.should eq 1
+      get "/posts/*:*", :klass => "post.comment"
+      JSON.parse(last_response.body)['posts'].size.should eq 2
+      get "/posts/post.comment:*"
+      JSON.parse(last_response.body)['posts'].size.should eq 2
+      get "/posts/*:*", :klass => "post.comment, post.blog"
+      JSON.parse(last_response.body)['posts'].size.should eq 3
+    end
+
+    it "can filter posts by creator" do
+      Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => '1')
+      Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => '2')
+      get "/posts/*:*", :created_by => 1
+      JSON.parse(last_response.body)['posts'].first['post']['document'].should eq '1'
+      get "/posts/*:*", :created_by => 2
+      JSON.parse(last_response.body)['posts'].first['post']['document'].should eq '2'
+    end
+
   end
 
   context "with a logged in god" do

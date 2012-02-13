@@ -33,21 +33,29 @@ class Post < ActiveRecord::Base
   end
 
   # Include the paths property with the json hash
+  alias_method :as_json_without_paths, :as_json
   def as_json(*args)
-    self.attributes.merge("paths" => self.paths)
+    hash = self.as_json_without_paths(*args)
+    hash['post']['paths'] = self.paths
+    hash
   end
 
   private
 
   # This ensures that any state is reset when the instance is reloaded
+  alias_method :clear_aggregation_cache_without_paths, :clear_aggregation_cache
   def clear_aggregation_cache
     @locations_accessor = nil
     @attributes.delete('paths')
-    super
+    clear_aggregation_cache_without_paths
+  end
+
+  def paths_need_sync?
+    @attributes['paths'] || @locations_accessor
   end
 
   def sync_paths_property
-    self.paths.save!
+    self.paths.save! if paths_need_sync?
   end
 
 end

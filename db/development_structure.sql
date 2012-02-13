@@ -73,6 +73,39 @@ CREATE TABLE locations_posts (
 
 
 --
+-- Name: occurrence_entries; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE occurrence_entries (
+    id integer NOT NULL,
+    label text,
+    post_id integer,
+    at timestamp without time zone,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone
+);
+
+
+--
+-- Name: occurrence_entries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE occurrence_entries_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: occurrence_entries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE occurrence_entries_id_seq OWNED BY occurrence_entries.id;
+
+
+--
 -- Name: posts; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -86,7 +119,8 @@ CREATE TABLE posts (
     created_at timestamp without time zone,
     updated_at timestamp without time zone,
     external_id text,
-    canonical_path text
+    canonical_path text,
+    klass text
 );
 
 
@@ -129,6 +163,13 @@ ALTER TABLE locations ALTER COLUMN id SET DEFAULT nextval('locations_id_seq'::re
 -- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
+ALTER TABLE occurrence_entries ALTER COLUMN id SET DEFAULT nextval('occurrence_entries_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
+--
+
 ALTER TABLE posts ALTER COLUMN id SET DEFAULT nextval('posts_id_seq'::regclass);
 
 
@@ -138,6 +179,14 @@ ALTER TABLE posts ALTER COLUMN id SET DEFAULT nextval('posts_id_seq'::regclass);
 
 ALTER TABLE ONLY locations
     ADD CONSTRAINT locations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: occurrence_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY occurrence_entries
+    ADD CONSTRAINT occurrence_entries_pkey PRIMARY KEY (id);
 
 
 --
@@ -160,6 +209,20 @@ CREATE UNIQUE INDEX index_locations_on_labels ON locations USING btree (label_0,
 --
 
 CREATE UNIQUE INDEX index_locations_posts_on_location_id_and_post_id ON locations_posts USING btree (location_id, post_id);
+
+
+--
+-- Name: index_occurrence_entries_on_at; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_occurrence_entries_on_at ON occurrence_entries USING btree (at);
+
+
+--
+-- Name: index_occurrence_entries_on_post_id_and_label; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_occurrence_entries_on_post_id_and_label ON occurrence_entries USING btree (post_id, label);
 
 
 --
