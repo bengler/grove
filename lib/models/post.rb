@@ -4,9 +4,10 @@ class Post < ActiveRecord::Base
   validates_presence_of :realm
 
   validate :canonical_path_must_be_valid
+  validates_format_of :klass, :with => /^post(\.|$)/
 
   before_save :sanitize
-  before_validation :assign_realm
+  before_validation :assign_realm, :set_default_klass
   before_save :attach_canonical_path
   after_update :invalidate_cache
   before_destroy :invalidate_cache
@@ -21,8 +22,9 @@ class Post < ActiveRecord::Base
   }
 
   scope :by_uid, lambda { |uid|
-    _klass, _path, _oid = Pebblebed::Uid.raw_parse(uid)
+    _klass, _path, _oid = Pebblebed::Uid.raw_parse(uid)    
     scope = by_path(_path)
+    scope = scope.where("klass = ?", _klass) unless _klass == '*'
     scope = scope.where("posts.id = ?", _oid) unless _oid == '' || _oid == '*'
     scope
   }
@@ -32,7 +34,7 @@ class Post < ActiveRecord::Base
   end
 
   def uid=(value)
-    _klass, self.canonical_path, _oid = Pebblebed::Uid.raw_parse(value)
+    self.klass, self.canonical_path, _oid = Pebblebed::Uid.raw_parse(value)
     raise ArgumentError, "Do not assign oid. It is managed by the model. (omit '...$#{_oid}' from uid)" if _oid != '' && _oid != self.id
   end
 
@@ -89,5 +91,8 @@ class Post < ActiveRecord::Base
     end
   end
 
+  def set_default_klass
+    self.klass ||= "post"
+  end
 
 end

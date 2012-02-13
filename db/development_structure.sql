@@ -119,7 +119,8 @@ CREATE TABLE posts (
     created_at timestamp without time zone,
     updated_at timestamp without time zone,
     external_id text,
-    canonical_path text
+    canonical_path text,
+    klass text
 );
 
 

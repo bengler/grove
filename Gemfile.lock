@@ -5,6 +5,21 @@ GIT
     o5-logging (0.0.1)
 
 GIT
+  remote: git://github.com/benglerpebbles/pebblebed.git
+  revision: 0c05286f00c864086c54416810a6acb8035cb5bb
+  specs:
+    pebblebed (0.0.8)
+      activesupport
+      curb (~> 0.8.0)
+      deepstruct
+      futurevalue
+      i18n
+      nokogiri
+      pathbuilder
+      queryparams
+      yajl-ruby
+
+GIT
   remote: git://github.com/benglerpebbles/petroglyph.git
   revision: da77e59f7dcfb53c43271b33bf55b06e8de6f753
   specs:
@@ -84,16 +99,6 @@ GEM
       net-ssh (>= 1.99.1)
     nokogiri (1.5.0)
     pathbuilder (0.0.2)
-    pebblebed (0.0.6)
-      activesupport
-      curb (~> 0.8.0)
-      deepstruct
-      futurevalue
-      i18n
-      nokogiri
-      pathbuilder
-      queryparams
-      yajl-ruby
     pg (0.12.2)
     pingable (0.0.9)
       rack (>= 1.0.0)
@@ -157,7 +162,7 @@ DEPENDENCIES
   dalli
   hupper!
   o5-logging!
-  pebblebed (>= 0.0.6)
+  pebblebed!
   petroglyph!
   pg
   pingable

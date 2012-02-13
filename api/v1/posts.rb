@@ -8,6 +8,7 @@ class GroveV1 < Sinatra::Base
     # If an external_id is submitted this is considered a sync with an external system.
     # external_id must be unique across a single realm. If there is a post with the
     # provided external_id it is updated with the provided content.
+
     external_id = params[:post][:external_id]
     if external_id
       realm = Pebblebed::Uid.new(uid).realm
@@ -84,7 +85,9 @@ class GroveV1 < Sinatra::Base
       # Retrieve a collection by wildcards
       @posts = Post.by_uid(uid)
       @posts = @posts.order("created_at desc")
+      @posts = @posts.where("klass in (?)", params['klass'].split(',').map(&:strip)) if params['klass']
       @posts = @posts.with_tags(params['tags']) if params['tags']
+      @posts = @posts.where("created_by = ?", params['created_by']) if params['created_by']
       @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
       pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => @pagination}
     else

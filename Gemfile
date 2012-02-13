@@ -8,7 +8,9 @@ gem 'activerecord', :require => 'active_record'
 gem 'pg'
 gem 'yajl-ruby', :require => "yajl"
 gem 'petroglyph', :git => 'git://github.com/benglerpebbles/petroglyph.git'
-gem 'pebblebed', '>=0.0.6'
+# TODO: This should really be a normal, public version of pebblebed, but right now I'm not getting
+# the latest version of Pebblebed from rubygems.org. WFT?
+gem 'pebblebed', :git => 'git://github.com/benglerpebbles/pebblebed.git' #'>=0.0.8'
 gem 'dalli'
 gem 'hupper', :git => 'git://github.com/origo/hupper.git'
 gem 'ts_vector_tags'
