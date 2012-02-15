@@ -31,6 +31,14 @@ class Post < ActiveRecord::Base
     scope
   }
 
+  scope :filtered_by, lambda { |filters|
+    scope = relation
+    scope = scope.where(:klass => filters['klass'].split(',').map(&:strip)) if filters['klass']
+    scope = scope.with_tags(filters['tags']) if filters['tags']
+    scope = scope.where(:created_by => filters['created_by']) if filters['created_by']
+    scope
+  }
+
   def owned_by?(identity_id)
     new_record? || created_by == identity_id
   end
