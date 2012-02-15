@@ -29,6 +29,14 @@ class Post < ActiveRecord::Base
     scope
   }
 
+  scope :filtered_by, lambda { |filters|
+    scope = order('created_at DESC')
+    scope = scope.where(:klass => filters['klass'].split(',').map(&:strip)) if filters['klass']
+    scope = scope.with_tags(filters['tags']) if filters['tags']
+    scope = scope.where(:created_by => filters['created_by']) if filters['created_by']
+    scope
+  }
+
   def uid
     "post:#{canonical_path}$#{self.id}"
   end
