@@ -109,6 +109,12 @@ describe "API v1 posts" do
       result['posts'].first['post']['document'].should eq 'a'
       result['posts'].last['post']['document'].should eq '0'
 
+      get "/posts/post:a.b.c#{CGI.escape('|')}d"
+      result = JSON.parse(last_response.body)
+      result['posts'].size.should eq 11
+      result['posts'].first['post']['document'].should eq 'a'
+      result['posts'].last['post']['document'].should eq '0'
+
       get "/posts/post:*", :limit => 2
       result = JSON.parse(last_response.body)
       result['posts'].size.should eq 2
