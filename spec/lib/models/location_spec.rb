@@ -34,6 +34,16 @@ describe Location do
     Location.parse_path('a.b').should eq({:label_0=>"a", :label_1=>"b", :label_2=>nil})
   end
 
+  it "can be found by set of paths" do
+    Location.declare!('a.b')
+    Location.declare!('a.b.a')
+    Location.declare!('a.b.b')
+    Location.declare!('a.b.c')
+    Location.declare!('a.b.d')
+
+    Location.by_path('a.b.a|b|c').count.should eq 3
+  end
+
   it "can't contain stray nils" do
     -> { Location.create!(:label_1 => "something")}.should raise_error ActiveRecord::RecordInvalid
   end
