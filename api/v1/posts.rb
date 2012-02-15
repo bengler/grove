@@ -22,19 +22,10 @@ class GroveV1 < Sinatra::Base
     # If an external_id is submitted this is considered a sync with an external system.
     # external_id must be unique across a single realm. If there is a post with the
     # provided external_id it is updated with the provided content.
-
-    external_id = params[:post][:external_id]
-    if external_id
-      realm = Pebblebed::Uid.new(uid).realm
-      @post = Post.find_by_realm_and_external_id(realm, external_id)
-      if @post
-        @post.deleted = false
-        existing_path = Pebblebed::Uid.new(@post.uid).path
-        provided_path = Pebblebed::Uid.new(uid).path
-        if existing_path != provided_path
-          halt 409, "Unable to create. A post with external_id '#{params[:post][:external_id]}' is allready posted with another canonical path (#{@post.uid})."
-        end
-      end
+    begin
+      @post = Post.find_by_external_id_and_uid(attributes[:external_id], uid)
+    rescue Post::CanonicalPathConflict => e
+      halt 409, "A post with external_id '#{attributes[:external_id]}' already exists with another canonical path (#{e.message})."
     end
 
     @post ||= Post.find_by_uid(uid) || Post.new(:uid => uid, :created_by => identity_id)
