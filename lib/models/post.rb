@@ -30,7 +30,7 @@ class Post < ActiveRecord::Base
   }
 
   scope :filtered_by, lambda { |filters|
-    scope = order('created_at DESC')
+    scope = relation
     scope = scope.where(:klass => filters['klass'].split(',').map(&:strip)) if filters['klass']
     scope = scope.with_tags(filters['tags']) if filters['tags']
     scope = scope.where(:created_by => filters['created_by']) if filters['created_by']
