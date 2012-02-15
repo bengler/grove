@@ -1,41 +1,42 @@
 class GroveV1 < Sinatra::Base
 
+  helpers do
+    def limit_offset_collection(collection, options)
+      limit = (options[:limit] || 20).to_i
+      offset = (options[:offset] || 0).to_i
+      collection = collection.limit(limit+1).offset(offset)
+      last_page = (collection.size <= limit)
+      metadata = {:limit => limit, :offset => offset, :last_page => last_page}
+      collection = collection[0..limit-1]
+      [collection, metadata]
+    end
+  end
 
   post "/posts/:uid" do |uid|
     identity_id = current_identity.try(:id)
     halt 403, "No identity" unless identity_id
 
+    attributes = params[:post]
+    halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless attributes
+
     # If an external_id is submitted this is considered a sync with an external system.
     # external_id must be unique across a single realm. If there is a post with the
     # provided external_id it is updated with the provided content.
-
-    external_id = params[:post][:external_id]
-    if external_id
-      realm = Pebblebed::Uid.new(uid).realm
-      @post = Post.unscoped.find_by_realm_and_external_id(realm, external_id)
-      if @post
-        @post.deleted = false
-        existing_path = Pebblebed::Uid.new(@post.uid).path
-        provided_path = Pebblebed::Uid.new(uid).path
-        if existing_path != provided_path
-          halt 409, "Unable to create. A post with external_id '#{params[:post][:external_id]}' is allready posted with another canonical path (#{@post.uid})."
-        end
-      end
+    begin
+      @post = Post.find_by_external_id_and_uid(attributes[:external_id], uid)
+    rescue Post::CanonicalPathConflict => e
+      halt 409, "A post with external_id '#{attributes[:external_id]}' already exists with another canonical path (#{e.message})."
     end
 
     @post ||= Post.find_by_uid(uid) || Post.new(:uid => uid, :created_by => identity_id)
     response.status = 201 if @post.new_record?
 
-    if !current_identity.god && @post.created_by != identity_id and !@post.new_record?
+    if !current_identity.god && !@post.owned_by?(identity_id)
       halt 403, "Post is owned by a different user (#{@post.created_by})"
     end
 
-    post = params[:post]
-
-    halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless post
-
-    (['document', 'paths', 'occurrences', 'tags', 'external_id'] & post.keys).each do |field|
-      @post.send(:"#{field}=", post[field])
+    (['document', 'paths', 'occurrences', 'tags', 'external_id'] & attributes.keys).each do |field|
+      @post.send(:"#{field}=", attributes[field])
     end
     @post.save!
 
@@ -61,18 +62,6 @@ class GroveV1 < Sinatra::Base
     @post.deleted = false
     @post.save!
     [200, "Ok"]
-  end
-
-  helpers do
-    def limit_offset_collection(collection, options)
-      limit = (options[:limit] || 20).to_i
-      offset = (options[:offset] || 0).to_i
-      collection = collection.limit(limit+1).offset(offset)
-      last_page = (collection.size <= limit)
-      metadata = {:limit => limit, :offset => offset, :last_page => last_page}
-      collection = collection[0..limit-1]
-      [collection, metadata]
-    end
   end
 
   get "/posts/:uid" do |uid|

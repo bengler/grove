@@ -182,7 +182,7 @@ describe "API v1 posts" do
       last_response.status.should eq 409 # conflict because of other path
       Post.first.document['content'].should eq "hello again"
       # Post to same path with different external_id creates a new document
-      post "/posts/post:a.b.c", :post => {:document => {content: "hello again"}, :external_id => "oter-unique"}
+      post "/posts/post:a.b.c", :post => {:document => {content: "hello again"}, :external_id => "other-unique"}
       Post.count.should eq 2
       last_response.status.should eq 201
     end
