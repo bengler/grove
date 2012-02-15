@@ -16,6 +16,9 @@ class GroveV1 < Sinatra::Base
     identity_id = current_identity.try(:id)
     halt 403, "No identity" unless identity_id
 
+    attributes = params[:post]
+    halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless attributes
+
     # If an external_id is submitted this is considered a sync with an external system.
     # external_id must be unique across a single realm. If there is a post with the
     # provided external_id it is updated with the provided content.
@@ -41,12 +44,8 @@ class GroveV1 < Sinatra::Base
       halt 403, "Post is owned by a different user (#{@post.created_by})"
     end
 
-    post = params[:post]
-
-    halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless post
-
-    (['document', 'paths', 'occurrences', 'tags', 'external_id'] & post.keys).each do |field|
-      @post.send(:"#{field}=", post[field])
+    (['document', 'paths', 'occurrences', 'tags', 'external_id'] & attributes.keys).each do |field|
+      @post.send(:"#{field}=", attributes[field])
     end
     @post.save!
 
