@@ -30,6 +30,10 @@ describe Location do
     Location.by_path('d.*').count.should eq 0
   end
 
+  it "doesn't bother checking all remaining labels for nil" do
+    Location.parse_path('a.b').should eq({:label_0=>"a", :label_1=>"b", :label_2=>nil})
+  end
+
   it "can be found by set of paths" do
     Location.declare!('a.b')
     Location.declare!('a.b.a')
