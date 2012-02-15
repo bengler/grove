@@ -54,7 +54,7 @@ describe Post do
     posts.first.document.should eq '2'
     # Change the cached document to verify that it actually reads through the cache
     post = JSON.parse($memcached.get(SchemaVersion.tag_key(doc1.uid)))
-    post['document'] = "sentinel"    
+    post['document'] = "sentinel"
     $memcached.set(SchemaVersion.tag_key(doc1.uid), post.to_json)
     posts = Post.cached_find_all_by_uid([doc1.uid])
     posts.first.document.should eq 'sentinel'
@@ -72,6 +72,14 @@ describe Post do
   it "knows how to handle non-existant posts when using cached_find_all_by_uid" do
     posts = Post.cached_find_all_by_uid(["post:out.of.this$1"])
     posts.should eq [nil]
+  end
+
+  it "does not try to retrieve wildcards from the cache" do
+    ->{ Post.cached_find_all_by_uid(["post:with.wildcard.*"]) }.should raise_error ArgumentError
+  end
+
+  it "does not try to retrieve pipes from the cache" do
+    ->{ Post.cached_find_all_by_uid(["post:with.pipes.a|b|c"]) }.should raise_error ArgumentError
   end
 
   it "can scope posts by tag" do

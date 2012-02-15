@@ -47,24 +47,25 @@ class Location < ActiveRecord::Base
   def self.declare!(path)
     attributes = self.parse_path(path)
     path = self.where(attributes).first
-    path ||= self.create!(attributes)    
+    path ||= self.create!(attributes)
   end
 
   def path
     @path ||= PathLabelsAccessor.new(self)
   end
 
-  # Converts an oid-path to a hash with attributes for 
+  # Converts an oid-path to a hash with attributes for
   # this very model. The attributes will always be
   # fully constrained (specify every labels field even
   # if they are nil), unless you terminate the path
   # with an asterisk, e.g.: "realm.blog.thread.*"
   def self.parse_path(path)
     labels = path.split('.')
+    labels.map! {|label| label.include?('|') ? label.split('|') : label}
     result = {}
     (0...MAX_DEPTH).map do |index|
       break if labels[index] == '*'
-      result[:"label_#{index}"] = labels[index] || nil
+      result[:"label_#{index}"] = labels[index]
     end
     result
   end
@@ -76,7 +77,7 @@ class Location < ActiveRecord::Base
     MAX_DEPTH.times do |i|
       if self.path[i].nil?
         nil_seen = true
-      else        
+      else
         errors.add(:base, "Location path has missing labels. (Stray nils within path)") if nil_seen
       end
     end
