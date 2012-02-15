@@ -1,4 +1,6 @@
 class Post < ActiveRecord::Base
+  class CanonicalPathConflict < StandardError; end
+
   has_and_belongs_to_many :locations, :uniq => true
 
   validates_presence_of :realm
@@ -29,6 +31,10 @@ class Post < ActiveRecord::Base
     scope
   }
 
+  def owned_by?(identity_id)
+    new_record? || created_by == identity_id
+  end
+
   def uid
     "#{klass}:#{canonical_path}$#{id}"
   end
@@ -41,6 +47,17 @@ class Post < ActiveRecord::Base
   def self.find_by_uid(uid)
     return nil unless Pebblebed::Uid.new(uid).oid
     self.by_uid(uid).first
+  end
+
+  def self.find_by_external_id_and_uid(external_id, provided_uid)
+    return nil if external_id.nil?
+
+    uid = Pebblebed::Uid.new(provided_uid)
+    post = self.where(:realm => uid.realm, :external_id => external_id).first
+    if post && post.canonical_path != uid.path
+      fail CanonicalPathConflict.new(post.uid)
+    end
+    post
   end
 
   def self.cached_find_all_by_uid(uids)
