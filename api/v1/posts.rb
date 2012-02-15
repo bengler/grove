@@ -23,11 +23,11 @@ class GroveV1 < Sinatra::Base
       end
     end
 
-    @post ||= Post.find_by_uid(uid) || Post.new(:uid => uid, :created_by => identity_id)    
+    @post ||= Post.find_by_uid(uid) || Post.new(:uid => uid, :created_by => identity_id)
     response.status = 201 if @post.new_record?
 
     if !current_identity.god && @post.created_by != identity_id and !@post.new_record?
-      halt 403, "Post is owned by a different user (#{@post.created_by})" 
+      halt 403, "Post is owned by a different user (#{@post.created_by})"
     end
 
     post = params[:post]
@@ -38,7 +38,7 @@ class GroveV1 < Sinatra::Base
       @post.send(:"#{field}=", post[field])
     end
     @post.save!
-    
+
     pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
   end
 
@@ -48,7 +48,7 @@ class GroveV1 < Sinatra::Base
     @post = Post.find_by_uid(uid)
     halt 404, "No such post" unless @post
     if !current_identity.god && @post.created_by != identity_id
-      halt 403, "Post is owned by a different user (#{@post.created_by})" 
+      halt 403, "Post is owned by a different user (#{@post.created_by})"
     end
     @post.deleted = true
     @post.save!
@@ -62,7 +62,7 @@ class GroveV1 < Sinatra::Base
     @post.save!
     [200, "Ok"]
   end
-  
+
   helpers do
     def limit_offset_collection(collection, options)
       limit = (options[:limit] || 20).to_i
@@ -76,12 +76,12 @@ class GroveV1 < Sinatra::Base
   end
 
   get "/posts/:uid" do |uid|
-    if uid =~ /\,/  
+    if uid =~ /\,/
       # Retrieve a list of posts
       uids = uid.split(/\s*,\s*/).compact
       @posts = Post.cached_find_all_by_uid(uids)
       pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => nil}
-    elsif uid =~ /\*/  
+    elsif uid =~ /\*/
       # Retrieve a collection by wildcards
       @posts = Post.by_uid(uid)
       @posts = @posts.order("created_at desc")

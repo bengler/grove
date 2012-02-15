@@ -52,11 +52,11 @@ describe "API v1 posts" do
     end
 
     it "cannot undelete a document" do
-      post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], 
+      post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"],
         :document => '1', :created_by => 1337, :deleted => true)
       post "/posts/#{post.uid}/undelete"
       last_response.status.should be 403
-    end      
+    end
 
     it "can not delete someone elses document" do
       post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => '1', :created_by => 666)
@@ -113,7 +113,7 @@ describe "API v1 posts" do
       result = JSON.parse(last_response.body)
       result['posts'].size.should eq 2
       result['posts'].first['post']['document'].should eq 'a'
-      result['posts'].last['post']['document'].should eq '9'      
+      result['posts'].last['post']['document'].should eq '9'
 
       get "/posts/post:a.b.*"
       result = JSON.parse(last_response.body)
@@ -237,7 +237,7 @@ describe "API v1 posts" do
       last_response.status.should eq 200
       get "/posts/#{post.uid}"
       last_response.status.should eq 200
-    end      
+    end
 
     it "can update a document created by another user without modifying created_by field" do
       p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => "Hello spaceboy")
