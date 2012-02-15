@@ -64,7 +64,7 @@ class Location < ActiveRecord::Base
     result = {}
     (0...MAX_DEPTH).map do |index|
       break if labels[index] == '*'
-      result[:"label_#{index}"] = labels[index] || nil
+      result[:"label_#{index}"] = labels[index]
     end
     result
   end
