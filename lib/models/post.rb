@@ -29,6 +29,10 @@ class Post < ActiveRecord::Base
     scope
   }
 
+  def owned_by?(identity_id)
+    new_record? || created_by == identity_id
+  end
+
   def uid
     "post:#{canonical_path}$#{self.id}"
   end

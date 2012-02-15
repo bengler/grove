@@ -40,7 +40,7 @@ class GroveV1 < Sinatra::Base
     @post ||= Post.find_by_uid(uid) || Post.new(:uid => uid, :created_by => identity_id)
     response.status = 201 if @post.new_record?
 
-    if !current_identity.god && @post.created_by != identity_id and !@post.new_record?
+    if !current_identity.god && !@post.owned_by?(identity_id)
       halt 403, "Post is owned by a different user (#{@post.created_by})"
     end
 
