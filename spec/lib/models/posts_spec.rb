@@ -13,6 +13,11 @@ describe Post do
     p.uid.should eq "post:area51.vaktmesterkontoret.forum1$#{p.id}"
   end
 
+  it "can have a child klass" do
+    p = Post.create!(:uid => "post.assignment:area51")
+    p.uid.should eq("post.assignment:area51$#{p.id}")
+  end
+
   it "can retrieve one by uid" do
     p1 = Post.create!(:canonical_path => "area51.vaktmesterkontoret.forum1", :document => "1")
     p2 = Post.create!(:canonical_path => "area51.vaktmesterkontoret.forum2", :document => "2")

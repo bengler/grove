@@ -30,7 +30,7 @@ class Post < ActiveRecord::Base
   }
 
   def uid
-    "post:#{canonical_path}$#{self.id}"
+    "#{klass}:#{canonical_path}$#{id}"
   end
 
   def uid=(value)
