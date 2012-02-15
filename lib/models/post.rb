@@ -17,19 +17,19 @@ class Post < ActiveRecord::Base
   include TsVectorTags
   serialize :document
 
-  scope :by_path, lambda { |path| 
+  scope :by_path, lambda { |path|
     select("distinct posts.*").joins(:locations).where(:locations => Location.parse_path(path)) unless path == '*'
   }
 
   scope :by_uid, lambda { |uid|
-    _klass, _path, _oid = Pebblebed::Uid.raw_parse(uid)    
+    _klass, _path, _oid = Pebblebed::Uid.raw_parse(uid)
     scope = by_path(_path)
     scope = scope.where("klass = ?", _klass) unless _klass == '*'
     scope = scope.where("posts.id = ?", _oid) unless _oid == '' || _oid == '*'
     scope
   }
 
-  def uid    
+  def uid
     "post:#{canonical_path}$#{self.id}"
   end
 
@@ -40,18 +40,18 @@ class Post < ActiveRecord::Base
 
   def self.find_by_uid(uid)
     return nil unless Pebblebed::Uid.new(uid).oid
-    self.by_uid(uid).first    
+    self.by_uid(uid).first
   end
 
   def self.cached_find_all_by_uid(uids)
     raise ArgumentError, "No wildcards allowed" if uids.join =~ /\*/
     result =  Hash[
-      $memcached.get_multi(*SchemaVersion.tag_keys(uids)).map do |key, value| 
+      $memcached.get_multi(*SchemaVersion.tag_keys(uids)).map do |key, value|
         post = Post.instantiate(Yajl::Parser.parse(value))
         post.readonly!
         [SchemaVersion.untag_key(key), post]
       end
-    ]    
+    ]
     uncached = uids-result.keys
     uncached.each do |uid|
       post = Post.find_by_uid(uid)
@@ -61,13 +61,13 @@ class Post < ActiveRecord::Base
     uids.map{|uid| result[uid]}
   end
 
-  private 
+  private
 
   def invalidate_cache
     $memcached.delete(SchemaVersion.tag_key(self.uid))
   end
 
-  # TODO: Replace with something general. This is an ugly hack to make dittforslag.no scripthacking-safe. 
+  # TODO: Replace with something general. This is an ugly hack to make dittforslag.no scripthacking-safe.
   def sanitize
     return unless self.document.is_a?(Hash)
     ['text', 'author_name', 'email'].each do |field|
@@ -77,7 +77,7 @@ class Post < ActiveRecord::Base
   end
 
   def assign_realm
-    self.realm = self.canonical_path[/^[^\.]*/] if self.canonical_path    
+    self.realm = self.canonical_path[/^[^\.]*/] if self.canonical_path
   end
 
   # Ensures that the post is attached to its canonical path

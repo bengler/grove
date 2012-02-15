@@ -54,7 +54,7 @@ describe Post do
     posts.first.document.should eq '2'
     # Change the cached document to verify that it actually reads through the cache
     post = JSON.parse($memcached.get(SchemaVersion.tag_key(doc1.uid)))
-    post['document'] = "sentinel"    
+    post['document'] = "sentinel"
     $memcached.set(SchemaVersion.tag_key(doc1.uid), post.to_json)
     posts = Post.cached_find_all_by_uid([doc1.uid])
     posts.first.document.should eq 'sentinel'
