@@ -61,6 +61,7 @@ class Location < ActiveRecord::Base
   # with an asterisk, e.g.: "realm.blog.thread.*"
   def self.parse_path(path)
     labels = path.split('.')
+    labels.map! {|label| label.include?('|') ? label.split('|') : label}
     result = {}
     (0...MAX_DEPTH).map do |index|
       break if labels[index] == '*'
