@@ -26,7 +26,7 @@ class GroveV1 < Sinatra::Base
     external_id = params[:post][:external_id]
     if external_id
       realm = Pebblebed::Uid.new(uid).realm
-      @post = Post.unscoped.find_by_realm_and_external_id(realm, external_id)
+      @post = Post.find_by_realm_and_external_id(realm, external_id)
       if @post
         @post.deleted = false
         existing_path = Pebblebed::Uid.new(@post.uid).path
