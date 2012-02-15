@@ -74,6 +74,14 @@ describe Post do
     posts.should eq [nil]
   end
 
+  it "does not try to retrieve wildcards from the cache" do
+    ->{ Post.cached_find_all_by_uid(["post:with.wildcard.*"]) }.should raise_error ArgumentError
+  end
+
+  it "does not try to retrieve pipes from the cache" do
+    ->{ Post.cached_find_all_by_uid(["post:with.pipes.a|b|c"]) }.should raise_error ArgumentError
+  end
+
   it "can scope posts by tag" do
     Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => '1')
     Post.create!(:uid => "post:a.b.c", :tags => ["capitals", "paris"], :document => '2')

@@ -44,7 +44,7 @@ class Post < ActiveRecord::Base
   end
 
   def self.cached_find_all_by_uid(uids)
-    raise ArgumentError, "No wildcards allowed" if uids.join =~ /\*/
+    raise ArgumentError, "No wildcards allowed" if uids.join =~ /[\*\|]/
     result =  Hash[
       $memcached.get_multi(*SchemaVersion.tag_keys(uids)).map do |key, value|
         post = Post.instantiate(Yajl::Parser.parse(value))
