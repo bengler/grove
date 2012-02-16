@@ -28,7 +28,8 @@ class GroveV1 < Sinatra::Base
       halt 409, "A post with external_id '#{attributes[:external_id]}' already exists with another canonical path (#{e.message})."
     end
 
-    @post ||= Post.find_by_uid(uid) || Post.new(:uid => uid, :created_by => identity_id)
+    @post ||= Post.unscoped.find_by_uid(uid) || Post.new(:uid => uid, :created_by => identity_id)
+    halt 404, "Post is deleted" if @post.deleted?
     response.status = 201 if @post.new_record?
 
     unless @post.may_be_managed_by?(current_identity)

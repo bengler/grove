@@ -38,6 +38,18 @@ describe "API v1 posts" do
         last_response.status.should eq 403
       end
 
+      it "can't update a deleted document" do
+        p = Post.create!(:uid => "post:a.b.c", :document => '1', :created_by => 1337, :deleted => true)
+        post "/posts/#{p.uid}", :post => {:document => '2'}
+        last_response.status.should eq 404
+      end
+
+      it "can't update a deleted external document" do
+        p = Post.create!(:uid => "post:a.b.c", :document => '1', :created_by => 1337, :deleted => true, :external_id => '123')
+        post "/posts/#{p.uid}", :post => {:document => '2', :external_id => '123'}
+        last_response.status.should eq 404
+      end
+
       it "can post with external_id and avoid duplicates" do
         post "/posts/post:a.b.c", :post => {:document => {content: "hello world"}, :external_id => "unique"}
         last_response.status.should eq 201
