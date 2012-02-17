@@ -3,7 +3,24 @@ require 'delegate'
 class Interceptor < SimpleDelegator
   class << self
     def process(post, options = {})
-      Post.filtered_by(:realm => post.realm, :tags => options[:action])
+      find_applicable(post, options).each do |interceptor|
+        interceptor.process(post)
+      end
+    end
+
+    def find_applicable(post, options)
+      Post.filtered_by(filters post, options[:action])
+    end
+
+    def filters(post, action)
+      tags = []
+      tags << action
+      tags << klass_to_tag(post.klass)
+      {:realm => post.realm, :tags => tags.compact}
+    end
+
+    def klass_to_tag(s)
+      s[/^[^\.]*\.(.*)$/, 1]
     end
   end
 
