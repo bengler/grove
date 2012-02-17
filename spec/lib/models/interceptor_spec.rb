@@ -19,13 +19,24 @@ describe Interceptor do
     }
     let(:post) { OpenStruct.new(attributes) }
 
-    subject { Interceptor.new(post) }
+    let(:interceptor) { Interceptor.new(post) }
+    subject { interceptor }
 
     its(:klasses_and_actions) { should eq(%w(a b c)) }
     its(:paths) { should eq(%w(x y z)) }
     its(:url) { should eq('url') }
     its(:realm) { should eq('realm') }
     its(:uid) { should eq('uid') }
+
+    describe "additional attributes" do
+      subject do
+        interceptor.with(:action => 'singing', :session => 'abc', :identity => stub(:id => 42))
+      end
+
+      its(:action) { should eq('singing') }
+      its(:session) { should eq('abc') }
+      its(:identity_id) { should eq(42) }
+    end
   end
 
   describe "Interceptor#process" do
@@ -43,15 +54,6 @@ describe Interceptor do
 
       Post.should_receive(:filtered_by).with(:realm => 'oz', :tags => ['singing']).and_return []
       Interceptor.process(post, :action => 'singing')
-    end
-
-    it "processes each interceptor" do
-      interceptors = [event_interceptor, blog_interceptor]
-      Post.should_receive(:filtered_by).and_return interceptors
-      interceptors.each do |i|
-        i.should_receive(:process)
-      end
-      Interceptor.process(post)
     end
   end
 end

@@ -3,18 +3,18 @@ require 'delegate'
 class Interceptor < SimpleDelegator
   class << self
     def process(post, options = {})
-      find_applicable(post, options).each do |interceptor|
-        interceptor.process
+      find_posts_for(post, options).each do |post|
+        Interceptor.new(post).with(options).process
       end
     end
 
-    def find_applicable(post, options)
-      Post.filtered_by(filters post, options[:action]).map { |post| Interceptor.new(post) }
+    def find_posts_for(post, options = {})
+      Post.filtered_by filters(post, options)
     end
 
-    def filters(post, action)
+    def filters(post, options)
       tags = []
-      tags << action
+      tags << options[:action] if options[:action]
       tags << klass_to_tag(post.klass)
       {:realm => post.realm, :tags => tags.compact}
     end
@@ -31,6 +31,14 @@ class Interceptor < SimpleDelegator
   alias_method :__class__, :class
   def class
     __getobj__.class
+  end
+
+  attr_accessor :action, :session, :identity_id
+  def with(options = {})
+    self.action = options[:action]
+    self.session = options[:session]
+    self.identity_id = options[:identity].id if options[:identity]
+    self
   end
 
   def klasses_and_actions
