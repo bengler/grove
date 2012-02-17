@@ -19,8 +19,8 @@ describe Interceptor::Validator do
     }
     let(:post) { OpenStruct.new(attributes) }
 
-    let(:interceptor) { Interceptor::Validator.new(post) }
-    subject { interceptor }
+    let(:validator) { Interceptor::Validator.new(post) }
+    subject { validator }
 
     its(:klasses_and_actions) { should eq(%w(a b c)) }
     its(:paths) { should eq(%w(x y z)) }
@@ -30,7 +30,7 @@ describe Interceptor::Validator do
 
     describe "additional attributes" do
       subject do
-        interceptor.with(:action => 'singing', :session => 'abc', :identity => stub(:id => 42))
+        validator.with(:action => 'singing', :session => 'abc', :identity => stub(:id => 42))
       end
 
       its(:action) { should eq('singing') }
