@@ -4,12 +4,12 @@ class Interceptor < SimpleDelegator
   class << self
     def process(post, options = {})
       find_applicable(post, options).each do |interceptor|
-        interceptor.process(post)
+        interceptor.process
       end
     end
 
     def find_applicable(post, options)
-      Post.filtered_by(filters post, options[:action])
+      Post.filtered_by(filters post, options[:action]).map { |post| Interceptor.new(post) }
     end
 
     def filters(post, action)

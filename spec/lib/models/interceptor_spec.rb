@@ -28,7 +28,7 @@ describe Interceptor do
     its(:uid) { should eq('uid') }
   end
 
-  describe "#process" do
+  describe "Interceptor#process" do
     let(:post) { stub(:realm => 'oz', :klass => 'post.event') }
     let(:event_interceptor) { stub(:klasses => ['concert', 'event', 'show']) }
     let(:blog_interceptor) { stub(:klasses => ['blog', 'comment', 'conversation']) }
@@ -46,11 +46,12 @@ describe Interceptor do
     end
 
     it "processes each interceptor" do
-      Post.should_receive(:filtered_by).and_return [event_interceptor, blog_interceptor]
-      event_interceptor.should_receive(:process).with(post)
-      blog_interceptor.should_receive(:process).with(post)
+      interceptors = [event_interceptor, blog_interceptor]
+      Post.should_receive(:filtered_by).and_return interceptors
+      interceptors.each do |i|
+        i.should_receive(:process)
+      end
       Interceptor.process(post)
     end
   end
-
 end
