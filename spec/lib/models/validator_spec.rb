@@ -7,15 +7,15 @@ describe Interceptor::Validator do
   describe "wraps post" do
     let(:attributes) {
       {
-      :created_by => 1,
-      :realm => 'realm',
-      :uid => 'uid',
-      :tags => %w(a b c),
-      :document => {
-      :paths => 'x,y,z',
-      :url => 'url'
-    }
-    }
+        :created_by => 1,
+        :realm => 'realm',
+        :uid => 'uid',
+        :tags => %w(a b c),
+        :document => {
+          :paths => 'x,y,z',
+          :url => 'url'
+        }
+      }
     }
     let(:post) { OpenStruct.new(attributes) }
 
