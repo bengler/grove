@@ -1,6 +1,12 @@
 require 'delegate'
 
-class Watchdog < SimpleDelegator
+class Interceptor < SimpleDelegator
+  class << self
+    def process(post, options = {})
+      Post.filtered_by(:realm => post.realm, :tags => options[:action])
+    end
+  end
+
   def to_model
     __getobj__
   end
@@ -10,12 +16,8 @@ class Watchdog < SimpleDelegator
     __getobj__.class
   end
 
-  def actions
+  def klasses_and_actions
     tags
-  end
-
-  def klasses
-    @klass ||= tagify document[:klasses]
   end
 
   def paths

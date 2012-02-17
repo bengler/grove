@@ -1,29 +1,27 @@
 require 'ostruct'
-require 'models/watchdog'
+require 'models/interceptor'
 
 class Post; end
 
-describe Watchdog do
+describe Interceptor do
   describe "wraps Post" do
     let(:attributes) {
       {
         :created_by => 1,
         :realm => 'realm',
         :uid => 'uid',
-        :tags => %w(p r q),
+        :tags => %w(a b c),
         :document => {
           :paths => 'x,y,z',
-          :klasses => 'a,b,c',
           :url => 'url'
         }
       }
     }
     let(:post) { OpenStruct.new(attributes) }
 
-    subject { Watchdog.new(post) }
+    subject { Interceptor.new(post) }
 
-    its(:klasses) { should eq(%w(a b c)) }
-    its(:actions) { should eq(%w(p r q)) }
+    its(:klasses_and_actions) { should eq(%w(a b c)) }
     its(:paths) { should eq(%w(x y z)) }
     its(:url) { should eq('url') }
     its(:realm) { should eq('realm') }
