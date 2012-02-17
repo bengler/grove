@@ -1,59 +1,37 @@
-require 'ostruct'
 require 'models/interceptor'
 
-class Post; end
-
 describe Interceptor do
-  describe "wraps Post" do
-    let(:attributes) {
-      {
-        :created_by => 1,
-        :realm => 'realm',
-        :uid => 'uid',
-        :tags => %w(a b c),
-        :document => {
-          :paths => 'x,y,z',
-          :url => 'url'
-        }
-      }
-    }
-    let(:post) { OpenStruct.new(attributes) }
 
-    let(:interceptor) { Interceptor.new(post) }
-    subject { interceptor }
+  let(:post) { stub(:realm => 'oz', :klass => 'post.event') }
+  let(:options) { {:action => 'smile', :session => 'abc', :identity => stub(:id => 42)} }
 
-    its(:klasses_and_actions) { should eq(%w(a b c)) }
-    its(:paths) { should eq(%w(x y z)) }
-    its(:url) { should eq('url') }
-    its(:realm) { should eq('realm') }
-    its(:uid) { should eq('uid') }
+  describe "basic attributes" do
+    subject { Interceptor.new(post, options) }
 
-    describe "additional attributes" do
-      subject do
-        interceptor.with(:action => 'singing', :session => 'abc', :identity => stub(:id => 42))
-      end
+    its(:post) { should eq(post) }
+    its(:options) { should eq(options) }
+    its(:action) { should eq('smile') }
+    its(:tags) { should eq(['smile', 'event']) }
+    its(:realm_and_tags) { should eq({:realm => 'oz', :tags => ['smile', 'event']}) }
 
-      its(:action) { should eq('singing') }
-      its(:session) { should eq('abc') }
-      its(:identity_id) { should eq(42) }
+    it "ignores tags if they are empty" do
+      subject.stub(:tags => [])
+      subject.realm_and_tags.should eq({:realm => 'oz'})
+    end
+
+    it "doesn't leave nils in tags" do
+      subject.stub(:action => nil)
+      subject.tags.should eq(['event'])
     end
   end
 
-  describe "Interceptor#process" do
-    let(:post) { stub(:realm => 'oz', :klass => 'post.event') }
-    let(:event_interceptor) { stub(:klasses => ['concert', 'event', 'show']) }
-    let(:blog_interceptor) { stub(:klasses => ['blog', 'comment', 'conversation']) }
-
-    it "finds the correct validators" do
-      Post.should_receive(:filtered_by).with(:realm => 'oz', :tags => ['singing', 'event']).and_return []
-      Interceptor.process(post, :action => 'singing')
+  describe "klass" do
+    it "corresponds to the post's sub-klass" do
+      Interceptor.new(stub(:klass => 'post.event')).klass.should eq('event')
     end
 
-    it "doesn't pass sub-klasses where it's irrelevant" do
-      post.stub(:klass => 'post')
-
-      Post.should_receive(:filtered_by).with(:realm => 'oz', :tags => ['singing']).and_return []
-      Interceptor.process(post, :action => 'singing')
+    it "is nil if the post is generic" do
+      Interceptor.new(stub(:klass => 'post')).klass.should be_nil
     end
   end
 end

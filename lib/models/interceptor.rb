@@ -1,61 +1,41 @@
-require 'delegate'
-
-class Interceptor < SimpleDelegator
+class Interceptor
   class << self
     def process(post, options = {})
-      find_posts_for(post, options).each do |post|
-        Interceptor.new(post).with(options).process
-      end
-    end
-
-    def find_posts_for(post, options = {})
-      Post.filtered_by filters(post, options)
-    end
-
-    def filters(post, options)
-      tags = []
-      tags << options[:action] if options[:action]
-      tags << klass_to_tag(post.klass)
-      {:realm => post.realm, :tags => tags.compact}
-    end
-
-    def klass_to_tag(s)
-      s[/^[^\.]*\.(.*)$/, 1]
+      Interceptor.new(post, options).process
     end
   end
 
-  def to_model
-    __getobj__
-  end
-
-  alias_method :__class__, :class
-  def class
-    __getobj__.class
-  end
-
-  attr_accessor :action, :session, :identity_id
-  def with(options = {})
+  attr_accessor :post, :options, :action
+  def initialize(post, options = {})
+    self.post = post
+    self.options = options
     self.action = options[:action]
-    self.session = options[:session]
-    self.identity_id = options[:identity].id if options[:identity]
-    self
   end
 
-  def klasses_and_actions
-    tags
+  def process
+    find_applicable.each do |post|
+      Validator.new(post).with(options).process
+    end
   end
 
-  def paths
-    @paths ||= tagify document[:paths]
+  def find_applicable
+    Post.filtered_by realm_and_tags
   end
 
-  def url
-    @url ||= document[:url]
+  def realm_and_tags
+    filters = {:realm => post.realm}
+    filters[:tags] = tags unless tags.empty?
+    filters
   end
 
-  def tagify(tags)
-    tags ||= ''
-    tags = tags.split(',') if tags.respond_to?(:split)
-    tags.map(&:strip)
+  def tags
+    tags = []
+    tags << action
+    tags << klass
+    tags.compact
+  end
+
+  def klass
+    post.klass[/^[^\.]*\.(.*)$/, 1]
   end
 end
