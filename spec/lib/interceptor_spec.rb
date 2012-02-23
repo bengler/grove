@@ -1,4 +1,4 @@
-require 'models/interceptor'
+require 'interceptor'
 
 describe Interceptor do
 
@@ -12,11 +12,11 @@ describe Interceptor do
     its(:options) { should eq(options) }
     its(:action) { should eq('smile') }
     its(:tags) { should eq(['smile', 'event']) }
-    its(:realm_and_tags) { should eq({:realm => 'oz', :tags => ['smile', 'event']}) }
+    its(:realm_and_tags) { should eq({'realm' => 'oz', 'tags' => ['smile', 'event']}) }
 
     it "ignores tags if they are empty" do
       subject.stub(:tags => [])
-      subject.realm_and_tags.should eq({:realm => 'oz'})
+      subject.realm_and_tags.should eq({'realm' => 'oz'})
     end
 
     it "doesn't leave nils in tags" do

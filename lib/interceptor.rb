@@ -13,9 +13,10 @@ class Interceptor
   end
 
   def process
-    find_applicable.each do |post|
-      Validator.new(post).with(options).process
+    find_applicable.each do |validator|
+      self.post = Validator.new(validator).with(options).validate(post)
     end
+    post
   end
 
   def find_applicable
@@ -23,8 +24,8 @@ class Interceptor
   end
 
   def realm_and_tags
-    filters = {:realm => post.realm}
-    filters[:tags] = tags unless tags.empty?
+    filters = {'realm' => post.realm}
+    filters['tags'] = tags unless tags.empty?
     filters
   end
 
@@ -32,7 +33,7 @@ class Interceptor
     tags = []
     tags << action
     tags << klass
-    tags.compact
+    tags.compact.map(&:to_s)
   end
 
   def klass

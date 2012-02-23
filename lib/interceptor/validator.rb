@@ -36,5 +36,10 @@ class Interceptor
       tags = tags.split(',') if tags.respond_to?(:split)
       tags.map(&:strip)
     end
+
+    def validate(post)
+      Callback.new(self, post).execute
+    end
+
   end
 end

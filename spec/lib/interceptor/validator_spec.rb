@@ -1,6 +1,7 @@
 require 'ostruct'
-require 'models/interceptor/validator'
+require 'interceptor/validator'
 
+class Callback; end
 class Post; end
 
 describe Interceptor::Validator do
@@ -38,4 +39,5 @@ describe Interceptor::Validator do
       its(:identity_id) { should eq(42) }
     end
   end
+
 end
