@@ -13,8 +13,8 @@ class Interceptor
   end
 
   def process
-    find_applicable.each do |validator|
-      self.post = Validator.new(validator).with(options).validate(post)
+    find_applicable.each do |record|
+      self.post = Validator.new(record).with(options).validate(post)
     end
     post
   end
