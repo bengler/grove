@@ -14,7 +14,8 @@ describe "API v1 posts" do
     {:method => :post, :endpoint => '/posts/post:a.b.c$1/occurrences/due'},
     {:method => :delete, :endpoint => '/posts/post:a.b.c$1/occurrences/due'},
     {:method => :put, :endpoint => '/posts/post:a.b.c$1/occurrences/due'},
-    {:method => :put, :endpoint => '/posts/post:a.b.c$1/touch'}
+    {:method => :put, :endpoint => '/posts/post:a.b.c$1/touch'},
+    {:method => :put, :endpoint => '/posts/post:a.b.c$1/tags/:tags'}
   ]
 
   context "with a logged in user" do
@@ -270,6 +271,57 @@ describe "API v1 posts" do
         last_response.status.should eq 200
         p.reload
         p.paths.to_a.sort.should eq(["a.b.c", "a.b.d"])
+      end
+    end
+
+    describe "POST /posts/:uid/tags/:tags" do
+      it "adds tags" do
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337)
+
+        post "/posts/#{p.uid}/tags/paris,france"
+
+        p.reload
+        p.tags.sort.should eq(['france', 'paris'])
+      end
+
+      it "adds more tags" do
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :tags => ['paris'])
+
+        post "/posts/#{p.uid}/tags/wine,france"
+
+        p.reload
+        p.tags.sort.should eq(['france', 'paris', 'wine'])
+      end
+
+      it "doesn't add duplicates" do
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :tags => ['paris'])
+
+        post "/posts/#{p.uid}/tags/wine,france,paris"
+
+        p.reload
+        p.tags.sort.should eq(['france', 'paris', 'wine'])
+      end
+    end
+
+    describe "PUT /posts/:uid/tags/:tags" do
+      it "updates the tags" do
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :tags => ["paris", "france"])
+
+        put "/posts/#{p.uid}/tags/promenades,vins"
+
+        p.reload
+        p.tags.should eq(["promenades", "vins"])
+      end
+    end
+
+    describe "DELETE /posts/:uid/tags/:tags" do
+      it "deletes tags" do
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :tags => ["paris", "france", "wine"])
+
+        delete "/posts/#{p.uid}/tags/france,wine"
+
+        p.reload
+        p.tags.should eq(["paris"])
       end
     end
 

@@ -164,6 +164,49 @@ class GroveV1 < Sinatra::Base
     pg :post, :locals => {:mypost => safe_post(post)}
   end
 
+  post "/posts/:uid/tags/:tags" do |uid, tags|
+    require_identity
+
+    @post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless @post
+
+    @post.with_lock do
+      @post.tags += params[:tags].split(',')
+      @post.save!
+    end
+
+    pg :post, :locals => {:mypost => safe_post(@post)}
+  end
+
+  put "/posts/:uid/tags/:tags" do |uid, tags|
+    require_identity
+
+    @post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless @post
+
+    @post.with_lock do
+      @post.tags = params[:tags]
+      @post.save!
+    end
+
+    pg :post, :locals => {:mypost => safe_post(@post)}
+  end
+
+  delete "/posts/:uid/tags/:tags" do |uid, tags|
+    require_identity
+
+    @post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless @post
+
+    @post.with_lock do
+      @post.tags -= params[:tags].split(',')
+      @post.save!
+    end
+
+    pg :post, :locals => {:mypost => safe_post(@post)}
+  end
+
+
   # Get current identity's posts for a given path
   get '/posts' do
     require_identity
