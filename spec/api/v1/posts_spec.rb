@@ -331,9 +331,8 @@ describe "API v1 posts" do
         p = Post.create!(:uid => "post:a.b.c", :created_at => created_at, :updated_at => created_at, :created_by => 1337)
 
         put "/posts/#{p.uid}/touch"
-
-        p.reload
-        p.updated_at.should be_within(5.seconds).of(Time.now)
+        result = JSON.parse(last_response.body)['post']
+        Time.parse(result['updated_at']).should be_within(5.seconds).of(Time.now)
       end
     end
 
