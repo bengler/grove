@@ -117,6 +117,39 @@ class GroveV1 < Sinatra::Base
     response.status = 204
   end
 
+  post "/posts/:uid/occurrences/:event" do |uid, event|
+    require_identity
+
+    post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless post
+
+    post.add_occurrences!(event, params[:at])
+
+    pg :post, :locals => {:mypost => safe_post(post)}
+  end
+
+  delete "/posts/:uid/occurrences/:event" do |uid, event|
+    require_identity
+
+    post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless post
+
+    post.remove_occurrences!(event, params[:at])
+
+    response.status = 204
+  end
+
+  put "/posts/:uid/occurrences/:event" do |uid, event|
+    require_identity
+
+    post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless post
+
+    post.replace_occurrences!(event, params[:at])
+
+    pg :post, :locals => {:mypost => safe_post(post)}
+  end
+
   # Get current identity's posts for a given path
   get '/posts' do
     require_identity

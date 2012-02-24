@@ -10,7 +10,10 @@ describe "API v1 posts" do
   user_endpoints = [
     {:method => :post, :endpoint => '/posts/post:a.b.c'},
     {:method => :post, :endpoint => '/posts/post:a.b.c$1/paths/a.b.d'},
-    {:method => :delete, :endpoint => '/posts/post:a.b.c$1/paths/a.b.d'}
+    {:method => :delete, :endpoint => '/posts/post:a.b.c$1/paths/a.b.d'},
+    {:method => :post, :endpoint => '/posts/post:a.b.c$1/occurrences/due'},
+    {:method => :delete, :endpoint => '/posts/post:a.b.c$1/occurrences/due'},
+    {:method => :put, :endpoint => '/posts/post:a.b.c$1/occurrences/due'}
   ]
 
   context "with a logged in user" do
@@ -266,6 +269,86 @@ describe "API v1 posts" do
         last_response.status.should eq 200
         p.reload
         p.paths.to_a.sort.should eq(["a.b.c", "a.b.d"])
+      end
+    end
+
+    describe "patching occurrences" do
+      let(:now) { Time.new(2012, 1, 1, 11, 11, 11) }
+      let(:soft_deadline) { Time.new(2012, 2, 7, 18, 28, 18) }
+      let(:hard_deadline) { Time.new(2012, 3, 14, 15, 9, 26) }
+
+      describe "POST /posts/:uid/occurrences/:event" do
+        it "creates an occurrence" do
+          p = Post.create!(:uid => "post:a.b.c")
+          post "/posts/#{p.uid}/occurrences/due", :at => soft_deadline
+
+          p.reload
+          p.occurrences['due'].should eq([soft_deadline])
+        end
+
+        it "creates multiple occurrences" do
+          p = Post.create!(:uid => "post:a.b.c")
+          post "/posts/#{p.uid}/occurrences/due", :at => [soft_deadline, hard_deadline]
+
+          p.reload
+          p.occurrences['due'].sort.should eq([soft_deadline, hard_deadline])
+        end
+
+        it "adds an occurrence to an existing one" do
+          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline]})
+          post "/posts/#{p.uid}/occurrences/due", :at => hard_deadline
+
+          p.reload
+          p.occurrences['due'].sort.should eq([soft_deadline, hard_deadline])
+        end
+
+        it "doesn't add a duplicate occurrence" do
+          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline]})
+          post "/posts/#{p.uid}/occurrences/due", :at => soft_deadline
+
+          p.reload
+          p.occurrences['due'].should eq([soft_deadline])
+        end
+      end
+
+      describe "DELETE /posts/:uid/occurrences/:event" do
+        it "deletes the specified occurrence" do
+          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline, hard_deadline]})
+
+          delete "/posts/#{p.uid}/occurrences/due", :at => soft_deadline
+          p.reload
+
+          p.occurrences['due'].should eq([hard_deadline])
+        end
+
+        it "deletes all the specified occurrences" do
+          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline, hard_deadline, now]})
+
+          delete "/posts/#{p.uid}/occurrences/due", :at => [soft_deadline, hard_deadline]
+          p.reload
+
+          p.occurrences['due'].should eq([now])
+        end
+
+        it "deletes all the occurrences for the event" do
+          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline, hard_deadline]})
+
+          delete "/posts/#{p.uid}/occurrences/due"
+          p.reload
+
+          p.occurrences['due'].should eq([])
+        end
+      end
+
+      describe "PUT /posts/:uid/occurrences/:event" do
+        it "replaces events" do
+          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline, hard_deadline]})
+
+          put "/posts/#{p.uid}/occurrences/due", :at => now
+          p.reload
+
+          p.occurrences['due'].should eq([now])
+        end
       end
     end
   end
