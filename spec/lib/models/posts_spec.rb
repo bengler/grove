@@ -142,7 +142,7 @@ describe Post do
     post.paths.to_a.should eq(["a.b.c"])
   end
 
-  it "cannot delete the cannonical path" do
+  it "cannot delete the canonical path" do
     post = Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
     Location.declare!("a.b.d").posts << post
 
