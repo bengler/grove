@@ -7,6 +7,12 @@ describe "API v1 posts" do
     GroveV1
   end
 
+  user_endpoints = [
+    {:method => :post, :endpoint => '/posts/post:a.b.c'},
+    {:method => :post, :endpoint => '/posts/post:a.b.c$1/paths/a.b.d'},
+    {:method => :delete, :endpoint => '/posts/post:a.b.c$1/paths/a.b.d'}
+  ]
+
   context "with a logged in user" do
     before :each do
       Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>1337, :god => false}))
@@ -296,19 +302,14 @@ describe "API v1 posts" do
       Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {}))
     end
 
-    it "can't create posts" do
-      post "/posts/post:a.b.c", {:document => "hello nobody"}
-      last_response.status.should eq 403
+    describe "has no access to user endpoints" do
+      user_endpoints.each do |forbidden|
+        it "fails to #{forbidden[:method]} #{forbidden[:endpoint]}" do
+          self.send(forbidden[:method], forbidden[:endpoint])
+          last_response.status.should eq(403)
+        end
+      end
     end
 
-    it "can't add paths" do
-      post "/posts/post:a.b.c$1/paths/a.b.d"
-      last_response.status.should eq 403
-    end
-
-    it "can't remove paths" do
-      delete "/posts/post:a.b.c$1/paths/a.b.d"
-      last_response.status.should eq 403
-    end
   end
 end
