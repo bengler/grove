@@ -13,7 +13,8 @@ describe "API v1 posts" do
     {:method => :delete, :endpoint => '/posts/post:a.b.c$1/paths/a.b.d'},
     {:method => :post, :endpoint => '/posts/post:a.b.c$1/occurrences/due'},
     {:method => :delete, :endpoint => '/posts/post:a.b.c$1/occurrences/due'},
-    {:method => :put, :endpoint => '/posts/post:a.b.c$1/occurrences/due'}
+    {:method => :put, :endpoint => '/posts/post:a.b.c$1/occurrences/due'},
+    {:method => :put, :endpoint => '/posts/post:a.b.c$1/touch'}
   ]
 
   context "with a logged in user" do
@@ -269,6 +270,18 @@ describe "API v1 posts" do
         last_response.status.should eq 200
         p.reload
         p.paths.to_a.sort.should eq(["a.b.c", "a.b.d"])
+      end
+    end
+
+    describe "PUT /posts/:uid/touch" do
+      it "touches the post" do
+        created_at = Time.new(2010, 3, 14, 15, 9, 26)
+        p = Post.create!(:uid => "post:a.b.c", :created_at => created_at, :updated_at => created_at, :created_by => 1337)
+
+        put "/posts/#{p.uid}/touch"
+
+        p.reload
+        p.updated_at.should be_within(5.seconds).of(Time.now)
       end
     end
 

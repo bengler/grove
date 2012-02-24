@@ -91,6 +91,20 @@ class GroveV1 < Sinatra::Base
     {:uid => uid, :count => Post.by_uid(uid).count}.to_json
   end
 
+  put "/posts/:uid/touch" do |uid|
+    require_identity
+
+    @post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless @post
+
+    unless @post.may_be_managed_by?(current_identity)
+      halt 403, "Post is owned by a different user (#{@post.created_by})"
+    end
+
+    @post.touch
+    pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
+  end
+
   post "/posts/:uid/paths/:path" do |uid, path|
     require_identity
 
