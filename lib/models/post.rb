@@ -96,7 +96,7 @@ class Post < ActiveRecord::Base
     end
 
     location = self.locations.by_path(path).first
-    location.destroy if location
+    location.posts -= [self]
   end
 
   # Add an occurrence without having to save the post.

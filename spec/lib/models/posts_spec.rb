@@ -130,8 +130,10 @@ describe Post do
   end
 
   it 'atomically deletes a path' do
-    post = Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
+    post = Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"hello" => "spaceboy"})
+    other_post = Post.create!(:uid => "post:a.b.c.d.e", :tags => ["wine", "dining"], :document => {"hello" => "cowgirl"})
     Location.declare!("a.b.d").posts << post
+    Location.declare!("a.b.d").posts << other_post
 
     post.should_not_receive(:save)
     post.should_not_receive(:save!)
@@ -139,7 +141,10 @@ describe Post do
     post.remove_path!("a.b.d")
 
     post.reload
+    other_post.reload
+
     post.paths.to_a.should eq(["a.b.c"])
+    other_post.paths.to_a.should eq(["a.b.c.d.e", "a.b.d"])
   end
 
   it "cannot delete the canonical path" do
