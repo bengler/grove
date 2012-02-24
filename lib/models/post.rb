@@ -8,15 +8,13 @@ class Post < ActiveRecord::Base
   validate :canonical_path_must_be_valid
   validates_format_of :klass, :with => /^post(\.|$)/
 
-  before_save :sanitize, :intercept
+  before_save :sanitize
   before_validation :assign_realm, :set_default_klass
   before_save :attach_canonical_path
   after_update :invalidate_cache
   before_destroy :invalidate_cache
 
   default_scope where("not deleted")
-
-  attr_accessor :session
 
   include TsVectorTags
   serialize :document
@@ -94,12 +92,12 @@ class Post < ActiveRecord::Base
   # a version, depending on the version of the api that is being used.
   # This is because the templates that are used in the interception/callback
   # are version-specific.
-  def save_with_session!(session)
-    self.session = session
+  def intercept_and_save!(session)
+    intercept(session)
     self.save!
   end
 
-  def intercept
+  def intercept(session = nil)
     action = new_record? ? 'create' : 'update'
     Interceptor.process(self, {:session => session, :action => action})
   end

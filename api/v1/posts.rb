@@ -29,7 +29,7 @@ class GroveV1 < Sinatra::Base
     end
 
     begin
-      @post.save_with_session!(params[:session])
+      @post.intercept_and_save!(params[:session])
     rescue UnauthorizedChangeError => e
       halt 403, e.message
     rescue Exception => e
