@@ -68,7 +68,7 @@ GEM
     activesupport (3.1.3)
       multi_json (~> 1.0)
     addressable (2.2.6)
-    approvals (0.0.1)
+    approvals (0.0.2)
       nokogiri
       rspec (~> 2.7)
       thor
