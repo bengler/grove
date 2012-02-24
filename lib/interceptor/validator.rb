@@ -11,20 +11,11 @@ class Interceptor
       __getobj__.class
     end
 
-    attr_accessor :action, :session, :identity_id
+    attr_accessor :action, :session
     def with(options = {})
       self.action = options[:action]
       self.session = options[:session]
-      self.identity_id = options[:identity].id if options[:identity]
       self
-    end
-
-    def klasses_and_actions
-      tags
-    end
-
-    def paths
-      @paths ||= tagify document[:paths]
     end
 
     def url

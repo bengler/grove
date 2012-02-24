@@ -3,7 +3,7 @@ require 'interceptor'
 describe Interceptor do
 
   let(:post) { stub(:realm => 'oz', :klass => 'post.event') }
-  let(:options) { {:action => 'smile', :session => 'abc', :identity => stub(:id => 42)} }
+  let(:options) { {:action => 'smile', :session => 'abc'} }
 
   describe "basic attributes" do
     subject { Interceptor.new(post, options) }
@@ -12,11 +12,11 @@ describe Interceptor do
     its(:options) { should eq(options) }
     its(:action) { should eq('smile') }
     its(:tags) { should eq(['smile', 'event']) }
-    its(:realm_and_tags) { should eq({'realm' => 'oz', 'tags' => ['smile', 'event']}) }
+    its(:filter_options) { should eq({'realm' => 'oz', 'tags' => ['smile', 'event']}) }
 
     it "ignores tags if they are empty" do
       subject.stub(:tags => [])
-      subject.realm_and_tags.should eq({'realm' => 'oz'})
+      subject.filter_options.should eq({'realm' => 'oz'})
     end
 
     it "doesn't leave nils in tags" do

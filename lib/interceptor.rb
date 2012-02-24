@@ -20,10 +20,10 @@ class Interceptor
   end
 
   def find_applicable
-    Post.filtered_by realm_and_tags
+    Post.filtered_by filter_options
   end
 
-  def realm_and_tags
+  def filter_options
     filters = {'realm' => post.realm}
     filters['tags'] = tags unless tags.empty?
     filters
