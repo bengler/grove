@@ -13,8 +13,7 @@ class GroveV1 < Sinatra::Base
   end
 
   post "/posts/:uid" do |uid|
-    identity_id = current_identity.try(:id)
-    halt 403, "No identity" unless identity_id
+    require_identity
 
     attributes = params[:post]
     halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless attributes
@@ -28,7 +27,7 @@ class GroveV1 < Sinatra::Base
       halt 409, "A post with external_id '#{attributes[:external_id]}' already exists with another canonical path (#{e.message})."
     end
 
-    @post ||= Post.unscoped.find_by_uid(uid) || Post.new(:uid => uid, :created_by => identity_id)
+    @post ||= Post.unscoped.find_by_uid(uid) || Post.new(:uid => uid, :created_by => current_identity.id)
     halt 404, "Post is deleted" if @post.deleted?
     response.status = 201 if @post.new_record?
 
@@ -45,13 +44,15 @@ class GroveV1 < Sinatra::Base
   end
 
   delete "/posts/:uid" do |uid|
-    identity_id = current_identity.try(:id)
-    halt 403, "No identity" unless identity_id
+    require_identity
+
     @post = Post.find_by_uid(uid)
     halt 404, "No such post" unless @post
-    if !current_identity.god && @post.created_by != identity_id
+
+    unless @post.may_be_managed_by?(current_identity)
       halt 403, "Post is owned by a different user (#{@post.created_by})"
     end
+
     @post.deleted = true
     @post.save!
     response.status = 204
