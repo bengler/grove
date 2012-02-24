@@ -250,6 +250,18 @@ describe "API v1 posts" do
         JSON.parse(last_response.body)['count'].should eq 20
       end
     end
+
+    describe "POST /posts/:uid/paths/:path" do
+      it "adds a path" do
+        p = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => '1', :created_by => 10)
+
+        post "/posts/#{p.uid}/paths/a.b.d"
+
+        last_response.status.should eq 200
+        p.reload
+        p.paths.to_a.sort.should eq(["a.b.c", "a.b.d"])
+      end
+    end
   end
 
   context "with a logged in god" do
@@ -281,11 +293,21 @@ describe "API v1 posts" do
 
   context "with no current user" do
     before :each do
-      Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>nil, :god => nil}))
+      Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {}))
     end
 
     it "can't create posts" do
       post "/posts/post:a.b.c", {:document => "hello nobody"}
+      last_response.status.should eq 403
+    end
+
+    it "can't add paths" do
+      post "/posts/post:a.b.c$1/paths/a.b.d"
+      last_response.status.should eq 403
+    end
+
+    it "can't remove paths" do
+      delete "/posts/post:a.b.c$1/paths/a.b.d"
       last_response.status.should eq 403
     end
   end

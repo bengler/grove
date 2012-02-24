@@ -86,6 +86,19 @@ class Post < ActiveRecord::Base
     uids.map{|uid| result[uid]}
   end
 
+  def add_path!(path)
+    Location.declare!(path).posts << self
+  end
+
+  def remove_path!(path)
+    if path == canonical_path
+      raise ArgumentError.new(:cannot_delete_canonical_path)
+    end
+
+    location = self.locations.by_path(path).first
+    location.destroy if location
+  end
+
   private
 
   def invalidate_cache

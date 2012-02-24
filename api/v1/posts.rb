@@ -91,6 +91,32 @@ class GroveV1 < Sinatra::Base
     {:uid => uid, :count => Post.by_uid(uid).count}.to_json
   end
 
+  post "/posts/:uid/paths/:path" do |uid, path|
+    require_identity
+
+    post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless post
+
+    post.add_path!(path)
+
+    pg :post, :locals => {:mypost => safe_post(post)}
+  end
+
+  delete "/posts/:uid/paths/:path" do |uid, path|
+    require_identity
+
+    post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless post
+
+    begin
+      post.remove_path!(path)
+    rescue Exception => e
+      halt 500, e.message
+    end
+
+    response.status = 204
+  end
+
   # Get current identity's posts for a given path
   get '/posts' do
     require_identity

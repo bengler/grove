@@ -117,4 +117,38 @@ describe Post do
     Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
     Post.first.document['text'].should eq "hei"
   end
+
+  it 'atomically adds a path' do
+    post = Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
+    post.should_not_receive(:save)
+    post.should_not_receive(:save!)
+
+    post.add_path!("a.b.d")
+
+    post.reload
+    post.paths.to_a.sort.should eq(["a.b.c", "a.b.d"])
+  end
+
+  it 'atomically deletes a path' do
+    post = Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
+    Location.declare!("a.b.d").posts << post
+
+    post.should_not_receive(:save)
+    post.should_not_receive(:save!)
+
+    post.remove_path!("a.b.d")
+
+    post.reload
+    post.paths.to_a.should eq(["a.b.c"])
+  end
+
+  it "cannot delete the cannonical path" do
+    post = Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
+    Location.declare!("a.b.d").posts << post
+
+    ->{ post.remove_path!("a.b.c") }.should raise_error ArgumentError
+
+    post.reload
+    post.paths.to_a.sort.should eq(["a.b.c", "a.b.d"])
+  end
 end
