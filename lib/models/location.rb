@@ -54,14 +54,30 @@ class Location < ActiveRecord::Base
     @path ||= PathLabelsAccessor.new(self)
   end
 
-  # Converts an oid-path to a hash with attributes for
+  # Converts an uid-path to a hash with attributes for
   # this very model. The attributes will always be
   # fully constrained (specify every labels field even
   # if they are nil), unless you terminate the path
   # with an asterisk, e.g.: "realm.blog.thread.*"
-  def self.parse_path(path)
+  # If you want to match super-paths of the 
+  # provided path, signal the optional path with a "^"
+  # e.g. "^a.b.c" will match "", "a", "a.b" and "a.b.c",
+  # "a.b.^c.d" will match "a.b", "a.b.c", "a.b.c.d"
+  def self.parse_path(path)    
     labels = path.split('.')
-    labels.map! {|label| label.include?('|') ? label.split('|') : label}
+    optional_part = false # <- true for the optional part of the path (after '^')
+
+    labels.map! do |label|
+      if label =~ /^\^/
+        label.gsub!(/^\^/, '')
+        optional_part = true
+      end
+
+      result = label.include?('|') ? label.split('|') : label
+      result = [label, nil].flatten if optional_part
+      result
+    end
+    
     result = {}
     (0...MAX_DEPTH).map do |index|
       break if labels[index] == '*'
