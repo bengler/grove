@@ -32,6 +32,8 @@ class GroveV1 < Sinatra::Base
       @post.intercept_and_save!(params[:session])
     rescue UnauthorizedChangeError => e
       halt 403, e.message
+    rescue Post::CanonicalPathConflict => e
+      halt 403, e.message
     rescue Exception => e
       halt 500, e.message
     end
