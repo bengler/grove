@@ -112,7 +112,7 @@ class Post < ActiveRecord::Base
 
   def canonical_path_must_be_valid
     unless Pebblebed::Uid.valid_path?(self.canonical_path)
-      error.add :base, "{self.canonical_path.inspect} is an invalid path."
+      error.add :base, "#{self.canonical_path.inspect} is an invalid path."
     end
   end
 
