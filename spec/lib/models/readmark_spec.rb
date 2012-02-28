@@ -30,4 +30,21 @@ describe Readmark do
     r.unread_count.should eq 2
   end
 
+  it "gets updated autmatically as posts are added" do
+    r1 = Readmark.create!(:path => "a.b")
+    r2 = Readmark.create!(:path => "a.c")
+    p = Post.create!(:canonical_path => "a.b")
+    r1.reload
+    r1.unread_count.should eq 1
+    r2.unread_count.should eq 0
+    p.paths |= ["a.c.d"]
+    p.save!
+    r2.reload
+    r2.unread_count.should eq 1
+    p.paths = []
+    p.save!
+    r2.reload
+    r2.unread_count.should eq 0
+  end
+
 end

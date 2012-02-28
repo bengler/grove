@@ -1,7 +1,9 @@
 class Post < ActiveRecord::Base
   class CanonicalPathConflict < StandardError; end
 
-  has_and_belongs_to_many :locations, :uniq => true
+  has_and_belongs_to_many :locations, :uniq => true, 
+    :after_add => :increment_unread_counts,
+    :after_remove => :decrement_unread_counts
 
   validates_presence_of :realm
 
@@ -118,6 +120,14 @@ class Post < ActiveRecord::Base
 
   def set_default_klass
     self.klass ||= "post"
+  end
+
+  def increment_unread_counts(location)
+    Readmark.post_added(location.path.to_s, self.id)
+  end
+
+  def decrement_unread_counts(location)
+    Readmark.post_removed(location.path.to_s, self.id)
   end
 
 end
