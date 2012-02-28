@@ -1,0 +1,3 @@
+collection :readmarks => readmarks do |readmark|
+  partial :readmark, :readmark => readmark
+end

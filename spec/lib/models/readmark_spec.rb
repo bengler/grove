@@ -11,7 +11,7 @@ describe Readmark do
   end
 
   it "uncounts deleted posts when they are among the unread ones" do
-    r = Readmark.create!(:path => "a.b.c", :unread_count => 2, :last_read_post_id => 5)
+    r = Readmark.create!(:path => "a.b.c", :unread_count => 2, :post_id => 5)
     Readmark.post_removed("a.b.c", 2)
     Readmark.post_removed("a.b.c", 3)
     Readmark.post_removed("a.b.c", 5)
@@ -25,7 +25,7 @@ describe Readmark do
     p2 = Post.create!(:canonical_path => "a.b.c.d")
     p3 = Post.create!(:canonical_path => "a.b.c.d")
     p4 = Post.create!(:canonical_path => "a.b.c.d.e")
-    r = Readmark.create!(:path => "a.b.c.d", :last_read_post_id => p2.id)
+    r = Readmark.create!(:path => "a.b.c.d", :post_id => p2.id)
     r.recount!    
     r.unread_count.should eq 2
   end
@@ -45,6 +45,15 @@ describe Readmark do
     p.save!
     r2.reload
     r2.unread_count.should eq 0
+  end
+
+  it "can set a readmark and update readmark count accordingly" do
+    posts = (1..10).map { Post.create!(:canonical_path => "a.b.c") }
+    readmark = Readmark.set!(1, "a.b", posts[-2].id)
+    readmark.unread_count.should eq 1
+    readmark = Readmark.set!(1, "a.b", posts[-5].id)
+    readmark.unread_count.should eq 4
+    Readmark.count.should eq 1
   end
 
 end

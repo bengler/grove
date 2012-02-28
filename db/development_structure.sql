@@ -150,7 +150,7 @@ ALTER SEQUENCE posts_id_seq OWNED BY posts.id;
 CREATE TABLE readmarks (
     id integer NOT NULL,
     location_id integer,
-    last_read_post_id integer DEFAULT 0,
+    post_id integer DEFAULT 0,
     owner integer,
     unread_count integer DEFAULT 0,
     created_at timestamp without time zone,
