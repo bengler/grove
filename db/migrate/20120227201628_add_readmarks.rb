@@ -7,6 +7,8 @@ class AddReadmarks < ActiveRecord::Migration
       t.integer :unread_count, :default => 0
       t.timestamps
     end
+    add_index :readmarks, :owner
+    add_index :readmarks, :location_id
   end
 
   def self.down

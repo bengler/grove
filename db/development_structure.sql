@@ -317,6 +317,20 @@ CREATE INDEX index_posts_on_updated_at ON posts USING btree (updated_at);
 
 
 --
+-- Name: index_readmarks_on_location_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_readmarks_on_location_id ON readmarks USING btree (location_id);
+
+
+--
+-- Name: index_readmarks_on_owner; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_readmarks_on_owner ON readmarks USING btree (owner);
+
+
+--
 -- Name: unique_schema_migrations; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
