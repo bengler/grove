@@ -124,19 +124,23 @@ class Post < ActiveRecord::Base
   end
 
   def increment_unread_counts(location)
-    Readmark.post_added(location.path.to_s, self.id)
+    Readmark.post_added(location.path.to_s, self.id) unless self.deleted?
   end
 
   def decrement_unread_counts(location)
-    Readmark.post_removed(location.path.to_s, self.id)
+    Readmark.post_removed(location.path.to_s, self.id) unless self.deleted?
   end
 
   def update_readmarks_according_to_deleted_status
     if self.deleted_changed?
+      # We are using the locations relation directly to make sure we are not
+      # picking up any unsynced changes that may have been applied to the 
+      # paths attribute.
+      paths = self.locations.map { |location| location.path.to_s }
       if self.deleted
-        self.paths.each { |path| Readmark.post_removed(path, self.id)}
+        paths.each { |path| Readmark.post_removed(path, self.id)}
       else
-        self.paths.each { |path| Readmark.post_added(path, self.id)}
+        paths.each { |path| Readmark.post_added(path, self.id)}
       end
     end
   end
