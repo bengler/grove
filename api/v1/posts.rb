@@ -66,12 +66,13 @@ class GroveV1 < Sinatra::Base
   end
 
   get "/posts/:uid" do |uid|
+    klass, path, oid = Pebblebed::Uid.raw_parse(uid)
     if uid =~ /\,/
       # Retrieve a list of posts
       uids = uid.split(/\s*,\s*/).compact
       @posts = Post.cached_find_all_by_uid(uids)
       pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => nil}
-    elsif uid =~ /[\*\|]/
+    elsif oid == '*' || oid == '' 
       # Retrieve a collection by wildcards
       @posts = Post.by_uid(uid).filtered_by(params)
       @posts = @posts.order('created_at DESC')
@@ -79,7 +80,11 @@ class GroveV1 < Sinatra::Base
       pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => @pagination}
     else
       # Retrieve a single specific post
-      @post = Post.cached_find_all_by_uid([uid]).first
+      if uid =~ /[\*\|]/
+        @post = Post.by_uid(uid).first
+      else
+        @post = Post.cached_find_all_by_uid([uid]).first
+      end
       Log.error @post.inspect
       halt 404, "No such post" unless @post
       pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
