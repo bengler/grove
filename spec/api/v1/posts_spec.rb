@@ -158,7 +158,7 @@ describe "API v1 posts" do
         post = Post.first
         get "/posts/post:*$#{post.id}"
         result = JSON.parse(last_response.body)
-        result['posts'].size.should eq 1
+        result['post']['document'].should eq post.document
       end
 
       it "filters by creator" do
