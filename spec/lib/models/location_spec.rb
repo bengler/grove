@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 describe Location do
+
   it "is declare!d in an idempotent way" do
     Location.declare!('a.b.c')
     Location.declare!('a.b')
@@ -28,6 +29,10 @@ describe Location do
     Location.by_path('c.*').count.should eq 1
     Location.by_path('*').count.should eq 4
     Location.by_path('d.*').count.should eq 0
+  end
+
+  it "complains about invalid wildcard searches" do
+    ->{ Location.by_path('*.c') }.should raise_error(ArgumentError)
   end
 
   it "doesn't bother checking all remaining labels for nil" do
