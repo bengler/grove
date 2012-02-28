@@ -13,6 +13,7 @@ class Post < ActiveRecord::Base
   before_save :sanitize
   before_validation :assign_realm, :set_default_klass
   before_save :attach_canonical_path
+  before_save :update_readmarks_according_to_deleted_status
   after_update :invalidate_cache
   before_destroy :invalidate_cache
 
@@ -130,4 +131,13 @@ class Post < ActiveRecord::Base
     Readmark.post_removed(location.path.to_s, self.id)
   end
 
+  def update_readmarks_according_to_deleted_status
+    if self.deleted_changed?
+      if self.deleted
+        self.paths.each { |path| Readmark.post_removed(path, self.id)}
+      else
+        self.paths.each { |path| Readmark.post_added(path, self.id)}
+      end
+    end
+  end
 end

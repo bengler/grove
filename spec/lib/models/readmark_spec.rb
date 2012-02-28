@@ -56,4 +56,19 @@ describe Readmark do
     Readmark.count.should eq 1
   end
 
+  it "gets notified when a post is deleted or undeleted" do
+    r = Readmark.create!(:path => "a.b")
+    p = Post.create!(:canonical_path => "a.b.c")
+    r.reload
+    r.unread_count.should eq 1
+    p.deleted = true
+    p.save!
+    r.reload
+    r.unread_count.should eq 0
+    p.deleted = false
+    p.save!
+    r.reload
+    r.unread_count.should eq 1
+  end
+
 end
