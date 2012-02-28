@@ -41,8 +41,8 @@ class Post < ActiveRecord::Base
     scope
   }
 
-  def owned_by?(identity_id)
-    new_record? || created_by == identity_id
+  def may_be_managed_by?(identity)
+    new_record? || identity.god || created_by == identity.id
   end
 
   def uid

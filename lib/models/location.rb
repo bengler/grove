@@ -63,7 +63,11 @@ class Location < ActiveRecord::Base
   # provided path, signal the optional path with a "^"
   # e.g. "^a.b.c" will match "", "a", "a.b" and "a.b.c",
   # "a.b.^c.d" will match "a.b", "a.b.c", "a.b.c.d"
-  def self.parse_path(path)    
+  def self.parse_path(path)
+    if invalid_wildcard?(path)
+      raise ArgumentError.new("Wildcards terminate the path. Invalid path: #{path}")
+    end
+
     labels = path.split('.')
     optional_part = false # <- true for the optional part of the path (after '^')
 
@@ -85,6 +89,10 @@ class Location < ActiveRecord::Base
       break if labels[index].nil?
     end
     result
+  end
+
+  def self.invalid_wildcard?(path)
+    path =~ /.*\*\.\w/
   end
 
   private
