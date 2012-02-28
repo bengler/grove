@@ -31,6 +31,13 @@ describe Location do
     Location.by_path('d.*').count.should eq 0
   end
 
+  describe "valid wildcard paths" do
+    specify { Location.valid_wildcard_path?('*').should be_true }
+    specify { Location.valid_wildcard_path?('a.b.c.*').should be_true }
+    specify { Location.valid_wildcard_path?('*.b').should be_false }
+    specify { Location.valid_wildcard_path?('a.*.b').should be_false }
+  end
+
   it "complains about invalid wildcard searches" do
     ->{ Location.by_path('*.c') }.should raise_error(ArgumentError)
   end

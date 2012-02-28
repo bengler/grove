@@ -60,7 +60,7 @@ class Location < ActiveRecord::Base
   # if they are nil), unless you terminate the path
   # with an asterisk, e.g.: "realm.blog.thread.*"
   def self.parse_path(path)
-    if invalid_wildcard?(path)
+    unless valid_wildcard_path?(path)
       raise ArgumentError.new("Wildcards terminate the path. Invalid path: #{path}")
     end
 
@@ -75,8 +75,8 @@ class Location < ActiveRecord::Base
     result
   end
 
-  def self.invalid_wildcard?(path)
-    path =~ /.*\*\.\w/
+  def self.valid_wildcard_path?(path)
+    path !~ /.*\*\.\w/
   end
 
   private
