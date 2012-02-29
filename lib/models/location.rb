@@ -64,7 +64,7 @@ class Location < ActiveRecord::Base
   # e.g. "^a.b.c" will match "", "a", "a.b" and "a.b.c",
   # "a.b.^c.d" will match "a.b", "a.b.c", "a.b.c.d"
   def self.parse_path(path)
-    unless valid_wildcard_path?(path)
+    unless WildcardPath.valid?(path)
       raise ArgumentError.new("Wildcards terminate the path. Invalid path: #{path}")
     end
 
@@ -89,10 +89,6 @@ class Location < ActiveRecord::Base
       break if labels[index].nil?
     end
     result
-  end
-
-  def self.valid_wildcard_path?(path)
-    path !~ /.*\*\.\w/
   end
 
   private
