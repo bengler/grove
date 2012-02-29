@@ -49,6 +49,25 @@ describe Location do
     Location.by_path('a.b.a|b|c').count.should eq 3
   end
 
+  it "can match superpaths" do
+    top = Location.declare!('a')
+    Location.declare!('a.b')
+    off_path = Location.declare!('a.c')
+    Location.declare!('a.b.c')
+    Location.declare!('a.b.c.d')
+    bottom = Location.declare!('a.b.c.d.e')
+
+    result = Location.by_path("^a.b.c").all
+    result.count.should eq 3
+    result.should_not include(off_path)
+
+    result = Location.by_path("a.b.^c.d").all
+    result.count.should eq 3
+    result.should_not include(top)
+    result.should_not include(bottom)
+
+  end
+
   it "can't contain stray nils" do
     -> { Location.create!(:label_1 => "something")}.should raise_error ActiveRecord::RecordInvalid
   end

@@ -144,6 +144,40 @@ ALTER SEQUENCE posts_id_seq OWNED BY posts.id;
 
 
 --
+-- Name: readmarks; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE readmarks (
+    id integer NOT NULL,
+    location_id integer,
+    post_id integer DEFAULT 0,
+    owner integer,
+    unread_count integer DEFAULT 0,
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone
+);
+
+
+--
+-- Name: readmarks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE readmarks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: readmarks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE readmarks_id_seq OWNED BY readmarks.id;
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -174,6 +208,13 @@ ALTER TABLE posts ALTER COLUMN id SET DEFAULT nextval('posts_id_seq'::regclass);
 
 
 --
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE readmarks ALTER COLUMN id SET DEFAULT nextval('readmarks_id_seq'::regclass);
+
+
+--
 -- Name: locations_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -195,6 +236,14 @@ ALTER TABLE ONLY occurrence_entries
 
 ALTER TABLE ONLY posts
     ADD CONSTRAINT posts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: readmarks_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY readmarks
+    ADD CONSTRAINT readmarks_pkey PRIMARY KEY (id);
 
 
 --
@@ -265,6 +314,20 @@ CREATE UNIQUE INDEX index_posts_on_realm_and_external_id ON posts USING btree (r
 --
 
 CREATE INDEX index_posts_on_updated_at ON posts USING btree (updated_at);
+
+
+--
+-- Name: index_readmarks_on_location_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_readmarks_on_location_id ON readmarks USING btree (location_id);
+
+
+--
+-- Name: index_readmarks_on_owner; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_readmarks_on_owner ON readmarks USING btree (owner);
 
 
 --

@@ -1,7 +1,9 @@
 class Post < ActiveRecord::Base
   class CanonicalPathConflict < StandardError; end
 
-  has_and_belongs_to_many :locations, :uniq => true
+  has_and_belongs_to_many :locations, :uniq => true, 
+    :after_add => :increment_unread_counts,
+    :after_remove => :decrement_unread_counts
 
   validates_presence_of :realm
 
@@ -11,6 +13,7 @@ class Post < ActiveRecord::Base
   before_save :sanitize
   before_validation :assign_realm, :set_default_klass
   before_save :attach_canonical_path
+  before_save :update_readmarks_according_to_deleted_status
   after_update :invalidate_cache
   before_destroy :invalidate_cache
 
@@ -120,4 +123,25 @@ class Post < ActiveRecord::Base
     self.klass ||= "post"
   end
 
+  def increment_unread_counts(location)
+    Readmark.post_added(location.path.to_s, self.id) unless self.deleted?
+  end
+
+  def decrement_unread_counts(location)
+    Readmark.post_removed(location.path.to_s, self.id) unless self.deleted?
+  end
+
+  def update_readmarks_according_to_deleted_status
+    if self.deleted_changed?
+      # We are using the locations relation directly to make sure we are not
+      # picking up any unsynced changes that may have been applied to the 
+      # paths attribute.
+      paths = self.locations.map { |location| location.path.to_s }
+      if self.deleted
+        paths.each { |path| Readmark.post_removed(path, self.id)}
+      else
+        paths.each { |path| Readmark.post_added(path, self.id)}
+      end
+    end
+  end
 end
