@@ -1,8 +1,7 @@
 class GroveV1 < Sinatra::Base
 
   post "/posts/:uid" do |uid|
-    identity_id = current_identity.try(:id)
-    halt 403, "No identity" unless identity_id
+    require_identity
 
     attributes = params[:post]
     halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless attributes
@@ -16,7 +15,7 @@ class GroveV1 < Sinatra::Base
       halt 409, "A post with external_id '#{attributes[:external_id]}' already exists with another canonical path (#{e.message})."
     end
 
-    @post ||= Post.unscoped.find_by_uid(uid) || Post.new(:uid => uid, :created_by => identity_id)
+    @post ||= Post.unscoped.find_by_uid(uid) || Post.new(:uid => uid, :created_by => current_identity.id)
     halt 404, "Post is deleted" if @post.deleted?
     response.status = 201 if @post.new_record?
 
@@ -42,13 +41,15 @@ class GroveV1 < Sinatra::Base
   end
 
   delete "/posts/:uid" do |uid|
-    identity_id = current_identity.try(:id)
-    halt 403, "No identity" unless identity_id
+    require_identity
+
     @post = Post.find_by_uid(uid)
     halt 404, "No such post" unless @post
-    if !current_identity.god && @post.created_by != identity_id
+
+    unless @post.may_be_managed_by?(current_identity)
       halt 403, "Post is owned by a different user (#{@post.created_by})"
     end
+
     @post.deleted = true
     @post.save!
     response.status = 204
@@ -91,6 +92,122 @@ class GroveV1 < Sinatra::Base
   get "/posts/:uid/count" do |uid|
     {:uid => uid, :count => Post.by_uid(uid).count}.to_json
   end
+
+  put "/posts/:uid/touch" do |uid|
+    require_identity
+
+    @post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless @post
+
+    unless @post.may_be_managed_by?(current_identity)
+      halt 403, "Post is owned by a different user (#{@post.created_by})"
+    end
+
+    @post.touch
+    pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
+  end
+
+  post "/posts/:uid/paths/:path" do |uid, path|
+    require_identity
+
+    post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless post
+
+    post.add_path!(path)
+
+    pg :post, :locals => {:mypost => safe_post(post)}
+  end
+
+  delete "/posts/:uid/paths/:path" do |uid, path|
+    require_identity
+
+    post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless post
+
+    begin
+      post.remove_path!(path)
+    rescue Exception => e
+      halt 500, e.message
+    end
+
+    response.status = 204
+  end
+
+  post "/posts/:uid/occurrences/:event" do |uid, event|
+    require_identity
+
+    post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless post
+
+    post.add_occurrences!(event, params[:at])
+
+    pg :post, :locals => {:mypost => safe_post(post)}
+  end
+
+  delete "/posts/:uid/occurrences/:event" do |uid, event|
+    require_identity
+
+    post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless post
+
+    post.remove_occurrences!(event, params[:at])
+
+    response.status = 204
+  end
+
+  put "/posts/:uid/occurrences/:event" do |uid, event|
+    require_identity
+
+    post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless post
+
+    post.replace_occurrences!(event, params[:at])
+
+    pg :post, :locals => {:mypost => safe_post(post)}
+  end
+
+  post "/posts/:uid/tags/:tags" do |uid, tags|
+    require_identity
+
+    @post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless @post
+
+    @post.with_lock do
+      @post.tags += params[:tags].split(',')
+      @post.save!
+    end
+
+    pg :post, :locals => {:mypost => safe_post(@post)}
+  end
+
+  put "/posts/:uid/tags/:tags" do |uid, tags|
+    require_identity
+
+    @post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless @post
+
+    @post.with_lock do
+      @post.tags = params[:tags]
+      @post.save!
+    end
+
+    pg :post, :locals => {:mypost => safe_post(@post)}
+  end
+
+  delete "/posts/:uid/tags/:tags" do |uid, tags|
+    require_identity
+
+    @post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless @post
+
+    @post.with_lock do
+      @post.tags -= params[:tags].split(',')
+      @post.save!
+    end
+
+    pg :post, :locals => {:mypost => safe_post(@post)}
+  end
+
 
   # Get current identity's posts for a given path
   get '/posts' do

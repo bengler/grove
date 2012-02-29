@@ -105,6 +105,40 @@ class Post < ActiveRecord::Base
     Interceptor.process(self, {:session => session, :action => action})
   end
 
+  def add_path!(path)
+    Location.declare!(path).posts << self
+  end
+
+  def remove_path!(path)
+    if path == canonical_path
+      raise ArgumentError.new(:cannot_delete_canonical_path)
+    end
+
+    location = self.locations.by_path(path).first
+    location.posts -= [self]
+  end
+
+  # Add an occurrence without having to save the post.
+  # This is to avoid race conditions
+  def add_occurrences!(event, at = [])
+    Array(at).each do |time|
+      OccurrenceEntry.create!(:post_id => id, :label => event, :at => time)
+    end
+  end
+
+  def remove_occurrences!(event, at = nil)
+    if at.nil?
+      OccurrenceEntry.where(:post_id => id, :label => event).destroy_all
+    else
+      OccurrenceEntry.where(:post_id => id, :label => event, :at => Array(at)).destroy_all
+    end
+  end
+
+  def replace_occurrences!(event, at = [])
+    remove_occurrences!(event)
+    add_occurrences!(event, at)
+  end
+
   private
 
   def invalidate_cache
