@@ -1,0 +1,32 @@
+{
+  "post": {
+    "uid": "post.salutation:a.b.c$42",
+    "created_by": 1,
+    "document": {
+      "title": "Hello cowboy"
+    },
+    "created_at": "2011-02-07T19:28:18+01:00",
+    "updated_at": "2011-02-07T19:28:18+01:00",
+    "tags": [
+
+    ],
+    "external_id": null,
+    "paths": [
+      "a.b.c"
+    ],
+    "id": "post.salutation:a.b.c$42"
+  },
+  "changes": {
+    "document": {
+      "was": {
+        "title": "Hello spaceboy",
+        "text": null,
+        "author_name": null,
+        "email": null
+      },
+      "becomes": {
+        "title": "Hello cowboy"
+      }
+    }
+  }
+}

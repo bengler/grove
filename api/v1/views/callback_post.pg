@@ -1,0 +1,11 @@
+partial :post, :mypost => mypost
+
+node :changes do
+  mypost.changes.each do |attribute, values|
+    old, new = values
+
+    node attribute do
+      merge :was => old, :becomes => new
+    end
+  end
+end

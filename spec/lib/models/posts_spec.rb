@@ -28,6 +28,16 @@ describe Post do
     Post.find_by_uid("post:area51.vaktmesterkontoret.forumX$2").should be_nil
   end
 
+  it "filters by realm" do
+    uid = "post:area51.vaktmesterkontoret.forum1"
+    p = Post.create!(:uid => uid)
+    Post.create!(:uid => "post:oz.other.place")
+
+    posts = Post.filtered_by('realm' => 'area51')
+    posts.size.should eq(1)
+    posts.first.uid.should eq(p.uid)
+  end
+
   it "can assign realm, canonical_path by assigning uid" do
     p = Post.create!(:uid => "post:area51.vaktmesterkontoret.forum1")
     p.realm.should eq "area51"
@@ -116,5 +126,44 @@ describe Post do
   it "sanitizes some fields if the content is json" do
     Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
     Post.first.document['text'].should eq "hei"
+  end
+
+  it 'atomically adds a path' do
+    post = Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
+    post.should_not_receive(:save)
+    post.should_not_receive(:save!)
+
+    post.add_path!("a.b.d")
+
+    post.reload
+    post.paths.to_a.sort.should eq(["a.b.c", "a.b.d"])
+  end
+
+  it 'atomically deletes a path' do
+    post = Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"hello" => "spaceboy"})
+    other_post = Post.create!(:uid => "post:a.b.c.d.e", :tags => ["wine", "dining"], :document => {"hello" => "cowgirl"})
+    Location.declare!("a.b.d").posts << post
+    Location.declare!("a.b.d").posts << other_post
+
+    post.should_not_receive(:save)
+    post.should_not_receive(:save!)
+
+    post.remove_path!("a.b.d")
+
+    post.reload
+    other_post.reload
+
+    post.paths.to_a.should eq(["a.b.c"])
+    other_post.paths.to_a.should eq(["a.b.c.d.e", "a.b.d"])
+  end
+
+  it "cannot delete the canonical path" do
+    post = Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
+    Location.declare!("a.b.d").posts << post
+
+    ->{ post.remove_path!("a.b.c") }.should raise_error ArgumentError
+
+    post.reload
+    post.paths.to_a.sort.should eq(["a.b.c", "a.b.d"])
   end
 end

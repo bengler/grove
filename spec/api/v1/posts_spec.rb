@@ -7,6 +7,17 @@ describe "API v1 posts" do
     GroveV1
   end
 
+  user_endpoints = [
+    {:method => :post, :endpoint => '/posts/post:a.b.c'},
+    {:method => :post, :endpoint => '/posts/post:a.b.c$1/paths/a.b.d'},
+    {:method => :delete, :endpoint => '/posts/post:a.b.c$1/paths/a.b.d'},
+    {:method => :post, :endpoint => '/posts/post:a.b.c$1/occurrences/due'},
+    {:method => :delete, :endpoint => '/posts/post:a.b.c$1/occurrences/due'},
+    {:method => :put, :endpoint => '/posts/post:a.b.c$1/occurrences/due'},
+    {:method => :put, :endpoint => '/posts/post:a.b.c$1/touch'},
+    {:method => :put, :endpoint => '/posts/post:a.b.c$1/tags/:tags'}
+  ]
+
   context "with a logged in user" do
     before :each do
       Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>1337, :god => false}))
@@ -158,7 +169,7 @@ describe "API v1 posts" do
         post = Post.first
         get "/posts/post:*$#{post.id}"
         result = JSON.parse(last_response.body)
-        result['posts'].size.should eq 1
+        result['post']['document'].should eq post.document
       end
 
       it "filters by creator" do
@@ -250,6 +261,160 @@ describe "API v1 posts" do
         JSON.parse(last_response.body)['count'].should eq 20
       end
     end
+
+    describe "POST /posts/:uid/paths/:path" do
+      it "adds a path" do
+        p = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => '1', :created_by => 10)
+
+        post "/posts/#{p.uid}/paths/a.b.d"
+
+        last_response.status.should eq 200
+        p.reload
+        p.paths.to_a.sort.should eq(["a.b.c", "a.b.d"])
+      end
+    end
+
+    describe "POST /posts/:uid/tags/:tags" do
+      it "adds tags" do
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337)
+
+        post "/posts/#{p.uid}/tags/paris,france"
+
+        p.reload
+        p.tags.sort.should eq(['france', 'paris'])
+      end
+
+      it "adds more tags" do
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :tags => ['paris'])
+
+        post "/posts/#{p.uid}/tags/wine,france"
+
+        p.reload
+        p.tags.sort.should eq(['france', 'paris', 'wine'])
+      end
+
+      it "doesn't add duplicates" do
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :tags => ['paris'])
+
+        post "/posts/#{p.uid}/tags/wine,france,paris"
+
+        p.reload
+        p.tags.sort.should eq(['france', 'paris', 'wine'])
+      end
+    end
+
+    describe "PUT /posts/:uid/tags/:tags" do
+      it "updates the tags" do
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :tags => ["paris", "france"])
+
+        put "/posts/#{p.uid}/tags/promenades,vins"
+
+        p.reload
+        p.tags.should eq(["promenades", "vins"])
+      end
+    end
+
+    describe "DELETE /posts/:uid/tags/:tags" do
+      it "deletes tags" do
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :tags => ["paris", "france", "wine"])
+
+        delete "/posts/#{p.uid}/tags/france,wine"
+
+        p.reload
+        p.tags.should eq(["paris"])
+      end
+    end
+
+    describe "PUT /posts/:uid/touch" do
+      it "touches the post" do
+        created_at = Time.new(2010, 3, 14, 15, 9, 26)
+        p = Post.create!(:uid => "post:a.b.c", :created_at => created_at, :updated_at => created_at, :created_by => 1337)
+
+        put "/posts/#{p.uid}/touch"
+        result = JSON.parse(last_response.body)['post']
+        Time.parse(result['updated_at']).should be_within(5.seconds).of(Time.now)
+      end
+    end
+
+    describe "patching occurrences" do
+      let(:now) { Time.new(2012, 1, 1, 11, 11, 11) }
+      let(:soft_deadline) { Time.new(2012, 2, 7, 18, 28, 18) }
+      let(:hard_deadline) { Time.new(2012, 3, 14, 15, 9, 26) }
+
+      describe "POST /posts/:uid/occurrences/:event" do
+        it "creates an occurrence" do
+          p = Post.create!(:uid => "post:a.b.c")
+          post "/posts/#{p.uid}/occurrences/due", :at => soft_deadline
+
+          p.reload
+          p.occurrences['due'].should eq([soft_deadline])
+        end
+
+        it "creates multiple occurrences" do
+          p = Post.create!(:uid => "post:a.b.c")
+          post "/posts/#{p.uid}/occurrences/due", :at => [soft_deadline, hard_deadline]
+
+          p.reload
+          p.occurrences['due'].sort.should eq([soft_deadline, hard_deadline])
+        end
+
+        it "adds an occurrence to an existing one" do
+          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline]})
+          post "/posts/#{p.uid}/occurrences/due", :at => hard_deadline
+
+          p.reload
+          p.occurrences['due'].sort.should eq([soft_deadline, hard_deadline])
+        end
+
+        it "doesn't add a duplicate occurrence" do
+          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline]})
+          post "/posts/#{p.uid}/occurrences/due", :at => soft_deadline
+
+          p.reload
+          p.occurrences['due'].should eq([soft_deadline])
+        end
+      end
+
+      describe "DELETE /posts/:uid/occurrences/:event" do
+        it "deletes the specified occurrence" do
+          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline, hard_deadline]})
+
+          delete "/posts/#{p.uid}/occurrences/due", :at => soft_deadline
+          p.reload
+
+          p.occurrences['due'].should eq([hard_deadline])
+        end
+
+        it "deletes all the specified occurrences" do
+          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline, hard_deadline, now]})
+
+          delete "/posts/#{p.uid}/occurrences/due", :at => [soft_deadline, hard_deadline]
+          p.reload
+
+          p.occurrences['due'].should eq([now])
+        end
+
+        it "deletes all the occurrences for the event" do
+          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline, hard_deadline]})
+
+          delete "/posts/#{p.uid}/occurrences/due"
+          p.reload
+
+          p.occurrences['due'].should eq([])
+        end
+      end
+
+      describe "PUT /posts/:uid/occurrences/:event" do
+        it "replaces events" do
+          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline, hard_deadline]})
+
+          put "/posts/#{p.uid}/occurrences/due", :at => now
+          p.reload
+
+          p.occurrences['due'].should eq([now])
+        end
+      end
+    end
   end
 
   context "with a logged in god" do
@@ -281,12 +446,17 @@ describe "API v1 posts" do
 
   context "with no current user" do
     before :each do
-      Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>nil, :god => nil}))
+      Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {}))
     end
 
-    it "can't create posts" do
-      post "/posts/post:a.b.c", {:document => "hello nobody"}
-      last_response.status.should eq 403
+    describe "has no access to user endpoints" do
+      user_endpoints.each do |forbidden|
+        it "fails to #{forbidden[:method]} #{forbidden[:endpoint]}" do
+          self.send(forbidden[:method], forbidden[:endpoint])
+          last_response.status.should eq(403)
+        end
+      end
     end
+
   end
 end

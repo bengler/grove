@@ -1,0 +1,4 @@
+node :readmark => readmark do
+  attributes :owner, :path, :unread_count, :created_at, :updated_at
+  node :oid => readmark.post_id.to_s
+end

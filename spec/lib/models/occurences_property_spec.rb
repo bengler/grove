@@ -1,16 +1,25 @@
 require 'spec_helper'
 
 describe Post::OccurrencesAccessor do
+  before(:each) do
+    Timecop.freeze(Time.utc(2012, 2, 7, 18, 28, 18))
+  end
+
+  after(:each) do
+    Timecop.return
+  end
+
+  let(:time) { Time.now }
+
   it "persists occurrences" do
-    time = Time.now
     p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [time]})
     q = Post.find(p.id)
-    q.occurrences['due'].first.should be_within(1.0).of(time)
+    q.occurrences['due'].first.should eq(time)
   end
 
   it "can be recovered from json without persisting" do
-    p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [Time.now]})
-    p.occurrences['onlyjson'] = [Time.now]
+    p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [time]})
+    p.occurrences['onlyjson'] = [time]
     json = p.to_json
     q = Post.instantiate(JSON.parse(json)['post'])
     q.occurrences['onlyjson'].size.should eq 1
@@ -20,8 +29,7 @@ describe Post::OccurrencesAccessor do
   end
 
   it "deletes occurrences" do
-    time = Time.now
-    other_time = Time.now-1000
+    other_time = time - 1000
     p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [time, other_time]})
     q = Post.find(p)
     q.occurrences['due'].size.should eq 2

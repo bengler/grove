@@ -1,7 +1,9 @@
 class Post < ActiveRecord::Base
   class CanonicalPathConflict < StandardError; end
 
-  has_and_belongs_to_many :locations, :uniq => true
+  has_and_belongs_to_many :locations, :uniq => true, 
+    :after_add => :increment_unread_counts,
+    :after_remove => :decrement_unread_counts
 
   validates_presence_of :realm
 
@@ -11,6 +13,7 @@ class Post < ActiveRecord::Base
   before_save :sanitize
   before_validation :assign_realm, :set_default_klass
   before_save :attach_canonical_path
+  before_save :update_readmarks_according_to_deleted_status
   after_update :invalidate_cache
   before_destroy :invalidate_cache
 
@@ -33,6 +36,7 @@ class Post < ActiveRecord::Base
 
   scope :filtered_by, lambda { |filters|
     scope = relation
+    scope = scope.where(:realm => filters['realm']) if filters['realm']
     scope = scope.where(:klass => filters['klass'].split(',').map(&:strip)) if filters['klass']
     scope = scope.with_tags(filters['tags']) if filters['tags']
     scope = scope.where(:created_by => filters['created_by']) if filters['created_by']
@@ -86,6 +90,55 @@ class Post < ActiveRecord::Base
     uids.map{|uid| result[uid]}
   end
 
+  # TODO: When we have multiple versions of the api, we will need to
+  # add validations to the Interceptor::Validator objects so that they have
+  # a version, depending on the version of the api that is being used.
+  # This is because the templates that are used in the interception/callback
+  # are version-specific.
+  def intercept_and_save!(session)
+    intercept(session)
+    self.save!
+  end
+
+  def intercept(session = nil)
+    action = new_record? ? 'create' : 'update'
+    Interceptor.process(self, {:session => session, :action => action})
+  end
+
+  def add_path!(path)
+    Location.declare!(path).posts << self
+  end
+
+  def remove_path!(path)
+    if path == canonical_path
+      raise ArgumentError.new(:cannot_delete_canonical_path)
+    end
+
+    location = self.locations.by_path(path).first
+    location.posts -= [self]
+  end
+
+  # Add an occurrence without having to save the post.
+  # This is to avoid race conditions
+  def add_occurrences!(event, at = [])
+    Array(at).each do |time|
+      OccurrenceEntry.create!(:post_id => id, :label => event, :at => time)
+    end
+  end
+
+  def remove_occurrences!(event, at = nil)
+    if at.nil?
+      OccurrenceEntry.where(:post_id => id, :label => event).destroy_all
+    else
+      OccurrenceEntry.where(:post_id => id, :label => event, :at => Array(at)).destroy_all
+    end
+  end
+
+  def replace_occurrences!(event, at = [])
+    remove_occurrences!(event)
+    add_occurrences!(event, at)
+  end
+
   private
 
   def invalidate_cache
@@ -112,7 +165,7 @@ class Post < ActiveRecord::Base
 
   def canonical_path_must_be_valid
     unless Pebblebed::Uid.valid_path?(self.canonical_path)
-      error.add :base, "{self.canonical_path.inspect} is an invalid path."
+      error.add :base, "#{self.canonical_path.inspect} is an invalid path."
     end
   end
 
@@ -120,4 +173,25 @@ class Post < ActiveRecord::Base
     self.klass ||= "post"
   end
 
+  def increment_unread_counts(location)
+    Readmark.post_added(location.path.to_s, self.id) unless self.deleted?
+  end
+
+  def decrement_unread_counts(location)
+    Readmark.post_removed(location.path.to_s, self.id) unless self.deleted?
+  end
+
+  def update_readmarks_according_to_deleted_status
+    if self.deleted_changed?
+      # We are using the locations relation directly to make sure we are not
+      # picking up any unsynced changes that may have been applied to the 
+      # paths attribute.
+      paths = self.locations.map { |location| location.path.to_s }
+      if self.deleted
+        paths.each { |path| Readmark.post_removed(path, self.id)}
+      else
+        paths.each { |path| Readmark.post_added(path, self.id)}
+      end
+    end
+  end
 end
