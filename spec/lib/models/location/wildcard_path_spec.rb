@@ -16,6 +16,8 @@ describe WildcardPath do
   end
 
   describe "invalid paths" do
+    specify { WildcardPath.valid?('*a').should be_false }
+    specify { WildcardPath.valid?('a*').should be_false }
     specify { WildcardPath.valid?('*.b').should be_false }
     specify { WildcardPath.valid?('a.*.b').should be_false }
     specify { WildcardPath.valid?('|').should be_false }
@@ -26,6 +28,7 @@ describe WildcardPath do
     specify { WildcardPath.valid?('^').should be_false }
     specify { WildcardPath.valid?('^.a').should be_false }
     specify { WildcardPath.valid?('a^').should be_false }
+    specify { WildcardPath.valid?('a^b.c').should be_false }
   end
 
 end
