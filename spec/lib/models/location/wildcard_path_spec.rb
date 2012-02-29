@@ -2,6 +2,13 @@ require 'models/location/wildcard_path'
 
 describe WildcardPath do
 
+  describe "is or is not" do
+    it { WildcardPath.is_it?('*').should be_true }
+    it { WildcardPath.is_it?('a.b|c.d').should be_true }
+    it { WildcardPath.is_it?('a.^b.d').should be_true }
+    it { WildcardPath.is_it?('a.b.d').should be_false }
+  end
+
   describe "valid paths" do
     specify { WildcardPath.valid?('*').should be_true }
     specify { WildcardPath.valid?('a.b.c.*').should be_true }

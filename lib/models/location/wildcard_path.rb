@@ -2,6 +2,10 @@ module WildcardPath
 
   class << self
 
+    def is_it?(path)
+      path =~ /[\*\|\^]/
+    end
+
     def valid?(path)
       stars_are_solitary?(path) && pipes_are_interleaved?(path) && carets_are_leading?(path) && stars_are_terminating?(path)
     end
