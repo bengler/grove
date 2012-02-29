@@ -36,6 +36,7 @@ class Post < ActiveRecord::Base
 
   scope :filtered_by, lambda { |filters|
     scope = relation
+    scope = scope.where(:realm => filters['realm']) if filters['realm']
     scope = scope.where(:klass => filters['klass'].split(',').map(&:strip)) if filters['klass']
     scope = scope.with_tags(filters['tags']) if filters['tags']
     scope = scope.where(:created_by => filters['created_by']) if filters['created_by']
@@ -87,6 +88,21 @@ class Post < ActiveRecord::Base
       result[uid] = post
     end
     uids.map{|uid| result[uid]}
+  end
+
+  # TODO: When we have multiple versions of the api, we will need to
+  # add validations to the Interceptor::Validator objects so that they have
+  # a version, depending on the version of the api that is being used.
+  # This is because the templates that are used in the interception/callback
+  # are version-specific.
+  def intercept_and_save!(session)
+    intercept(session)
+    self.save!
+  end
+
+  def intercept(session = nil)
+    action = new_record? ? 'create' : 'update'
+    Interceptor.process(self, {:session => session, :action => action})
   end
 
   private

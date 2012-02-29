@@ -5,3 +5,5 @@ coverage/
 .DS_Store
 .rvmrc
 .idea
+.approvals
+*.received.txt

@@ -28,6 +28,16 @@ describe Post do
     Post.find_by_uid("post:area51.vaktmesterkontoret.forumX$2").should be_nil
   end
 
+  it "filters by realm" do
+    uid = "post:area51.vaktmesterkontoret.forum1"
+    p = Post.create!(:uid => uid)
+    Post.create!(:uid => "post:oz.other.place")
+
+    posts = Post.filtered_by('realm' => 'area51')
+    posts.size.should eq(1)
+    posts.first.uid.should eq(p.uid)
+  end
+
   it "can assign realm, canonical_path by assigning uid" do
     p = Post.create!(:uid => "post:area51.vaktmesterkontoret.forum1")
     p.realm.should eq "area51"
