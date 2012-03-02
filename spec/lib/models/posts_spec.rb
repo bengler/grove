@@ -154,7 +154,7 @@ describe Post do
     other_post.reload
 
     post.paths.to_a.should eq(["a.b.c"])
-    other_post.paths.to_a.should eq(["a.b.c.d.e", "a.b.d"])
+    other_post.paths.to_a.sort.should eq(["a.b.c.d.e", "a.b.d"])
   end
 
   it "cannot delete the canonical path" do
