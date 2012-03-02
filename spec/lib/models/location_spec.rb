@@ -73,6 +73,6 @@ describe Location do
   end
 
   it "won't accept malformed paths" do
-    -> { Location.declare!("some.f@$%&ing.sh*t.characters")}.should raise_error ActiveRecord::RecordInvalid
+    -> { Location.declare!("some.f@$%&ing.sh*t.characters")}.should raise_error ArgumentError
   end
  end

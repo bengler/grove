@@ -45,6 +45,7 @@ class Location < ActiveRecord::Base
   end
 
   def self.declare!(path)
+    raise ArgumentError, "Path must be valid" unless Pebblebed::Uid.valid_path?(path)
     attributes = self.parse_path(path)
     path = self.where(attributes).first
     path ||= self.create!(attributes)
