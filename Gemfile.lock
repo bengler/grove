@@ -47,7 +47,7 @@ GIT
 
 GIT
   remote: git@github.com:origo/capistrano-bengler.git
-  revision: 8a7ce28282efbdb28c84c322fab4e03a59bf6044
+  revision: 5c357309188e15c39473f61e0e2725bff127333e
   specs:
     capistrano-bengler (0.0.11)
       capistrano (>= 2.9)
