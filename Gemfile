@@ -12,7 +12,7 @@ gem 'petroglyph', :git => 'git://github.com/benglerpebbles/petroglyph.git'
 # the latest version of Pebblebed from rubygems.org. WFT?
 gem 'pebblebed', :git => 'git://github.com/benglerpebbles/pebblebed.git'
 gem 'dalli'
-gem 'hupper', :git => 'git://github.com/origo/hupper.git'
+gem 'hupper', :git => 'git://github.com/bengler/hupper.git'
 gem 'ts_vector_tags'
 gem 'rake'
 gem 'unicorn', '~> 4.1.1'
