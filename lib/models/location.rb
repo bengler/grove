@@ -65,7 +65,7 @@ class Location < ActiveRecord::Base
   # e.g. "^a.b.c" will match "", "a", "a.b" and "a.b.c",
   # "a.b.^c.d" will match "a.b", "a.b.c", "a.b.c.d"
   def self.parse_path(path)
-    unless WildcardPath.valid?(path)
+    unless Pebblebed::Uid.valid_path?(path)
       raise ArgumentError.new("Wildcards terminate the path. Invalid path: #{path}")
     end
 
