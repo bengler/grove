@@ -11,15 +11,13 @@ class GroveV1 < Sinatra::Base
     identity_id = current_identity.try(:id)
     halt 403, "No identity" unless identity_id
 
-    if Pebblebed::Uid.valid_path?(path)
+    if Pebblebed::Uid.wildcard_path?(path)
+      pg :readmarks, :locals => { :readmarks => Readmark.where("owner = ?", identity_id).by_path(path) }
+    else
       # This is a fully constrained path - return exactly one readmark
       readmark = Readmark.where("owner = ?", identity_id).by_path(path).first
       halt 404, "No readmark for this path" unless readmark
       pg :readmark, :locals => { :readmark => readmark }
-    else
-      # This is a wildcard path - return a collection
-      pg :readmarks, :locals => 
-        { :readmarks => Readmark.where("owner = ?", identity_id).by_path(path) }
     end
   end
 end
