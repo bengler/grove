@@ -24,10 +24,8 @@ class GroveV1 < Sinatra::Base
     end
 
     @post ||= Post.unscoped.find_by_uid(uid)
-    if @post.nil?
-      halt 404, "Post not found" if opts[:only_updates]
-      @post = Post.new(:uid => uid, :created_by => current_identity.id)
-    end
+    @post ||= Post.new(:uid => uid, :created_by => current_identity.id) unless opts[:only_updates]
+    halt 404, "Post not found" unless @post
 
     halt 404, "Post is deleted" if @post.deleted?
     response.status = 201 if @post.new_record?
