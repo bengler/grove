@@ -40,6 +40,37 @@ class GroveV1 < Sinatra::Base
     pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
   end
 
+  put "/posts/:uid" do |uid|
+    require_identity
+
+    attributes = params[:post]
+    halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless attributes
+
+    @post = Post.unscoped.find_by_uid(uid)
+
+    halt 404, "Post not found" if @post.nil? || @post.deleted?
+
+    unless @post.may_be_managed_by?(current_identity)
+      halt 403, "Post is owned by a different user (#{@post.created_by})"
+    end
+
+    (['document', 'paths', 'occurrences', 'tags', 'external_id'] & attributes.keys).each do |field|
+      @post.send(:"#{field}=", attributes[field])
+    end
+
+    begin
+      @post.intercept_and_save!(params[:session])
+    rescue UnauthorizedChangeError => e
+      halt 403, e.message
+    rescue Post::CanonicalPathConflict => e
+      halt 403, e.message
+    rescue Exception => e
+      halt 500, e.message
+    end
+
+    pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
+  end
+
   delete "/posts/:uid" do |uid|
     require_identity
 
