@@ -1,6 +1,14 @@
 class GroveV1 < Sinatra::Base
 
   post "/posts/:uid" do |uid|
+    save_post(uid)
+  end
+
+  put "/posts/:uid" do |uid|
+    save_post(uid, :only_updates=>true)
+  end
+
+  def save_post(uid, opts={})
     require_identity
 
     attributes = params[:post]
@@ -15,7 +23,10 @@ class GroveV1 < Sinatra::Base
       halt 409, "A post with external_id '#{attributes[:external_id]}' already exists with another canonical path (#{e.message})."
     end
 
-    @post ||= Post.unscoped.find_by_uid(uid) || Post.new(:uid => uid, :created_by => current_identity.id)
+    @post ||= Post.unscoped.find_by_uid(uid)
+    @post ||= Post.new(:uid => uid, :created_by => current_identity.id) unless opts[:only_updates]
+    halt 404, "Post not found" unless @post
+
     halt 404, "Post is deleted" if @post.deleted?
     response.status = 201 if @post.new_record?
 

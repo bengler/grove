@@ -94,6 +94,18 @@ describe "API v1 posts" do
       end
     end
 
+    describe "PUT /posts/:uid" do
+      it "returns 404 if the document doesn't exists" do
+        put "/posts/post:a.b.c", :post => {:document => {content: "hello world"}}
+        last_response.status.should eq 404
+      end
+      it "updates a document" do
+        post "/posts/post:a.b.c", :post => {:document => {:title => 'Hello spaceboy'}}
+        uid = JSON.parse(last_response.body)['post']['uid']
+        put "/posts/#{uid}", :post => {:document =>  {:title => 'Hello universe'}}
+        Post.find_by_uid(uid).document['title'].should eq "Hello universe"
+      end
+    end
     describe "GET /posts/:uid" do
 
       it "can retrieve a document" do
