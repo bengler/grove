@@ -193,6 +193,15 @@ describe "API v1 posts" do
         JSON.parse(last_response.body)['posts'].first['post']['document'].should eq '2'
       end
 
+      it "filters by external_id" do
+        Post.create!(:uid => "post:a.b.c", :external_id => 'abc', :document => '1')
+        Post.create!(:uid => "post:a.b.c", :external_id => 'pqr', :document => '2')
+        get "/posts/*:*", :external_id => 'abc'
+        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq '1'
+        get "/posts/*:*", :external_id => 'pqr'
+        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq '2'
+      end
+
       it "filters on klass path" do
         post "/posts/post.blog:a.b", {:post => {:document => {content: "1"}}}
         post "/posts/post.comment:a.b.c", {:post => {:document => {content: "2"}}}
