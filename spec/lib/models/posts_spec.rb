@@ -172,26 +172,41 @@ describe Post do
 
     it "will fail without an identity" do
       identity = DeepStruct.wrap({})
-      Post.create!(:uid => "post:a.b.c", :document => "xyzzy", :created_by => 1337, :restricted => true)
+      post = Post.create!(:uid => "post:a.b.c", :document => "xyzzy", :created_by => 1337, :restricted => true)
       Post.with_restrictions(identity).size.should eq 0
+      post.visible_to?(identity).should eq false
     end
 
     it "will fail if identity is not the document creator" do
       identity = DeepStruct.wrap({:id => 1337, :god => false})
-      Post.create!(:uid => "post:a.b.c", :document => "xyzzy", :created_by => 1, :restricted => true)
+      post = Post.create!(:uid => "post:a.b.c", :document => "xyzzy", :created_by => 1, :restricted => true)
       Post.with_restrictions(identity).size.should eq 0
+      post.visible_to?(identity).should eq false
     end
 
-    it "succed if identity has god status" do
+    it "succeed if identity has god status" do
       identity = DeepStruct.wrap({:id => 1337, :god => true})
-      Post.create!(:uid => "post:a.b.c", :document => "xyzzy", :created_by => 1, :restricted => true)
+      post = Post.create!(:uid => "post:a.b.c", :document => "xyzzy", :created_by => 1, :restricted => true)
       Post.with_restrictions(identity).size.should eq 1
+      post.visible_to?(identity).should eq true
     end
 
-    it "succed if identity is the document creator" do
+    it "succeed if identity is the document creator" do
       identity = DeepStruct.wrap({:id => 1337, :god => false})
-      Post.create!(:uid => "post:a.b.c", :document => "xyzzy", :created_by => 1337, :restricted => true)
+      post = Post.create!(:uid => "post:a.b.c", :document => "xyzzy", :created_by => 1337, :restricted => true)
       Post.with_restrictions(identity).size.should eq 1
+      post.visible_to?(identity).should eq true
+    end
+
+    it "returns filters out inaccessible documents" do
+      identity = DeepStruct.wrap({:id => 1337, :god => false})
+      post = Post.create!(:uid => "post:a.b.c", :document => "xyzzy", :created_by => 1337, :restricted => true)
+      another_post = Post.create!(:uid => "post:a.b.c", :document => "xyzzy", :created_by => 1, :restricted => true)
+      posts = []
+      [post, another_post].map{|p| p.visible_to?(identity)? posts << p : posts << nil }
+      posts.count.should eq 2
+      posts[0].should eq post
+      posts[1].should eq nil
     end
 
   end

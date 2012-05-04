@@ -54,6 +54,12 @@ class Post < ActiveRecord::Base
     scope
   }
 
+  def visible_to?(identity)
+    return true unless self.restricted
+    return true if identity && identity.respond_to?(:god) && identity.god
+    return (identity && identity.respond_to?(:id) && identity.id == self.created_by)
+  end
+
   def may_be_managed_by?(identity)
     new_record? || identity.god || created_by == identity.id
   end

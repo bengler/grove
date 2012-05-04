@@ -1,5 +1,13 @@
 class GroveV1 < Sinatra::Base
 
+  helpers do
+
+    def filter_visible_posts(posts)
+      posts.map{|p| p.visible_to?(current_identity) ? p : nil if p}
+    end
+
+  end
+
   post "/posts/:uid" do |uid|
     save_post(uid)
   end
@@ -79,7 +87,7 @@ class GroveV1 < Sinatra::Base
     if uid =~ /\,/
       # Retrieve a list of posts
       uids = uid.split(/\s*,\s*/).compact
-      @posts = Post.with_restrictions(current_identity).cached_find_all_by_uid(uids)
+      @posts = filter_visible_posts(Post.cached_find_all_by_uid(uids))
       pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => nil}
     elsif oid == '*' || oid == ''
       # Retrieve a collection by wildcards
@@ -92,10 +100,11 @@ class GroveV1 < Sinatra::Base
       if uid =~ /[\*\|]/
         @post = Post.by_uid(uid).with_restrictions(current_identity).first
       else
-        @post = Post.with_restrictions(current_identity).cached_find_all_by_uid([uid]).first
+        @post = Post.cached_find_all_by_uid([uid]).first
       end
       Log.error @post.inspect
       halt 404, "No such post" unless @post
+      halt 403, "Forbidden" unless @post.visible_to?(current_identity)
       pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
     end
   end

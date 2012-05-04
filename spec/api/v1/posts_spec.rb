@@ -247,13 +247,17 @@ describe "API v1 posts" do
       end
 
       it "can read restricted posts created by current user" do
-        Post.create!(:uid => "post:a.b.c", :created_by => 1337, :document => 'xyzzy', :restricted => true)
+        post = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :document => 'xyzzy', :restricted => true)
         2.times do |i|
           Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => i.to_s, :restricted => true)
         end
-        get "/posts/post:a.b.c"
+        posts = Post.limit(3).order('created_at asc').all
+        get "/posts/#{[posts.map(&:uid)].join(',')}"
         result = JSON.parse(last_response.body)['posts']
-        result.size.should eq 1
+        result.size.should eq 3
+        result[0]["post"]["uid"].should eq post.uid
+        result[1]["post"].should be_nil
+        result[2]["post"].should be_nil
       end
 
     end
