@@ -36,6 +36,11 @@ describe "API v1 posts" do
         Post.first.tags.should eq ['paris', 'texas']
       end
 
+      it "sets the restricted flag" do
+        post "/posts/post:a.b.c", :post => {:document => "restricted document", :restricted => true}
+        Post.first.restricted.should eq true
+      end
+
       it "updates a document" do
         post "/posts/post:a.b.c", :post => {:document => {:title => 'Hello spaceboy'}}
         uid = JSON.parse(last_response.body)['post']['uid']
@@ -106,6 +111,7 @@ describe "API v1 posts" do
         Post.find_by_uid(uid).document['title'].should eq "Hello universe"
       end
     end
+
     describe "GET /posts/:uid" do
 
       it "can retrieve a document" do
@@ -239,6 +245,17 @@ describe "API v1 posts" do
         result['pagination']['limit'].should eq 10
         result['pagination']['offset'].should eq 15
       end
+
+      it "can read restricted posts created by current user" do
+        Post.create!(:uid => "post:a.b.c", :created_by => 1337, :document => 'xyzzy', :restricted => true)
+        2.times do |i|
+          Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => i.to_s, :restricted => true)
+        end
+        get "/posts/post:a.b.c"
+        result = JSON.parse(last_response.body)['posts']
+        result.size.should eq 1
+      end
+
     end
 
     describe "DELETE /posts/:uid" do
@@ -456,6 +473,13 @@ describe "API v1 posts" do
       last_response.status.should eq 200
     end
 
+    it "can read restricted documents" do
+      Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => 'xyzzy', :restricted => true)
+      get "/posts/post:a.b.c"
+      result = JSON.parse(last_response.body)['posts']
+      result.size.should eq 1
+    end
+
     it "can update a document created by another user without modifying created_by field" do
       p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => "Hello spaceboy")
       post "/posts/#{p.uid}", :post => {:document => "hello nobody"}
@@ -477,6 +501,13 @@ describe "API v1 posts" do
           last_response.status.should eq(403)
         end
       end
+    end
+
+    it "cannot read restricted documents" do
+      Post.create!(:uid => "post:a.b.c", :created_by => 3, :document => 'xyzzy', :restricted => true)
+      get "/posts/post:a.b.c"
+      result = JSON.parse(last_response.body)['posts']
+      result.size.should eq 0
     end
 
   end

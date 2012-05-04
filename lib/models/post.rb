@@ -44,6 +44,16 @@ class Post < ActiveRecord::Base
     scope
   }
 
+  scope :with_restrictions, lambda { |identity|
+    scope = relation
+    if identity == nil || ! identity.respond_to?(:id)
+      scope = scope.where(:restricted => false)
+    elsif !(identity.respond_to?(:god) && identity.god)
+      scope = scope.where('restricted = false or created_by = ?', identity.id)
+    end
+    scope
+  }
+
   def may_be_managed_by?(identity)
     new_record? || identity.god || created_by == identity.id
   end

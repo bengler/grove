@@ -34,7 +34,7 @@ class GroveV1 < Sinatra::Base
       halt 403, "Post is owned by a different user (#{@post.created_by})"
     end
 
-    (['document', 'paths', 'occurrences', 'tags', 'external_id'] & attributes.keys).each do |field|
+    (['document', 'paths', 'occurrences', 'tags', 'external_id', 'restricted'] & attributes.keys).each do |field|
       @post.send(:"#{field}=", attributes[field])
     end
 
@@ -79,20 +79,20 @@ class GroveV1 < Sinatra::Base
     if uid =~ /\,/
       # Retrieve a list of posts
       uids = uid.split(/\s*,\s*/).compact
-      @posts = Post.cached_find_all_by_uid(uids)
+      @posts = Post.with_restrictions(current_identity).cached_find_all_by_uid(uids)
       pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => nil}
-    elsif oid == '*' || oid == '' 
+    elsif oid == '*' || oid == ''
       # Retrieve a collection by wildcards
-      @posts = Post.by_uid(uid).filtered_by(params)
+      @posts = Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity)
       @posts = @posts.order("created_at #{params[:direction] || 'DESC'}")
       @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
       pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => @pagination}
     else
       # Retrieve a single specific post
       if uid =~ /[\*\|]/
-        @post = Post.by_uid(uid).first
+        @post = Post.by_uid(uid).with_restrictions(current_identity).first
       else
-        @post = Post.cached_find_all_by_uid([uid]).first
+        @post = Post.with_restrictions(current_identity).cached_find_all_by_uid([uid]).first
       end
       Log.error @post.inspect
       halt 404, "No such post" unless @post
@@ -101,7 +101,7 @@ class GroveV1 < Sinatra::Base
   end
 
   get "/posts/:uid/count" do |uid|
-    {:uid => uid, :count => Post.by_uid(uid).count}.to_json
+    {:uid => uid, :count => Post.by_uid(uid).with_restrictions(current_identity).count}.to_json
   end
 
   put "/posts/:uid/touch" do |uid|
@@ -238,7 +238,7 @@ class GroveV1 < Sinatra::Base
     posts.map {|p| safe_post(p)}
   end
   def safe_post(post)
-    unless current_identity.try(:god)
+    unless current_identity.respond_to?(:god) && current_identity.god
       post.document.delete 'email' if post && !post.document.nil?
     end
     post

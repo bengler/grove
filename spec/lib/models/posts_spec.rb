@@ -166,4 +166,35 @@ describe Post do
     post.reload
     post.paths.to_a.sort.should eq(["a.b.c", "a.b.d"])
   end
+
+
+  context "searching for restricted documents" do
+
+    it "will fail without an identity" do
+      identity = DeepStruct.wrap({})
+      Post.create!(:uid => "post:a.b.c", :document => "xyzzy", :created_by => 1337, :restricted => true)
+      Post.with_restrictions(identity).size.should eq 0
+    end
+
+    it "will fail if identity is not the document creator" do
+      identity = DeepStruct.wrap({:id => 1337, :god => false})
+      Post.create!(:uid => "post:a.b.c", :document => "xyzzy", :created_by => 1, :restricted => true)
+      Post.with_restrictions(identity).size.should eq 0
+    end
+
+    it "succed if identity has god status" do
+      identity = DeepStruct.wrap({:id => 1337, :god => true})
+      Post.create!(:uid => "post:a.b.c", :document => "xyzzy", :created_by => 1, :restricted => true)
+      Post.with_restrictions(identity).size.should eq 1
+    end
+
+    it "succed if identity is the document creator" do
+      identity = DeepStruct.wrap({:id => 1337, :god => false})
+      Post.create!(:uid => "post:a.b.c", :document => "xyzzy", :created_by => 1337, :restricted => true)
+      Post.with_restrictions(identity).size.should eq 1
+    end
+
+  end
+
+
 end
