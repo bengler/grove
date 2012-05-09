@@ -22,8 +22,6 @@ class Post < ActiveRecord::Base
     end
   end
 
-  attr_accessor :paths
-
   def paths
     @locations_accessor ||= LocationsAccessor.new(self)
   end
