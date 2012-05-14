@@ -81,7 +81,7 @@ class GroveV1 < Sinatra::Base
       uids = uid.split(/\s*,\s*/).compact
       @posts = Post.cached_find_all_by_uid(uids)
       pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => nil}
-    elsif oid == '*' || oid == '' 
+    elsif oid == '*' || oid == '' || oid.nil?
       # Retrieve a collection by wildcards
       @posts = Post.by_uid(uid).filtered_by(params)
       @posts = @posts.order("created_at #{params[:direction] || 'DESC'}")
