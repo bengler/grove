@@ -21,6 +21,7 @@ gem 'sanitize'
 gem 'pingable'
 gem 'o5-logging', :git => "git://github.com/benglerpebbles/o5-logging.git"
 gem 'curb'
+gem 'pebble_path'
 
 group :development, :test do
   gem 'rspec', '~> 2.8'
