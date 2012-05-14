@@ -5,7 +5,7 @@ class Readmark < ActiveRecord::Base
   before_save :create_location_from_path
 
   scope :by_path, lambda { |path|
-    select("readmarks.*").joins(:location).where(:locations => Location.parse_path(path)) unless path == '*'
+    select("readmarks.*").joins(:location).where(:locations => PebblePath.detect(path)) unless path == '*'
   }
 
   # Set the current readmark for a user in a given path in an idempotent way. Typically called as the 

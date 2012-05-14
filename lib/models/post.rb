@@ -23,14 +23,14 @@ class Post < ActiveRecord::Base
   serialize :document
 
   scope :by_path, lambda { |path|
-    select("distinct posts.*").joins(:locations).where(:locations => Location.parse_path(path)) unless path == '*'
+    select("distinct posts.*").joins(:locations).where(:locations => PebblePath.detect(path)) unless path == '*'
   }
 
   scope :by_uid, lambda { |uid|
     _klass, _path, _oid = Pebblebed::Uid.raw_parse(uid)
     scope = by_path(_path)
     scope = scope.where("klass = ?", _klass) unless _klass == '*'
-    scope = scope.where("posts.id = ?", _oid) unless _oid == '' || _oid == '*'
+    scope = scope.where("posts.id = ?", _oid) unless _oid.nil? || _oid == '' || _oid == '*'
     scope
   }
 
