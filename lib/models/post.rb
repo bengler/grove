@@ -60,6 +60,12 @@ class Post < ActiveRecord::Base
     return (identity && identity.respond_to?(:id) && identity.id == self.created_by)
   end
 
+  def editable_by?(identity)
+    return false unless identity
+    return true if identity.respond_to?(:god) && identity.god
+    return (identity.respond_to?(:id) && identity.id == self.created_by)
+  end
+
   def may_be_managed_by?(identity)
     new_record? || identity.god || created_by == identity.id
   end

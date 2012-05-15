@@ -260,6 +260,24 @@ describe "API v1 posts" do
         result[2]["post"].should be_nil
       end
 
+      describe "checking editable status in response" do
+
+        it "returns true if identity is creator" do
+          p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :document => {:title => 'Hello spaceboy'})
+          get "/posts/#{p.uid}"
+          result = JSON.parse(last_response.body)['post']
+          result['may_edit'].should be_true
+        end
+
+        it "returns false unless identity is creator" do
+          p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'})
+          get "/posts/#{p.uid}"
+          result = JSON.parse(last_response.body)['post']
+          result['may_edit'].should be_false
+        end
+
+      end
+
     end
 
     describe "DELETE /posts/:uid" do

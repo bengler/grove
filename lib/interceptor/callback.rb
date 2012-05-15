@@ -1,4 +1,12 @@
 class Interceptor
+
+  # stubbing sinatra helpers used by the views
+  class TemplateContext
+    def current_identity
+      nil
+    end
+  end
+
   class Callback
 
     attr_accessor :validator, :post
@@ -34,7 +42,7 @@ class Interceptor
 
     def request_body
       template = 'api/v1/views/callback_post.pg'
-      Petroglyph::Engine.new(File.read(template)).render(Object.new, {:mypost => post}, template)
+      Petroglyph::Engine.new(File.read(template)).render(TemplateContext.new, {:mypost => post}, template)
     end
 
   end
