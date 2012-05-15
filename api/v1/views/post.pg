@@ -1,4 +1,5 @@
 node :post => mypost do
   attributes :uid, :created_by, :document, :created_at, :updated_at, :tags, :external_id, :paths
   node :id => mypost.uid
+  node :may_edit => mypost.editable_by?(current_identity)
 end

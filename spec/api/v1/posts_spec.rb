@@ -36,6 +36,11 @@ describe "API v1 posts" do
         Post.first.tags.should eq ['paris', 'texas']
       end
 
+      it "sets the restricted flag" do
+        post "/posts/post:a.b.c", :post => {:document => "restricted document", :restricted => true}
+        Post.first.restricted.should eq true
+      end
+
       it "updates a document" do
         post "/posts/post:a.b.c", :post => {:document => {:title => 'Hello spaceboy'}}
         uid = JSON.parse(last_response.body)['post']['uid']
@@ -106,6 +111,7 @@ describe "API v1 posts" do
         Post.find_by_uid(uid).document['title'].should eq "Hello universe"
       end
     end
+
     describe "GET /posts/:uid" do
 
       it "can retrieve a document" do
@@ -239,6 +245,36 @@ describe "API v1 posts" do
         result['pagination']['limit'].should eq 10
         result['pagination']['offset'].should eq 15
       end
+
+      it "can only read restricted posts created by current user" do
+        posts = []
+        posts << Post.create!(:uid => "post:a.b.c", :created_by => 1337, :document => 'xyzzy', :restricted => true)
+        posts << Post.create!(:uid => "post:a.b.d", :created_by => 1, :document => 'zippo', :restricted => true)
+        get "/posts/#{[posts.map(&:uid)].join(',')}"
+        result = JSON.parse(last_response.body)['posts']
+        result.size.should eq 2
+        result[0]["post"]["uid"].should eq posts[0].uid
+        result[1]["post"].should be_nil
+      end
+
+      describe "checking editable status in response" do
+
+        it "returns true if identity is creator" do
+          p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :document => {:title => 'Hello spaceboy'})
+          get "/posts/#{p.uid}"
+          result = JSON.parse(last_response.body)['post']
+          result['may_edit'].should be_true
+        end
+
+        it "returns false unless identity is creator" do
+          p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'})
+          get "/posts/#{p.uid}"
+          result = JSON.parse(last_response.body)['post']
+          result['may_edit'].should be_false
+        end
+
+      end
+
     end
 
     describe "DELETE /posts/:uid" do
@@ -456,6 +492,13 @@ describe "API v1 posts" do
       last_response.status.should eq 200
     end
 
+    it "can read restricted documents" do
+      Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => 'xyzzy', :restricted => true)
+      get "/posts/post:a.b.c"
+      result = JSON.parse(last_response.body)['posts']
+      result.size.should eq 1
+    end
+
     it "can update a document created by another user without modifying created_by field" do
       p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => "Hello spaceboy")
       post "/posts/#{p.uid}", :post => {:document => "hello nobody"}
@@ -477,6 +520,13 @@ describe "API v1 posts" do
           last_response.status.should eq(403)
         end
       end
+    end
+
+    it "cannot read restricted documents" do
+      Post.create!(:uid => "post:a.b.c", :created_by => 3, :document => 'xyzzy', :restricted => true)
+      get "/posts/post:a.b.c"
+      result = JSON.parse(last_response.body)['posts']
+      result.size.should eq 0
     end
 
   end

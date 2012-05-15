@@ -44,6 +44,28 @@ class Post < ActiveRecord::Base
     scope
   }
 
+  scope :with_restrictions, lambda { |identity|
+    scope = relation
+    if identity == nil || !identity.respond_to?(:id)
+      scope = scope.where(:restricted => false)
+    elsif !(identity.respond_to?(:god) && identity.god)
+      scope = scope.where('not restricted or created_by = ?', identity.id)
+    end
+    scope
+  }
+
+  def visible_to?(identity)
+    return true unless self.restricted
+    return true if identity && identity.respond_to?(:god) && identity.god
+    return (identity && identity.respond_to?(:id) && identity.id == self.created_by)
+  end
+
+  def editable_by?(identity)
+    return false unless identity
+    return true if identity.respond_to?(:god) && identity.god
+    return (identity.respond_to?(:id) && identity.id == self.created_by)
+  end
+
   def may_be_managed_by?(identity)
     new_record? || identity.god || created_by == identity.id
   end

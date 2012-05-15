@@ -14,7 +14,8 @@
     "paths": [
       "a.b.c"
     ],
-    "id": "post.salutation:a.b.c$42"
+    "id": "post.salutation:a.b.c$42",
+    "may_edit": false
   },
   "changes": {
     "document": {
