@@ -10,7 +10,7 @@ gem 'yajl-ruby', :require => "yajl"
 gem 'petroglyph', :git => 'git://github.com/benglerpebbles/petroglyph.git'
 # TODO: This should really be a normal, public version of pebblebed, but right now I'm not getting
 # the latest version of Pebblebed from rubygems.org. WFT?
-gem 'pebblebed', :git => 'git://github.com/benglerpebbles/pebblebed.git', :branch => 'wildcard-path'
+gem 'pebblebed', :git => 'git://github.com/benglerpebbles/pebblebed.git'
 gem 'dalli'
 gem 'hupper', :git => 'git://github.com/bengler/hupper.git'
 gem 'ts_vector_tags'
@@ -21,6 +21,7 @@ gem 'sanitize'
 gem 'pingable'
 gem 'o5-logging', :git => "git://github.com/benglerpebbles/o5-logging.git"
 gem 'curb'
+gem 'pebble_path'
 
 group :development, :test do
   gem 'rspec', '~> 2.8'

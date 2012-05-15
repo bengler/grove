@@ -35,10 +35,6 @@ describe Location do
     ->{ Location.by_path('*.c') }.should raise_error(ArgumentError)
   end
 
-  it "doesn't bother checking all remaining labels for nil" do
-    Location.parse_path('a.b').should eq({:label_0=>"a", :label_1=>"b", :label_2=>nil})
-  end
-
   it "can be found by set of paths" do
     Location.declare!('a.b')
     Location.declare!('a.b.a')
@@ -66,10 +62,6 @@ describe Location do
     result.should_not include(top)
     result.should_not include(bottom)
 
-  end
-
-  it "can't contain stray nils" do
-    -> { Location.create!(:label_1 => "something")}.should raise_error ActiveRecord::RecordInvalid
   end
 
   it "won't accept malformed paths" do

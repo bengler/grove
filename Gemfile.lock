@@ -12,10 +12,9 @@ GIT
 
 GIT
   remote: git://github.com/benglerpebbles/pebblebed.git
-  revision: c7b3a275c5c965e8b0c896debfef4db35d2c5ec3
-  branch: wildcard-path
+  revision: f8d6f7f4aa6855518f3d200619b3094251154aeb
   specs:
-    pebblebed (0.0.13)
+    pebblebed (0.0.17)
       activesupport
       curb (~> 0.8.0)
       deepstruct
@@ -104,6 +103,8 @@ GEM
       net-ssh (>= 1.99.1)
     nokogiri (1.5.2)
     pathbuilder (0.0.2)
+    pebble_path (0.0.2)
+      pebblebed (>= 0.0.15)
     pg (0.12.2)
     pingable (0.0.9)
       rack (>= 1.0.0)
@@ -170,6 +171,7 @@ DEPENDENCIES
   dalli
   hupper!
   o5-logging!
+  pebble_path
   pebblebed!
   petroglyph!
   pg
