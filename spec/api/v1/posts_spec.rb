@@ -94,6 +94,18 @@ describe "API v1 posts" do
       end
     end
 
+    describe "PUT /posts/:uid" do
+      it "returns 404 if the document doesn't exists" do
+        put "/posts/post:a.b.c", :post => {:document => {content: "hello world"}}
+        last_response.status.should eq 404
+      end
+      it "updates a document" do
+        post "/posts/post:a.b.c", :post => {:document => {:title => 'Hello spaceboy'}}
+        uid = JSON.parse(last_response.body)['post']['uid']
+        put "/posts/#{uid}", :post => {:document =>  {:title => 'Hello universe'}}
+        Post.find_by_uid(uid).document['title'].should eq "Hello universe"
+      end
+    end
     describe "GET /posts/:uid" do
 
       it "can retrieve a document" do
@@ -178,6 +190,15 @@ describe "API v1 posts" do
         get "/posts/*:*", :created_by => 1
         JSON.parse(last_response.body)['posts'].first['post']['document'].should eq '1'
         get "/posts/*:*", :created_by => 2
+        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq '2'
+      end
+
+      it "filters by external_id" do
+        Post.create!(:uid => "post:a.b.c", :external_id => 'abc', :document => '1')
+        Post.create!(:uid => "post:a.b.c", :external_id => 'pqr', :document => '2')
+        get "/posts/*:*", :external_id => 'abc'
+        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq '1'
+        get "/posts/*:*", :external_id => 'pqr'
         JSON.parse(last_response.body)['posts'].first['post']['document'].should eq '2'
       end
 
