@@ -246,18 +246,15 @@ describe "API v1 posts" do
         result['pagination']['offset'].should eq 15
       end
 
-      it "can read restricted posts created by current user" do
-        post = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :document => 'xyzzy', :restricted => true)
-        2.times do |i|
-          Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => i.to_s, :restricted => true)
-        end
-        posts = Post.limit(3).order('created_at asc').all
+      it "can only read restricted posts created by current user" do
+        posts = []
+        posts << Post.create!(:uid => "post:a.b.c", :created_by => 1337, :document => 'xyzzy', :restricted => true)
+        posts << Post.create!(:uid => "post:a.b.d", :created_by => 1, :document => 'zippo', :restricted => true)
         get "/posts/#{[posts.map(&:uid)].join(',')}"
         result = JSON.parse(last_response.body)['posts']
-        result.size.should eq 3
-        result[0]["post"]["uid"].should eq post.uid
+        result.size.should eq 2
+        result[0]["post"]["uid"].should eq posts[0].uid
         result[1]["post"].should be_nil
-        result[2]["post"].should be_nil
       end
 
       describe "checking editable status in response" do

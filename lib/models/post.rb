@@ -46,10 +46,10 @@ class Post < ActiveRecord::Base
 
   scope :with_restrictions, lambda { |identity|
     scope = relation
-    if identity == nil || ! identity.respond_to?(:id)
+    if identity == nil || !identity.respond_to?(:id)
       scope = scope.where(:restricted => false)
     elsif !(identity.respond_to?(:god) && identity.god)
-      scope = scope.where('restricted = false or created_by = ?', identity.id)
+      scope = scope.where('not restricted or created_by = ?', identity.id)
     end
     scope
   }
