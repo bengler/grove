@@ -11,4 +11,9 @@ class GroveV1 < Sinatra::Base
   set :root, "#{File.dirname(__FILE__)}/v1"
 
   register Sinatra::Pebblebed
+
+  before do
+    cache_control :private, :no_cache, :no_store, :must_revalidate
+  end
+
 end

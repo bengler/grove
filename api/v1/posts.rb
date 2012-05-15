@@ -92,7 +92,8 @@ class GroveV1 < Sinatra::Base
     elsif oid == '*' || oid == ''
       # Retrieve a collection by wildcards
       @posts = Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity)
-      @posts = @posts.order("created_at #{params[:direction] || 'DESC'}")
+      direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
+      @posts = @posts.order("created_at #{direction}")
       @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
       pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => @pagination}
     else
