@@ -12,7 +12,7 @@ GIT
 
 GIT
   remote: git://github.com/benglerpebbles/pebblebed.git
-  revision: 04665b007e5646d90bad288b0f28eb6ba521cebd
+  revision: 07f37411f42c1198c48d11c948bfb5a787a49e07
   specs:
     pebblebed (0.0.16)
       activesupport
@@ -103,7 +103,7 @@ GEM
       net-ssh (>= 1.99.1)
     nokogiri (1.5.2)
     pathbuilder (0.0.2)
-    pebble_path (0.0.1)
+    pebble_path (0.0.2)
       pebblebed (>= 0.0.15)
     pg (0.12.2)
     pingable (0.0.9)
