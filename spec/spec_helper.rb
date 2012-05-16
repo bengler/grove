@@ -17,9 +17,9 @@ require 'config/logging'
 require 'timecop'
 
 require 'vcr'
-VCR.config do |c|
+VCR.configure do |c|
   c.cassette_library_dir = 'spec/fixtures/vcr_cassettes'
-  c.stub_with :webmock 
+  c.hook_into :webmock 
 end
 
 set :environment, :test
