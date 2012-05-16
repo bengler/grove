@@ -30,7 +30,7 @@ class Post < ActiveRecord::Base
     _klass, _path, _oid = Pebblebed::Uid.raw_parse(uid)
     scope = by_path(_path)
     scope = scope.where("klass = ?", _klass) unless _klass == '*'
-    scope = scope.where("posts.id = ?", _oid) unless _oid.nil? || _oid == '' || _oid == '*'
+    scope = scope.where("posts.id = ?", _oid.to_i) unless _oid.nil? || _oid == '' || _oid == '*'
     scope
   }
 
