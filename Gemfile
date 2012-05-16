@@ -35,5 +35,6 @@ group :development, :test do
   gem 'timecop'
   gem 'vcr'
   gem 'webmock'
+  gem 'thor', '~> 0.14.6'
   gem 'approvals'
 end
