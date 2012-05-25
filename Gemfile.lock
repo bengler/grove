@@ -26,8 +26,8 @@ GIT
       yajl-ruby
 
 GIT
-  remote: git://github.com/benglerpebbles/petroglyph.git
-  revision: 145f8fdf63ebc935d81e809cf93eb0439192c94f
+  remote: git://github.com/kytrinyx/petroglyph.git
+  revision: 71ddd648d47ff13fd1ee3af709b12f8e3cc48436
   specs:
     petroglyph (0.0.2)
       tilt
