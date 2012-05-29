@@ -311,6 +311,7 @@ describe "API v1 posts" do
         20.times do |i|
           Post.create!(:uid => "post:a.b.c", :document => i.to_s)
         end
+        Post.create!(:uid => "post:a.b.c", :document => "deleted", :deleted => true)
         10.times do |i|
           Post.create!(:uid => "post:a.c.c", :document => i.to_s)
         end
