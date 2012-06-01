@@ -103,7 +103,6 @@ class GroveV1 < Sinatra::Base
       else
         @post = Post.cached_find_all_by_uid([uid]).first
       end
-      Log.error @post.inspect
       halt 404, "No such post" unless @post
       halt 403, "Forbidden" unless @post.visible_to?(current_identity)
       pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
