@@ -1,0 +1,1 @@
+pebble 'checkpoint', :git => 'git@github.com:benglerpebbles/checkpoint.git'
