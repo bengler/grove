@@ -34,10 +34,10 @@ GIT
       rack (>= 0.9.1)
 
 GIT
-  remote: git@github.com:origo/capistrano-bengler.git
-  revision: c52bb6bd2ac1151599d89fb702d044796d8fc0ec
+  remote: git@github.com:bengler/capistrano-bengler.git
+  revision: f26ae5349f95cdf6fb35e739b9e5b326b70d278a
   specs:
-    capistrano-bengler (0.0.13)
+    capistrano-bengler (0.0.14)
       capistrano (>= 2.9)
       capistrano-ext (>= 1.2.1)
 
