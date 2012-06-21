@@ -1,7 +1,7 @@
 class Post < ActiveRecord::Base
   class CanonicalPathConflict < StandardError; end
 
-  has_and_belongs_to_many :locations, :uniq => true, 
+  has_and_belongs_to_many :locations, :uniq => true,
     :after_add => :increment_unread_counts,
     :after_remove => :decrement_unread_counts
 
@@ -207,7 +207,7 @@ class Post < ActiveRecord::Base
   def update_readmarks_according_to_deleted_status
     if self.deleted_changed?
       # We are using the locations relation directly to make sure we are not
-      # picking up any unsynced changes that may have been applied to the 
+      # picking up any unsynced changes that may have been applied to the
       # paths attribute.
       paths = self.locations.map { |location| location.path.to_s }
       if self.deleted
