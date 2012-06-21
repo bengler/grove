@@ -10,7 +10,7 @@ gem 'yajl-ruby', :require => "yajl"
 gem 'petroglyph', :git => 'git://github.com/kytrinyx/petroglyph.git'
 # TODO: This should really be a normal, public version of pebblebed, but right now I'm not getting
 # the latest version of Pebblebed from rubygems.org. WFT?
-gem 'pebblebed', :git => 'git://github.com/benglerpebbles/pebblebed.git'
+gem 'pebblebed', :git => 'git://github.com/benglerpebbles/pebblebed.git', :branch => 'a-river-of-bunnies'
 gem 'dalli'
 gem 'ts_vector_tags'
 gem 'rake'
