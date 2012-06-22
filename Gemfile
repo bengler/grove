@@ -7,10 +7,8 @@ gem 'rack-contrib', :git => 'git://github.com/rack/rack-contrib.git'
 gem 'activerecord', :require => 'active_record'
 gem 'pg'
 gem 'yajl-ruby', :require => "yajl"
-gem 'petroglyph', :git => 'git://github.com/kytrinyx/petroglyph.git'
-# TODO: This should really be a normal, public version of pebblebed, but right now I'm not getting
-# the latest version of Pebblebed from rubygems.org. WFT?
-gem 'pebblebed', :git => 'git://github.com/benglerpebbles/pebblebed.git'
+gem 'petroglyph'
+gem 'pebblebed'
 gem 'dalli'
 gem 'ts_vector_tags'
 gem 'rake'
