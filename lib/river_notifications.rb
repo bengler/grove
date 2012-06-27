@@ -4,6 +4,10 @@ require_relative 'models/post'
 class RiverNotifications < ActiveRecord::Observer
   observe :post
 
+  def self.river
+    river = Pebblebed::River.new
+  end
+
   def after_create(post)
     publish(post, :create)
   end
@@ -17,7 +21,7 @@ class RiverNotifications < ActiveRecord::Observer
   end
 
   def publish(post, event)
-    Pebblebed::River.publish(:event => event, :uid => post.uid, :attributes => post.attributes)
+    self.class.river.publish(:event => event, :uid => post.uid, :attributes => post.attributes)
   end
 
 end
