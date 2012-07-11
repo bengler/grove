@@ -19,6 +19,14 @@ GIT
       capistrano (>= 2.9)
       capistrano-ext (>= 1.2.1)
 
+GIT
+  remote: git@github.com:bengler/pebbles-cors.git
+  revision: 3e66f7908e40660f9974aa272fddfa12819117cb
+  specs:
+    pebbles-cors (0.0.1)
+      pebblebed
+      rack
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -146,6 +154,7 @@ DEPENDENCIES
   dalli
   pebble_path
   pebblebed
+  pebbles-cors!
   petroglyph
   pg
   rack-contrib!
