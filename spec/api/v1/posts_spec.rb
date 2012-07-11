@@ -330,6 +330,17 @@ describe "API v1 posts" do
         p.reload
         p.paths.to_a.sort.should eq(["a.b.c", "a.b.d"])
       end
+
+      it "doesn't try to add a path twice" do
+        p = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => '1', :created_by => 10)
+
+        post "/posts/#{p.uid}/paths/a.b.d"
+        post "/posts/#{p.uid}/paths/a.b.d"
+
+        last_response.status.should eq 200
+        p.reload
+        p.paths.to_a.sort.should eq(["a.b.c", "a.b.d"])
+      end
     end
 
     describe "POST /posts/:uid/tags/:tags" do

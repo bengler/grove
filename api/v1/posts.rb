@@ -133,7 +133,7 @@ class GroveV1 < Sinatra::Base
     post = Post.find_by_uid(uid)
     halt 404, "No such post" unless post
 
-    post.add_path!(path)
+    post.add_path!(path) unless post.paths.include?(path)
 
     pg :post, :locals => {:mypost => safe_post(post)}
   end
