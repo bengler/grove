@@ -9,6 +9,7 @@ gem 'pg'
 gem 'yajl-ruby', :require => "yajl"
 gem 'petroglyph'
 gem 'pebblebed'
+gem 'pebbles-cors', :git => 'git@github.com:bengler/pebbles-cors.git'
 gem 'dalli'
 gem 'ts_vector_tags'
 gem 'rake'
