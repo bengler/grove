@@ -97,6 +97,42 @@ describe "API v1 posts" do
         Post.first.occurrences['due'].size.should eq 1
         Post.first.occurrences['due'].first.should be_within(1.0).of(timestamp)
       end
+
+      it "can post an external document" do
+        post "/posts/post:a.b.c", :post => {:external_document => {:quick => "fox"}}
+        JSON.parse(last_response.body)['post']['document']['quick'].should eq 'fox'
+      end
+
+      it "allows for moderation of external documents" do
+        post "/posts/post:a.b.c", :post => { :external_document => {
+          :quick => "fox",
+          :lazy => "dog"
+        }}
+
+        uid = JSON.parse(last_response.body)['post']['uid']
+
+        put "/posts/#{uid}", :post => {:document => {:quick => "coyote"}}
+
+        updated = JSON.parse(last_response.body)['post']
+        updated['document']['quick'].should eq 'coyote'
+        updated['document']['lazy'].should eq 'dog'
+      end
+
+      it "marks the post as conflicted if external document has been updated (i.e. imported) after moderation" do
+        post "/posts/post:a.b.c", :post => { :document => {
+          :quick => "coyote",
+          :lazy => "dog"
+        }}
+
+        uid = JSON.parse(last_response.body)['post']['uid']
+
+        put "/posts/#{uid}", :post => {:external_document => {:quick => "fox"}}
+
+        updated = JSON.parse(last_response.body)['post']
+        updated['conflicted'].should be_true
+        updated['document']['quick'].should eq 'coyote' # Keeps the moderated version
+        updated['document']['lazy'].should eq 'dog'
+      end
     end
 
     describe "PUT /posts/:uid" do

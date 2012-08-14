@@ -42,7 +42,7 @@ class GroveV1 < Sinatra::Base
       halt 403, "Post is owned by a different user (#{@post.created_by})"
     end
 
-    (['document', 'paths', 'occurrences', 'tags', 'external_id', 'restricted'] & attributes.keys).each do |field|
+    (['external_document', 'document', 'paths', 'occurrences', 'tags', 'external_id', 'restricted'] & attributes.keys).each do |field|
       @post.send(:"#{field}=", attributes[field])
     end
 

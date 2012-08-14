@@ -72,7 +72,7 @@ class Post < ActiveRecord::Base
   end
 
   def conflicted?
-    external_document_updated_at && document_updated_at && external_document_updated_at > document_updated_at
+    !!(external_document_updated_at && document_updated_at) && external_document_updated_at > document_updated_at
   end
 
   def external_document=(external_document)
