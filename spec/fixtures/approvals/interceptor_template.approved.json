@@ -21,14 +21,15 @@
   "changes": {
     "document": {
       "was": {
-        "title": "Hello spaceboy",
-        "text": null,
-        "author_name": null,
-        "email": null
+        "title": "Hello spaceboy"
       },
       "becomes": {
         "title": "Hello cowboy"
       }
+    },
+    "document_updated_at": {
+      "was": "2011-02-07T19:28:18+01:00",
+      "becomes": "2011-02-07T19:28:18+01:00"
     }
   }
 }

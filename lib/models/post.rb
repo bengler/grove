@@ -21,6 +21,7 @@ class Post < ActiveRecord::Base
 
   include TsVectorTags
   serialize :document
+  serialize :external_document
 
   scope :by_path, lambda { |path|
     select("distinct posts.*").joins(:locations).where(:locations => PebblePath.to_conditions(path)) unless path == '*'
@@ -68,6 +69,28 @@ class Post < ActiveRecord::Base
 
   def may_be_managed_by?(identity)
     new_record? || identity.god || created_by == identity.id
+  end
+
+  def conflicted?
+    external_document_updated_at && document_updated_at && external_document_updated_at > document_updated_at
+  end
+
+  def external_document=(external_document)
+    write_attribute("external_document", external_document)
+    self.external_document_updated_at = Time.now
+  end
+
+  def document=(document)
+    write_attribute("document", document)
+    self.document_updated_at = Time.now
+  end
+
+  def document
+    document = read_attribute("document")
+    return external_document if document.nil?
+    return document unless document.is_a? Hash # todo: consider removing (see discussion here: https://github.com/benglerpebbles/grove/issues/42)
+    return external_document.merge(document) if external_document.is_a? Hash
+    document
   end
 
   def uid
@@ -172,7 +195,7 @@ class Post < ActiveRecord::Base
   def sanitize
     return unless self.document.is_a?(Hash)
     ['text', 'author_name', 'email'].each do |field|
-      self.document[field] = Sanitize.clean(self.document[field])
+      self.document[field] = Sanitize.clean(self.document[field]) if self.document.has_key?(field)
     end
     self.document['text'] = self.document['text'][0..139] unless self.document['text'].nil?
   end

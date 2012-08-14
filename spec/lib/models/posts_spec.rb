@@ -211,5 +211,51 @@ describe Post do
 
   end
 
+  context "Imported/external documents" do
+    it "returns the external_document attribute if the document attribute is not set" do
+      post = Post.create!(:uid => "post:some.ext.thing", :external_document => {:title => "the quick brown fox"}, :created_by => 1337)
+      post.document[:title].should eq "the quick brown fox"
+    end
+
+    it "merges document into external_document with key/value pairs from document overriding external_document pairs" do
+      post = Post.create!(:uid => "post:some.ext.thing", :external_document => {
+        :brown => "fox",
+        :lazy => "dog"
+      }, :created_by => 1337)
+
+      post.document = {:brown => "coyote"}
+
+      post.document.should eq(:brown => "coyote", :lazy => "dog")
+    end
+
+    it "keeps track of when the document was last updated" do
+      post = Post.create!(:uid => "post:some.ext.thing", :document => {:title => "the quick brown fox"}, :created_by => 1337)
+      post.document_updated_at.should_not be_nil
+    end
+
+    it "keeps track of when the external document was last updated" do
+      post = Post.create!(:uid => "post:some.ext.thing", :external_document => {:title => "the quick brown fox"}, :created_by => 1337)
+      post.external_document_updated_at.should_not be_nil
+    end
+
+    it "marks a post as conflicted if post has an external document newer than the document" do
+      post = Post.create!(:uid => "post:a.b.c", :document => {:title => "the quick brown fox"}, :created_by => 1337)
+      Timecop.freeze(Date.today + 1) do
+        post.external_document = {:title => "jumps over the lazy dog"}
+        post.external_document_updated_at.to_i.should be > post.document_updated_at.to_i
+        post.conflicted?.should be_true
+      end
+    end
+
+    it "doesn't mark a post as conflicted if there's no external document" do
+      post = Post.create!(:uid => "post:a.b.c", :document => {:title => "the quick brown fox"}, :created_by => 1337)
+      post.conflicted?.should be_false
+    end
+
+    it "doesn't mark a post as conflicted if there's only an external document" do
+      post = Post.create!(:uid => "post:a.b.c", :external_document => {:title => "the quick brown fox"}, :created_by => 1337)
+      post.conflicted?.should be_false
+    end
+  end
 
 end
