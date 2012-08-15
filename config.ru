@@ -12,5 +12,6 @@ use Rack::CommonLogger
 map "/api/grove/v1" do
   use Rack::PostBodyContentTypeParser
   use Rack::MethodOverride
+  use Pebbles::Cors
   run GroveV1
 end
