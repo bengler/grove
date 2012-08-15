@@ -211,10 +211,10 @@ describe Post do
 
   end
 
-  context "Imported/external documents" do
+  context "Moderation of external documents" do
     it "returns the external_document attribute if the document attribute is not set" do
       post = Post.create!(:uid => "post:some.ext.thing", :external_document => {:title => "the quick brown fox"}, :created_by => 1337)
-      post.document[:title].should eq "the quick brown fox"
+      post.moderated_document[:title].should eq "the quick brown fox"
     end
 
     it "merges document into external_document with key/value pairs from document overriding external_document pairs" do
@@ -225,7 +225,7 @@ describe Post do
 
       post.document = {:brown => "coyote"}
 
-      post.document.should eq(:brown => "coyote", :lazy => "dog")
+      post.moderated_document.should eq(:brown => "coyote", :lazy => "dog")
     end
 
     it "keeps track of when the document was last updated" do
@@ -238,23 +238,34 @@ describe Post do
       post.external_document_updated_at.should_not be_nil
     end
 
-    it "marks a post as conflicted if post has an external document newer than the document" do
+    it "marks a post as conflicted if post has an external document newer than the document and document overrides any of its keys" do
       post = Post.create!(:uid => "post:a.b.c", :document => {:title => "the quick brown fox"}, :created_by => 1337)
       Timecop.freeze(Date.today + 1) do
         post.external_document = {:title => "jumps over the lazy dog"}
         post.external_document_updated_at.to_i.should be > post.document_updated_at.to_i
-        post.conflicted?.should be_true
+        post.save
+        post.conflicted.should be_true
       end
     end
 
     it "doesn't mark a post as conflicted if there's no external document" do
       post = Post.create!(:uid => "post:a.b.c", :document => {:title => "the quick brown fox"}, :created_by => 1337)
-      post.conflicted?.should be_false
+      post.conflicted.should be_false
     end
 
     it "doesn't mark a post as conflicted if there's only an external document" do
       post = Post.create!(:uid => "post:a.b.c", :external_document => {:title => "the quick brown fox"}, :created_by => 1337)
-      post.conflicted?.should be_false
+      post.conflicted.should be_false
+    end
+
+    it "mark a post as conflicted only if keys in document are also in external_document" do
+      post = Post.create!(:uid => "post:a.b.c", :document => {:brown => "fox"}, :created_by => 1337)
+      Timecop.freeze(Date.today + 1) do
+        post.external_document = {:lazy => "dog"}
+        post.external_document_updated_at.to_i.should be > post.document_updated_at.to_i
+        post.save
+        post.conflicted.should be_false
+      end
     end
   end
 

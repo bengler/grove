@@ -9,9 +9,10 @@ class Post < ActiveRecord::Base
 
   validate :canonical_path_must_be_valid
   validates_format_of :klass, :with => /^post(\.|$)/
-
-  before_save :sanitize
   before_validation :assign_realm, :set_default_klass
+
+  before_save :mark_conflicted
+  before_save :sanitize
   before_save :attach_canonical_path
   before_save :update_readmarks_according_to_deleted_status
   after_update :invalidate_cache
@@ -71,10 +72,6 @@ class Post < ActiveRecord::Base
     new_record? || identity.god || created_by == identity.id
   end
 
-  def conflicted?
-    !!(external_document_updated_at && document_updated_at) && external_document_updated_at > document_updated_at
-  end
-
   def external_document=(external_document)
     write_attribute("external_document", external_document)
     self.external_document_updated_at = Time.now
@@ -85,8 +82,7 @@ class Post < ActiveRecord::Base
     self.document_updated_at = Time.now
   end
 
-  def document
-    document = read_attribute("document")
+  def moderated_document
     return external_document if document.nil?
     return document unless document.is_a? Hash # todo: consider removing (see discussion here: https://github.com/benglerpebbles/grove/issues/42)
     return external_document.merge(document) if external_document.is_a? Hash
@@ -225,6 +221,13 @@ class Post < ActiveRecord::Base
 
   def decrement_unread_counts(location)
     Readmark.post_removed(location.path.to_s, self.id) unless self.deleted?
+  end
+
+  def mark_conflicted
+    return if document.nil? or external_document.nil?
+    overridden_fields = external_document.keys & document.keys
+    self.conflicted = (external_document_updated_at > document_updated_at and overridden_fields.any?)
+    true
   end
 
   def update_readmarks_according_to_deleted_status

@@ -140,7 +140,8 @@ CREATE TABLE posts (
     restricted boolean DEFAULT false,
     document_updated_at timestamp without time zone,
     external_document_updated_at timestamp without time zone,
-    external_document text
+    external_document text,
+    conflicted boolean DEFAULT false NOT NULL
 );
 
 

@@ -1,6 +1,6 @@
 node :post => mypost do
-  attributes :uid, :created_by, :document, :created_at, :updated_at, :tags, :external_id, :paths, :restricted
+  attributes :uid, :created_by, :created_at, :updated_at, :tags, :external_id, :paths, :restricted, :conflicted
   node :id => mypost.uid
+  node :document => mypost.moderated_document
   node :may_edit => mypost.editable_by?(current_identity)
-  node :conflicted => mypost.conflicted?
 end
