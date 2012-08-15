@@ -214,7 +214,7 @@ describe Post do
   context "Moderation of external documents" do
     it "returns the external_document attribute if the document attribute is not set" do
       post = Post.create!(:uid => "post:some.ext.thing", :external_document => {:title => "the quick brown fox"}, :created_by => 1337)
-      post.moderated_document[:title].should eq "the quick brown fox"
+      post.merged_document[:title].should eq "the quick brown fox"
     end
 
     it "merges document into external_document with key/value pairs from document overriding external_document pairs" do
@@ -225,7 +225,7 @@ describe Post do
 
       post.document = {:brown => "coyote"}
 
-      post.moderated_document.should eq(:brown => "coyote", :lazy => "dog")
+      post.merged_document.should eq(:brown => "coyote", :lazy => "dog")
     end
 
     it "keeps track of when the document was last updated" do

@@ -11,7 +11,7 @@ class Post < ActiveRecord::Base
   validates_format_of :klass, :with => /^post(\.|$)/
   before_validation :assign_realm, :set_default_klass
 
-  before_save :mark_conflicted
+  before_save :update_conflicted
   before_save :sanitize
   before_save :attach_canonical_path
   before_save :update_readmarks_according_to_deleted_status
@@ -82,7 +82,7 @@ class Post < ActiveRecord::Base
     self.document_updated_at = Time.now
   end
 
-  def moderated_document
+  def merged_document
     return external_document if document.nil?
     return document unless document.is_a? Hash # todo: consider removing (see discussion here: https://github.com/benglerpebbles/grove/issues/42)
     return external_document.merge(document) if external_document.is_a? Hash
@@ -223,7 +223,7 @@ class Post < ActiveRecord::Base
     Readmark.post_removed(location.path.to_s, self.id) unless self.deleted?
   end
 
-  def mark_conflicted
+  def update_conflicted
     return if document.nil? or external_document.nil?
     overridden_fields = external_document.keys & document.keys
     self.conflicted = (external_document_updated_at > document_updated_at and overridden_fields.any?)
