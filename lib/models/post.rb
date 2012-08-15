@@ -84,8 +84,7 @@ class Post < ActiveRecord::Base
 
   def merged_document
     return external_document if document.nil?
-    return document unless document.is_a? Hash # todo: consider removing (see discussion here: https://github.com/benglerpebbles/grove/issues/42)
-    return external_document.merge(document) if external_document.is_a? Hash
+    return external_document.merge(document) unless external_document.nil?
     document
   end
 
