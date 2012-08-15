@@ -37,7 +37,7 @@ describe "API v1 posts" do
       end
 
       it "sets the restricted flag" do
-        post "/posts/post:a.b.c", :post => {:document => "restricted document", :restricted => true}
+        post "/posts/post:a.b.c", :post => {:document => {:title => "restricted document"}, :restricted => true}
         Post.first.restricted.should eq true
       end
 
@@ -137,7 +137,7 @@ describe "API v1 posts" do
 
     describe "PUT /posts/:uid" do
       it "returns 404 if the document doesn't exists" do
-        put "/posts/post:a.b.c", :post => {:document => {content: "hello world"}}
+        put "/posts/post:a.b.c", :post => {:document => {:content => "hello world"}}
         last_response.status.should eq 404
       end
       it "updates a document" do
