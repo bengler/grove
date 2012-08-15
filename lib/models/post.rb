@@ -11,6 +11,7 @@ class Post < ActiveRecord::Base
   validates_format_of :klass, :with => /^post(\.|$)/
   before_validation :assign_realm, :set_default_klass
 
+  before_save :revert_unmodified_values
   before_save :update_conflicted
   before_save :sanitize
   before_save :attach_canonical_path
@@ -220,6 +221,13 @@ class Post < ActiveRecord::Base
 
   def decrement_unread_counts(location)
     Readmark.post_removed(location.path.to_s, self.id) unless self.deleted?
+  end
+
+  def revert_unmodified_values
+    # When updating a Post that has an external_document, make sure only the actual *changed* (overridden)
+    # fields are kept in the `document` hash.
+    return if document.nil? or external_document.nil?
+    document.reject! { |key, value| external_document[key] == value }
   end
 
   def update_conflicted

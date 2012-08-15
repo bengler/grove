@@ -258,6 +258,15 @@ describe Post do
       post.conflicted.should be_false
     end
 
+    it "keeps only modified versions of keys in external_document" do
+      post = Post.create!(:uid => "post:a.b.c", :external_document => {:quick => "fox", :lazy => "dog"}, :created_by => 1337)
+      post.document = {:quick => "coyote", :lazy => "dog"}
+      post.save
+      post.document.should eq({:quick => "coyote"})
+      post.merged_document.should eq({:quick => "coyote", :lazy => "dog"})
+      post.external_document.should eq({:quick => "fox", :lazy => "dog"})
+    end
+
     it "mark a post as conflicted only if keys in document are also in external_document" do
       post = Post.create!(:uid => "post:a.b.c", :document => {:brown => "fox"}, :created_by => 1337)
       Timecop.freeze(Date.today + 1) do
