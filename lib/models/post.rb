@@ -9,9 +9,11 @@ class Post < ActiveRecord::Base
 
   validate :canonical_path_must_be_valid
   validates_format_of :klass, :with => /^post(\.|$)/
-
-  before_save :sanitize
   before_validation :assign_realm, :set_default_klass
+
+  before_save :revert_unmodified_values
+  before_save :update_conflicted
+  before_save :sanitize
   before_save :attach_canonical_path
   before_save :update_readmarks_according_to_deleted_status
   after_update :invalidate_cache
@@ -21,6 +23,7 @@ class Post < ActiveRecord::Base
 
   include TsVectorTags
   serialize :document
+  serialize :external_document
 
   scope :by_path, lambda { |path|
     select("distinct posts.*").joins(:locations).where(:locations => PebblePath.to_conditions(path)) unless path == '*'
@@ -68,6 +71,22 @@ class Post < ActiveRecord::Base
 
   def may_be_managed_by?(identity)
     new_record? || identity.god || created_by == identity.id
+  end
+
+  def external_document=(external_document)
+    write_attribute("external_document", external_document)
+    self.external_document_updated_at = Time.now
+  end
+
+  def document=(document)
+    write_attribute("document", document)
+    self.document_updated_at = Time.now
+  end
+
+  def merged_document
+    return external_document if document.nil?
+    return external_document.merge(document) unless external_document.nil?
+    document
   end
 
   def uid
@@ -172,7 +191,7 @@ class Post < ActiveRecord::Base
   def sanitize
     return unless self.document.is_a?(Hash)
     ['text', 'author_name', 'email'].each do |field|
-      self.document[field] = Sanitize.clean(self.document[field])
+      self.document[field] = Sanitize.clean(self.document[field]) if self.document.has_key?(field)
     end
     self.document['text'] = self.document['text'][0..139] unless self.document['text'].nil?
   end
@@ -202,6 +221,20 @@ class Post < ActiveRecord::Base
 
   def decrement_unread_counts(location)
     Readmark.post_removed(location.path.to_s, self.id) unless self.deleted?
+  end
+
+  def revert_unmodified_values
+    # When updating a Post that has an external_document, make sure only the actual *changed* (overridden)
+    # fields are kept in the `document` hash.
+    return if document.nil? or external_document.nil?
+    document.reject! { |key, value| external_document[key] == value }
+  end
+
+  def update_conflicted
+    return if document.nil? or external_document.nil?
+    overridden_fields = external_document.keys & document.keys
+    self.conflicted = (external_document_updated_at > document_updated_at and overridden_fields.any?)
+    true
   end
 
   def update_readmarks_according_to_deleted_status

@@ -2,9 +2,6 @@
   "post": {
     "uid": "post.salutation:a.b.c$42",
     "created_by": 1,
-    "document": {
-      "title": "Hello cowboy"
-    },
     "created_at": "2011-02-07T19:28:18+01:00",
     "updated_at": "2011-02-07T19:28:18+01:00",
     "tags": [
@@ -15,20 +12,25 @@
       "a.b.c"
     ],
     "restricted": false,
+    "conflicted": false,
     "id": "post.salutation:a.b.c$42",
+    "document": {
+      "title": "Hello cowboy"
+    },
     "may_edit": false
   },
   "changes": {
     "document": {
       "was": {
-        "title": "Hello spaceboy",
-        "text": null,
-        "author_name": null,
-        "email": null
+        "title": "Hello spaceboy"
       },
       "becomes": {
         "title": "Hello cowboy"
       }
+    },
+    "document_updated_at": {
+      "was": "2011-02-07T19:28:18+01:00",
+      "becomes": "2011-02-07T19:28:18+01:00"
     }
   }
 }
