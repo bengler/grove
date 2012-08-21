@@ -64,7 +64,7 @@ class GroveV1 < Sinatra::Base
     require_identity
 
     @post = Post.find_by_uid(uid)
-    halt 404, "No such post" unless @post
+    halt 404, "No post with uid #{uid}" unless @post
 
     unless @post.may_be_managed_by?(current_identity)
       halt 403, "Post is owned by a different user (#{@post.created_by})"
