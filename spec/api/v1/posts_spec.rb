@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'spec_helper'
 
 describe "API v1 posts" do
@@ -32,7 +33,7 @@ describe "API v1 posts" do
       end
 
       it "creates a tagged document" do
-        post "/posts/post:a.b.c", :post => {:document => "taggable", :tags => "paris, texas"}
+        post "/posts/post:a.b.c", :post => {:document => "taggable", :tags => "paris, texas∞"}
         Post.first.tags.should eq ['paris', 'texas']
       end
 
