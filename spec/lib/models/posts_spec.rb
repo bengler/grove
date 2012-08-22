@@ -1,3 +1,5 @@
+require 'cache_key'
+require 'cache_keychain'
 require 'spec_helper'
 
 describe Post do
