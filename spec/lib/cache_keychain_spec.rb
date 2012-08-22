@@ -20,7 +20,6 @@ describe CacheKeychain do
   it "marks a key" do
     subject.mark 'post.doc:*$1337'
     subject.unmarked.should eq(haste_key => haste, card_key => card)
-    subject.marked.should eq(doc_key => doc)
   end
 
   it "marks keys" do

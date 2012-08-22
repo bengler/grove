@@ -13,7 +13,7 @@ class CacheKeychain
     @marked_keys = []
 
     uids.each do |uid|
-      @data[CacheKey.from_uid(uid)] = uid
+      @key_to_uid_map[CacheKey.from_uid(uid)] = uid
     end
   end
 
@@ -27,7 +27,7 @@ class CacheKeychain
   def unmarked
     result = {}
     (keys - marked_keys).each do |key|
-      result[key] = data[key]
+      result[key] = @key_to_uid_map[key]
     end
     result
   end
@@ -35,7 +35,6 @@ class CacheKeychain
   def keys
     @key_to_uid_map.keys
   end
-
 
   private
   def marked_keys
