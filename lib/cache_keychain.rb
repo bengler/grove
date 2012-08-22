@@ -1,37 +1,46 @@
+# Maps cache keys to uids in order to mediate
+# storage and retrieval from cache for a collection
+# of uids.
+#
+# This is necessary because many different uids
+# point to the same object (due to alternate path
+# semantics).
+#
 class CacheKeychain
 
-  attr_reader :data, :marks
   def initialize(uids)
-    @data = {}
-    @marks = []
+    @key_to_uid_map = {}
+    @marked_keys = []
 
     uids.each do |uid|
       @data[CacheKey.from_uid(uid)] = uid
     end
   end
 
-  def keys
-    @data.keys
+  # Marking one or more cache key as seen.
+  def mark(cache_keys)
+    @marked_keys += Array(cache_keys)
   end
 
-  def mark(keys)
-    @marks += Array(keys)
-  end
-
+  # Returns a map of {cache_key => uid} for those
+  # items which have not been marked as seen.
   def unmarked
     result = {}
-    (keys - marks).each do |key|
+    (keys - marked_keys).each do |key|
       result[key] = data[key]
     end
     result
   end
 
-  def marked
-    result = {}
-    marks.each do |key|
-      result[key] = data[key]
-    end
-    result
+  def keys
+    @key_to_uid_map.keys
   end
+
+
+  private
+  def marked_keys
+    @marked_keys
+  end
+
 
 end
