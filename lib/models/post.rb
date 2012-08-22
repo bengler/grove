@@ -1,7 +1,4 @@
 # encoding: utf-8
-require 'cache_key'
-require 'cache_keychain'
-
 class Post < ActiveRecord::Base
   class CanonicalPathConflict < StandardError; end
 
