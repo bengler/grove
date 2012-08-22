@@ -2,6 +2,9 @@
 class Post < ActiveRecord::Base
   class CanonicalPathConflict < StandardError; end
 
+  include TsVectorTags
+  include CacheKey
+
   has_and_belongs_to_many :locations, :uniq => true,
     :after_add => :increment_unread_counts,
     :after_remove => :decrement_unread_counts
@@ -22,7 +25,6 @@ class Post < ActiveRecord::Base
 
   default_scope where("not deleted")
 
-  include TsVectorTags
   serialize :document
   serialize :external_document
 
@@ -117,20 +119,23 @@ class Post < ActiveRecord::Base
 
   def self.cached_find_all_by_uid(uids)
     raise ArgumentError, "No wildcards allowed" if uids.join =~ /[\*\|]/
+
+    keychain = CacheKeychain.new(uids)
+
     result =  Hash[
-      $memcached.get_multi(*SchemaVersion.tag_keys(uids)).map do |key, value|
+      $memcached.get_multi(*SchemaVersion.tag_keys(keychain.keys)).map do |key, value|
         post = Post.instantiate(Yajl::Parser.parse(value))
         post.readonly!
         [SchemaVersion.untag_key(key), post]
       end
     ]
-    uncached = uids-result.keys
-    uncached.each do |uid|
+    keychain.mark result.keys
+    keychain.unmarked.each do |key, uid|
       post = Post.find_by_uid(uid)
-      $memcached.set(SchemaVersion.tag_key(uid), post.attributes.to_json) if post
-      result[uid] = post
+      $memcached.set(SchemaVersion.tag_key(key), post.attributes.to_json) if post
+      result[key] = post
     end
-    uids.map{|uid| result[uid]}
+    keychain.keys.map {|key| result[key]}
   end
 
   # TODO: When we have multiple versions of the api, we will need to
@@ -185,7 +190,7 @@ class Post < ActiveRecord::Base
   private
 
   def invalidate_cache
-    $memcached.delete(SchemaVersion.tag_key(self.uid))
+    $memcached.delete(SchemaVersion.tag_key(self.cache_key))
   end
 
   # TODO: Replace with something general. This is an ugly hack to make dittforslag.no scripthacking-safe.
