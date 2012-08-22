@@ -185,7 +185,7 @@ class Post < ActiveRecord::Base
   private
 
   def invalidate_cache
-    $memcached.delete(SchemaVersion.tag_key(self.oid))
+    $memcached.delete(SchemaVersion.tag_key(self.uid))
   end
 
   # TODO: Replace with something general. This is an ugly hack to make dittforslag.no scripthacking-safe.
