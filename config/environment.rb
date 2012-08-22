@@ -1,6 +1,5 @@
 require File.expand_path('config/site.rb') if File.exists?('config/site.rb')
 $:.unshift(File.expand_path(File.join(File.dirname(__FILE__), '..')))
-$:.unshift(File.expand_path(File.join(File.dirname(__FILE__), '../lib')))
 
 require "bundler"
 Bundler.require
