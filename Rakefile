@@ -21,7 +21,7 @@ namespace :bagera do
         LOGGER.warn "Error publishing post to river."
         LOGGER.error e
       else
-        LOGGER.debug "Published #{post.uid} to river with fake 'create' event."
+        LOGGER.info "Published #{post.uid} to river with fake 'create' event."
       end
     end
 
