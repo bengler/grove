@@ -42,6 +42,18 @@ class Post < ActiveRecord::Base
     scope
   }
 
+  scope :by_occurrence, lambda { |label|
+    joins(:occurrence_entries).where(:occurrence_entries => {:label => label})
+  }
+
+  scope :occurs_after, lambda { |timestamp|
+    where("occurrence_entries.at >= ?", timestamp)
+  }
+
+  scope :occurs_before, lambda { |timestamp|
+    where("occurrence_entries.at < ?", timestamp)
+  }
+
   scope :filtered_by, lambda { |filters|
     scope = relation
     scope = scope.where(:realm => filters['realm']) if filters['realm']

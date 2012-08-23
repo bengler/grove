@@ -55,4 +55,19 @@ describe Post::OccurrencesAccessor do
     s = Post.find(p)
     s.occurrences.keys.size.should eq 0
   end
+
+  it "can select posts with a specific occurrence type" do
+    Post.create!(:uid => "post:a.b.c", :occurrences => {:odd => [time]})
+    Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [time]})
+    Post.by_occurrence('due').count.should eq 1
+    Post.by_occurrence('strange').count.should eq 0
+  end
+
+  it "can limit occurrence selection by time range" do
+    Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [time]})
+    Post.by_occurrence('due').occurs_before(time-1).count.should eq 0
+    Post.by_occurrence('due').occurs_before(time+1).count.should eq 1
+    Post.by_occurrence('due').occurs_after(time-1).count.should eq 1
+    Post.by_occurrence('due').occurs_after(time+1).count.should eq 0
+  end
 end
