@@ -113,7 +113,7 @@ class GroveV1 < Sinatra::Base
       @posts = Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity)
       @posts = apply_occurrence_scope(@posts, params['occurrence'])
       direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
-      @posts = @posts.order("created_at #{direction}")
+      @posts = @posts.order("posts.created_at #{direction}")
       @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
       pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => @pagination}
     else

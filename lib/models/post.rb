@@ -43,7 +43,7 @@ class Post < ActiveRecord::Base
   }
 
   scope :by_occurrence, lambda { |label|
-    joins(:occurrence_entries).where(:occurrence_entries => {:label => label})
+    select('posts.*').select('occurrence_entries.at').joins(:occurrence_entries).where(:occurrence_entries => {:label => label})
   }
 
   scope :occurs_after, lambda { |timestamp|
