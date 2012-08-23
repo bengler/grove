@@ -33,7 +33,7 @@ describe "API v1 posts" do
       end
 
       it "creates a tagged document" do
-        post "/posts/post:a.b.c", :post => {:document => {"text" => "taggable"}, :tags => "paris, texas∞"}
+        post "/posts/post:a.b.c", :post => {:document => {'text' => "taggable"}, :tags => "paris, texas∞"}
         Post.first.tags.should eq ['paris', 'texas']
       end
 
@@ -192,9 +192,9 @@ describe "API v1 posts" do
 
       it "retrieves a collection of documents" do
         10.times do |i|
-          Post.create!(:uid => "post:a.b.c", :document => {"n" => i.to_s})
+          Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})
         end
-        Post.create!(:uid => "post:a.b.d", :document => {"text" => "a"})
+        Post.create!(:uid => "post:a.b.d", :document => {'text' => "a"})
         get "/posts/post:*"
         result = JSON.parse(last_response.body)
         result['posts'].size.should eq 11
@@ -204,13 +204,13 @@ describe "API v1 posts" do
         get "/posts/post:a.b.c#{CGI.escape('|')}d"
         result = JSON.parse(last_response.body)
         result['posts'].size.should eq 11
-        result['posts'].first['post']['document'].should eq('a' => 'b')
+        result['posts'].first['post']['document'].should eq('text' => 'a')
         result['posts'].last['post']['document'].should eq('text' => '0')
 
         get "/posts/post:*", :limit => 2
         result = JSON.parse(last_response.body)
         result['posts'].size.should eq 2
-        result['posts'].first['post']['document'].should eq('a' => 'b')
+        result['posts'].first['post']['document'].should eq('text' => 'a')
         result['posts'].last['post']['document'].should eq('text' => '9')
 
         get "/posts/post:a.b.*"
