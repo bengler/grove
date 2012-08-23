@@ -83,6 +83,24 @@ class GroveV1 < Sinatra::Base
     [200, "Ok"]
   end
 
+  # To request documents with a specific occurrence, an occurrence spec can
+  # be provided to the search api. The typical occurrence spec looks something like
+  # this:
+  #    :occurrence =>
+  #      :label => 'start_time',
+  #      :from => '2012-1-1',
+  #      :order => 'asc'
+  def apply_occurrence_scope(scope, spec)
+    return scope unless spec
+    halt 400, "Occurrence label must be specified" unless spec['label']
+    scope = scope.by_occurrence(spec['label'])
+    scope = scope.occurs_after(Time.parse(spec['from'])) if spec['from']
+    scope = scope.occurs_before(Time.parse(spec['to'])) if spec['to']
+    direction = spec['order'].try(:downcase) == 'desc' ? 'DESC' : 'ASC'
+    scope = scope.order("occurrence_entries.at #{direction}")
+    scope
+  end
+
   get "/posts/:uid" do |uid|
     klass, path, oid = Pebblebed::Uid.raw_parse(uid)
     if uid =~ /\,/
@@ -93,6 +111,7 @@ class GroveV1 < Sinatra::Base
     elsif oid == '*' || oid == '' || oid.nil?
       # Retrieve a collection by wildcards
       @posts = Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity)
+      @posts = apply_occurrence_scope(@posts, params['occurrence'])
       direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
       @posts = @posts.order("created_at #{direction}")
       @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])

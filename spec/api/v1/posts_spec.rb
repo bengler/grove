@@ -259,6 +259,22 @@ describe "API v1 posts" do
         JSON.parse(last_response.body)['posts'].size.should eq 3
       end
 
+      it "filters by occurrence" do
+        time = Time.now
+        Post.create!(:uid => "post:a.b.c", :occurrences => {:start_time => [time]})
+        Post.create!(:uid => "post:a.b.c", :occurrences => {:strange_time => [time]})
+        get "/posts/*:*", :occurrence => {:label => 'start_time'}
+        JSON.parse(last_response.body)['posts'].size.should eq 1
+        get "/posts/*:*", :occurrence => {:label => 'start_time', :from => time+1}
+        JSON.parse(last_response.body)['posts'].size.should eq 0
+        get "/posts/*:*", :occurrence => {:label => 'start_time', :from => time-1}
+        JSON.parse(last_response.body)['posts'].size.should eq 1
+        get "/posts/*:*", :occurrence => {:label => 'start_time', :to => time-1}
+        JSON.parse(last_response.body)['posts'].size.should eq 0
+        get "/posts/*:*", :occurrence => {:label => 'start_time', :to => time+1}
+        JSON.parse(last_response.body)['posts'].size.should eq 1
+      end
+
       it "pages through documents" do
         20.times do |i|
           Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})
