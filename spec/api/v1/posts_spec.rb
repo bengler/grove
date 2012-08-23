@@ -33,7 +33,7 @@ describe "API v1 posts" do
       end
 
       it "creates a tagged document" do
-        post "/posts/post:a.b.c", :post => {:document => "taggable", :tags => "paris, texas∞"}
+        post "/posts/post:a.b.c", :post => {:document => {"text" => "taggable"}, :tags => "paris, texas∞"}
         Post.first.tags.should eq ['paris', 'texas']
       end
 
@@ -192,26 +192,26 @@ describe "API v1 posts" do
 
       it "retrieves a collection of documents" do
         10.times do |i|
-          Post.create!(:uid => "post:a.b.c", :document => i.to_s)
+          Post.create!(:uid => "post:a.b.c", :document => {"n" => i.to_s})
         end
-        Post.create!(:uid => "post:a.b.d", :document => "a")
+        Post.create!(:uid => "post:a.b.d", :document => {"text" => "a"})
         get "/posts/post:*"
         result = JSON.parse(last_response.body)
         result['posts'].size.should eq 11
-        result['posts'].first['post']['document'].should eq 'a'
-        result['posts'].last['post']['document'].should eq '0'
+        result['posts'].first['post']['document'].should eq('text' => 'a')
+        result['posts'].last['post']['document'].should eq('text' => '0')
 
         get "/posts/post:a.b.c#{CGI.escape('|')}d"
         result = JSON.parse(last_response.body)
         result['posts'].size.should eq 11
-        result['posts'].first['post']['document'].should eq 'a'
-        result['posts'].last['post']['document'].should eq '0'
+        result['posts'].first['post']['document'].should eq('a' => 'b')
+        result['posts'].last['post']['document'].should eq('text' => '0')
 
         get "/posts/post:*", :limit => 2
         result = JSON.parse(last_response.body)
         result['posts'].size.should eq 2
-        result['posts'].first['post']['document'].should eq 'a'
-        result['posts'].last['post']['document'].should eq '9'
+        result['posts'].first['post']['document'].should eq('a' => 'b')
+        result['posts'].last['post']['document'].should eq('text' => '9')
 
         get "/posts/post:a.b.*"
         result = JSON.parse(last_response.body)
@@ -237,12 +237,12 @@ describe "API v1 posts" do
       end
 
       it "filters by external_id" do
-        Post.create!(:uid => "post:a.b.c", :external_id => 'abc', :document => '1')
-        Post.create!(:uid => "post:a.b.c", :external_id => 'pqr', :document => '2')
+        Post.create!(:uid => "post:a.b.c", :external_id => 'abc', :document => {'text' => '1'})
+        Post.create!(:uid => "post:a.b.c", :external_id => 'pqr', :document => {'text' => '2'})
         get "/posts/*:*", :external_id => 'abc'
-        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq '1'
+        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq('text' => '1')
         get "/posts/*:*", :external_id => 'pqr'
-        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq '2'
+        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq('text' => '2')
       end
 
       it "filters on klass path" do
@@ -261,14 +261,13 @@ describe "API v1 posts" do
 
       it "pages through documents" do
         20.times do |i|
-          Post.create!(:uid => "post:a.b.c", :document => i.to_s)
+          Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})
         end
-
         get "/posts/post:*", :limit => 10, :offset => 2
         result = JSON.parse(last_response.body)
         result['posts'].size.should eq 10
-        result['posts'].first['post']['document'].should eq "17"
-        result['posts'].last['post']['document'].should eq "8"
+        result['posts'].first['post']['document'].should eq('text' => "17")
+        result['posts'].last['post']['document'].should eq('text' => "8")
         result['pagination']['last_page'].should be_false
         result['pagination']['limit'].should eq 10
         result['pagination']['offset'].should eq 2
@@ -276,8 +275,8 @@ describe "API v1 posts" do
         get "/posts/post:*", :limit => 10, :offset => 15
         result = JSON.parse(last_response.body)
         result['posts'].size.should eq 5
-        result['posts'].first['post']['document'].should eq "4"
-        result['posts'].last['post']['document'].should eq "0"
+        result['posts'].first['post']['document'].should eq('text' => "4")
+        result['posts'].last['post']['document'].should eq('text' => "0")
         result['pagination']['last_page'].should be_true
         result['pagination']['limit'].should eq 10
         result['pagination']['offset'].should eq 15
@@ -285,8 +284,8 @@ describe "API v1 posts" do
 
       it "can only read restricted posts created by current user" do
         posts = []
-        posts << Post.create!(:uid => "post:a.b.c", :created_by => 1337, :document => 'xyzzy', :restricted => true)
-        posts << Post.create!(:uid => "post:a.b.d", :created_by => 1, :document => 'zippo', :restricted => true)
+        posts << Post.create!(:uid => "post:a.b.c", :created_by => 1337, :document => {'text' => 'xyzzy'}, :restricted => true)
+        posts << Post.create!(:uid => "post:a.b.d", :created_by => 1, :document => {'text' => 'zippo'}, :restricted => true)
         get "/posts/#{[posts.map(&:uid)].join(',')}"
         result = JSON.parse(last_response.body)['posts']
         result.size.should eq 2
@@ -317,7 +316,7 @@ describe "API v1 posts" do
     describe "DELETE /posts/:uid" do
 
       it "deletes a document and removes it from cache" do
-        post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => '1', :created_by => 1337)
+        post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 1337)
         get "/posts/#{post.uid}"
         last_response.status.should be 200
         delete "/posts/#{post.uid}"
@@ -327,7 +326,7 @@ describe "API v1 posts" do
       end
 
       it "cannot delete someone elses document" do
-        post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => '1', :created_by => 666)
+        post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 666)
         delete "/posts/#{post.uid}"
         last_response.status.should be 403
       end
@@ -336,7 +335,7 @@ describe "API v1 posts" do
     describe "POST /posts/:uid/undelete" do
 
       it "cannot undelete a document" do
-        post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => '1', :created_by => 1337, :deleted => true)
+        post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 1337, :deleted => true)
         post "/posts/#{post.uid}/undelete"
         last_response.status.should be 403
       end
@@ -346,11 +345,11 @@ describe "API v1 posts" do
 
       it "counts" do
         20.times do |i|
-          Post.create!(:uid => "post:a.b.c", :document => i.to_s)
+          Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})
         end
         Post.create!(:uid => "post:a.b.c", :document => "deleted", :deleted => true)
         10.times do |i|
-          Post.create!(:uid => "post:a.c.c", :document => i.to_s)
+          Post.create!(:uid => "post:a.c.c", :document => {'text' => i.to_s})
         end
         get "/posts/post:a.b.*$*/count"
         JSON.parse(last_response.body)['count'].should eq 20
@@ -359,7 +358,7 @@ describe "API v1 posts" do
 
     describe "POST /posts/:uid/paths/:path" do
       it "adds a path" do
-        p = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => '1', :created_by => 10)
+        p = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 10)
 
         post "/posts/#{p.uid}/paths/a.b.d"
 
@@ -369,7 +368,7 @@ describe "API v1 posts" do
       end
 
       it "doesn't try to add a path twice" do
-        p = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => '1', :created_by => 10)
+        p = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 10)
 
         post "/posts/#{p.uid}/paths/a.b.d"
         post "/posts/#{p.uid}/paths/a.b.d"
@@ -529,7 +528,7 @@ describe "API v1 posts" do
     end
 
     it "can undelete a document" do
-      post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => '1', :created_by => 10)
+      post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 10)
       get "/posts/#{post.uid}"
       last_response.status.should eq 200
       delete "/posts/#{post.uid}"
@@ -542,15 +541,15 @@ describe "API v1 posts" do
     end
 
     it "can read restricted documents" do
-      Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => 'xyzzy', :restricted => true)
+      Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'xyzzy'}, :restricted => true)
       get "/posts/post:a.b.c"
       result = JSON.parse(last_response.body)['posts']
       result.size.should eq 1
     end
 
     it "can update a document created by another user without modifying created_by field" do
-      p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => "Hello spaceboy")
-      post "/posts/#{p.uid}", :post => {:document => "hello nobody"}
+      p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => "Hello spaceboy"})
+      post "/posts/#{p.uid}", :post => {:document => {'text' => "hello nobody"}}
       last_response.status.should eq 200
       result = JSON.parse(last_response.body)['post']
       result['created_by'].should eq 1
@@ -572,7 +571,7 @@ describe "API v1 posts" do
     end
 
     it "cannot read restricted documents" do
-      Post.create!(:uid => "post:a.b.c", :created_by => 3, :document => 'xyzzy', :restricted => true)
+      Post.create!(:uid => "post:a.b.c", :created_by => 3, :document => {'text' => 'xyzzy'}, :restricted => true)
       get "/posts/post:a.b.c"
       result = JSON.parse(last_response.body)['posts']
       result.size.should eq 0
