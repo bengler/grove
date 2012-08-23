@@ -56,14 +56,14 @@ describe "API v1 posts" do
       end
 
       it "can't update a deleted document" do
-        p = Post.create!(:uid => "post:a.b.c", :document => '1', :created_by => 1337, :deleted => true)
-        post "/posts/#{p.uid}", :post => {:document => '2'}
+        p = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => 1337, :deleted => true)
+        post "/posts/#{p.uid}", :post => {:document => {'text' => '2'}}
         last_response.status.should eq 404
       end
 
       it "can't update a deleted external document" do
-        p = Post.create!(:uid => "post:a.b.c", :document => '1', :created_by => 1337, :deleted => true, :external_id => '123')
-        post "/posts/#{p.uid}", :post => {:document => '2', :external_id => '123'}
+        p = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => 1337, :deleted => true, :external_id => '123')
+        post "/posts/#{p.uid}", :post => {:document => {'text' => '2'}, :external_id => '123'}
         last_response.status.should eq 404
       end
 
@@ -161,13 +161,13 @@ describe "API v1 posts" do
       end
 
       it "retrieves a tagged document" do
-        Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => '1')
-        Post.create!(:uid => "post:a.b.c", :tags => ["paris", "texas"], :document => '2')
-        Post.create!(:uid => "post:a.b.c", :tags => ["lyon", "france"], :document => '3')
+        Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'})
+        Post.create!(:uid => "post:a.b.c", :tags => ["paris", "texas"], :document => {'text' => '2'})
+        Post.create!(:uid => "post:a.b.c", :tags => ["lyon", "france"], :document => {'text' => '3'})
         get "/posts/post:*", :tags => "texas"
         result = JSON.parse(last_response.body)['posts']
         result.size.should eq 1
-        result.first['post']['document'].should eq "2"
+        result.first['post']['document'].should eq('text' => "2")
 
         get "/posts/post:*", :tags => "paris"
         result = JSON.parse(last_response.body)['posts']
@@ -180,7 +180,7 @@ describe "API v1 posts" do
 
       it "retrieves a list of documents" do
         10.times do |i|
-          Post.create!(:uid => "post:a.b.c", :document => i.to_s)
+          Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})
         end
         posts = Post.limit(3).order('created_at desc').all
         get "/posts/#{[posts.map(&:uid), "post:does.not.exist$99999999"].flatten.join(',')}"
@@ -228,12 +228,12 @@ describe "API v1 posts" do
       end
 
       it "filters by creator" do
-        Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => '1')
-        Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => '2')
+        Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => '1'})
+        Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => '2'})
         get "/posts/*:*", :created_by => 1
-        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq '1'
+        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq('text' => '1')
         get "/posts/*:*", :created_by => 2
-        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq '2'
+        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq('text' => '2')
       end
 
       it "filters by external_id" do
@@ -347,7 +347,7 @@ describe "API v1 posts" do
         20.times do |i|
           Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})
         end
-        Post.create!(:uid => "post:a.b.c", :document => "deleted", :deleted => true)
+        Post.create!(:uid => "post:a.b.c", :document => {'text' => "deleted"}, :deleted => true)
         10.times do |i|
           Post.create!(:uid => "post:a.c.c", :document => {'text' => i.to_s})
         end
