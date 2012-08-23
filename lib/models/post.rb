@@ -47,11 +47,11 @@ class Post < ActiveRecord::Base
   }
 
   scope :occurs_after, lambda { |timestamp|
-    where("occurrence_entries.at >= ?", timestamp)
+    where("occurrence_entries.at >= ?", timestamp.utc)
   }
 
   scope :occurs_before, lambda { |timestamp|
-    where("occurrence_entries.at < ?", timestamp)
+    where("occurrence_entries.at < ?", timestamp.utc)
   }
 
   scope :filtered_by, lambda { |filters|
