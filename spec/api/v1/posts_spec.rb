@@ -180,7 +180,7 @@ describe "API v1 posts" do
 
       it "retrieves a list of documents" do
         10.times do |i|
-          Post.create!(:uid => "post:a.b.c", :document => i.to_s)
+          Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})
         end
         posts = Post.limit(3).order('created_at desc').all
         get "/posts/#{[posts.map(&:uid), "post:does.not.exist$99999999"].flatten.join(',')}"
