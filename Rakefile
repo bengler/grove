@@ -7,6 +7,27 @@ task :environment do
   require 'config/environment'
 end
 
+namespace :bagera do
+  desc "trigger initial delta migrations"
+  task :trigger_delta => :environment do
+
+    LOGGER.info "Beginning symlink/import process for #{Post.where(:klass => 'post.event').count} events."
+
+    river = Pebblebed::River.new
+    Post.where(:klass => 'post.event').find_each do |post|
+      begin
+        river.publish(:event => 'create', :uid => post.uid, :attributes => post.attributes.update('document' => post.merged_document))
+      rescue RuntimeError => e
+        LOGGER.warn "Error publishing post to river."
+        LOGGER.error e
+      else
+        LOGGER.debug "Published #{post.uid} to river with fake 'create' event."
+      end
+    end
+
+  end
+end
+
 namespace :db do
 
   desc "bootstrap db user, recreate, run migrations"
