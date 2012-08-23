@@ -89,9 +89,8 @@ class Post < ActiveRecord::Base
   end
 
   def merged_document
-    return external_document if document.nil?
-    return external_document.merge(document) unless external_document.nil?
-    document
+    doc = (external_document || {}).merge(document || {}).merge((occurrences.empty? ? {} : {'occurrences' => occurrences}))
+    doc.empty? ? nil : doc
   end
 
   def uid

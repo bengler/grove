@@ -17,6 +17,19 @@ describe Post::OccurrencesAccessor do
     q.occurrences['due'].first.should eq(time)
   end
 
+  it "ignores occurrences if there are none" do
+    p = Post.create!(:uid => "post:a.b.c")
+    q = Post.find(p.id)
+    q.merged_document.should eq(nil)
+  end
+
+  it "puts occurrences into the merged document" do
+    p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [time]})
+    q = Post.find(p.id)
+    q.merged_document.should eq({"occurrences" => {"due" => [time]}})
+
+  end
+
   it "can be recovered from json without persisting" do
     p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [time]})
     p.occurrences['onlyjson'] = [time]
