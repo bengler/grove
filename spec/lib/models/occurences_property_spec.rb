@@ -17,6 +17,19 @@ describe Post::OccurrencesAccessor do
     q.occurrences['due'].first.should eq(time)
   end
 
+  it "ignores occurrences if there are none" do
+    p = Post.create!(:uid => "post:a.b.c")
+    q = Post.find(p.id)
+    q.merged_document.should eq(nil)
+  end
+
+  it "puts occurrences into the merged document" do
+    p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [time]})
+    q = Post.find(p.id)
+    q.merged_document.should eq({"occurrences" => {"due" => [time]}})
+
+  end
+
   it "can be recovered from json without persisting" do
     p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [time]})
     p.occurrences['onlyjson'] = [time]
@@ -41,5 +54,20 @@ describe Post::OccurrencesAccessor do
     r.save!
     s = Post.find(p)
     s.occurrences.keys.size.should eq 0
+  end
+
+  it "can select posts with a specific occurrence type" do
+    Post.create!(:uid => "post:a.b.c", :occurrences => {:odd => [time]})
+    Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [time]})
+    Post.by_occurrence('due').count.should eq 1
+    Post.by_occurrence('strange').count.should eq 0
+  end
+
+  it "can limit occurrence selection by time range" do
+    Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [time]})
+    Post.by_occurrence('due').occurs_before(time-1).count.should eq 0
+    Post.by_occurrence('due').occurs_before(time+1).count.should eq 1
+    Post.by_occurrence('due').occurs_after(time-1).count.should eq 1
+    Post.by_occurrence('due').occurs_after(time+1).count.should eq 0
   end
 end

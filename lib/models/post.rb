@@ -42,6 +42,18 @@ class Post < ActiveRecord::Base
     scope
   }
 
+  scope :by_occurrence, lambda { |label|
+    joins(:occurrence_entries).where(:occurrence_entries => {:label => label})
+  }
+
+  scope :occurs_after, lambda { |timestamp|
+    where("occurrence_entries.at >= ?", timestamp)
+  }
+
+  scope :occurs_before, lambda { |timestamp|
+    where("occurrence_entries.at < ?", timestamp)
+  }
+
   scope :filtered_by, lambda { |filters|
     scope = relation
     scope = scope.where(:realm => filters['realm']) if filters['realm']
@@ -89,9 +101,8 @@ class Post < ActiveRecord::Base
   end
 
   def merged_document
-    return external_document if document.nil?
-    return external_document.merge(document) unless external_document.nil?
-    document
+    doc = (external_document || {}).merge(document || {}).merge((occurrences.empty? ? {} : {'occurrences' => occurrences}))
+    doc.empty? ? nil : doc
   end
 
   def uid
