@@ -263,15 +263,19 @@ describe "API v1 posts" do
         time = Time.now
         Post.create!(:uid => "post:a.b.c", :occurrences => {:start_time => [time]})
         Post.create!(:uid => "post:a.b.c", :occurrences => {:strange_time => [time]})
+        Post.create!(:uid => "post:x.y.z", :occurrences => {:start_time => [time]})
         get "/posts/*:*", :occurrence => {:label => 'start_time'}
-        JSON.parse(last_response.body)['posts'].size.should eq 1
+        JSON.parse(last_response.body)['posts'].size.should eq 2
         get "/posts/*:*", :occurrence => {:label => 'start_time', :from => time+1}
         JSON.parse(last_response.body)['posts'].size.should eq 0
         get "/posts/*:*", :occurrence => {:label => 'start_time', :from => time-1}
-        JSON.parse(last_response.body)['posts'].size.should eq 1
+        JSON.parse(last_response.body)['posts'].size.should eq 2
         get "/posts/*:*", :occurrence => {:label => 'start_time', :to => time-1}
         JSON.parse(last_response.body)['posts'].size.should eq 0
         get "/posts/*:*", :occurrence => {:label => 'start_time', :to => time+1}
+        JSON.parse(last_response.body)['posts'].size.should eq 2
+
+        get "/posts/post:x.y.z", :occurrence => {:label => 'start_time'}
         JSON.parse(last_response.body)['posts'].size.should eq 1
       end
 
