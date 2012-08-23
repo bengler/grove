@@ -13,7 +13,11 @@ class RiverNotifications < ActiveRecord::Observer
   end
 
   def after_update(post)
-    publish(post, :update)
+    if post.deleted?
+      publish(post, :delete)
+    else
+      publish(post, :update)
+    end
   end
 
   def after_destroy(post)
