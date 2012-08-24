@@ -69,19 +69,19 @@ describe Post do
     posts = Post.cached_find_all_by_uid([doc1.uid, doc2.uid])
     posts.first.document[:text].should eq '1'
     # Have a look in the cache to verify that the documents got there
-    post = JSON.parse($memcached.get(SchemaVersion.tag_key(doc1.cache_key)))
+    post = JSON.parse($memcached.get(doc1.cache_key))
     post['document']['text'].should eq '1'
     # Verify that the order matches the request
     posts = Post.cached_find_all_by_uid([doc2.uid, doc1.uid])
     posts.first.document['text'].should eq '2'
     # Change the cached document to verify that it actually reads through the cache
-    post = JSON.parse($memcached.get(SchemaVersion.tag_key(doc1.cache_key)))
+    post = JSON.parse($memcached.get(doc1.cache_key))
     post['document'] = "sentinel"
-    $memcached.set(SchemaVersion.tag_key(doc1.cache_key), post.to_json)
+    $memcached.set(doc1.cache_key, post.to_json)
     posts = Post.cached_find_all_by_uid([doc1.uid])
     posts.first.document.should eq 'sentinel'
     # Delete one of the cached documents to verify that the finder can perform with only partial cache hits
-    $memcached.delete(SchemaVersion.tag_key(doc1.cache_key))
+    $memcached.delete(doc1.cache_key)
     posts = Post.cached_find_all_by_uid([doc1.uid, doc2.uid])
     posts.first.document[:text].should eq '1'
     # Update one to verify that the cache is invalidated

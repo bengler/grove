@@ -1,3 +1,5 @@
+require_relative './cache_key'
+
 # Maps cache keys to uids in order to mediate
 # storage and retrieval from cache for a collection
 # of uids.

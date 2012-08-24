@@ -1,5 +1,4 @@
 # encoding: utf-8
-require_relative '../cache_key'
 require_relative '../cache_keychain'
 require_relative './post/document_validator'
 
@@ -139,16 +138,16 @@ class Post < ActiveRecord::Base
     keychain = CacheKeychain.new(uids)
 
     result =  Hash[
-      $memcached.get_multi(*SchemaVersion.tag_keys(keychain.keys)).map do |key, value|
+      $memcached.get_multi(*keychain.keys).map do |key, value|
         post = Post.instantiate(Yajl::Parser.parse(value))
         post.readonly!
-        [SchemaVersion.untag_key(key), post]
+        [key, post]
       end
     ]
     keychain.mark result.keys
     keychain.unmarked.each do |key, uid|
       post = Post.find_by_uid(uid)
-      $memcached.set(SchemaVersion.tag_key(key), post.attributes.to_json) if post
+      $memcached.set(key, post.attributes.to_json) if post
       result[key] = post
     end
     keychain.keys.map {|key| result[key]}
@@ -206,7 +205,7 @@ class Post < ActiveRecord::Base
   private
 
   def invalidate_cache
-    $memcached.delete(SchemaVersion.tag_key(self.cache_key))
+    $memcached.delete(self.cache_key)
   end
 
   # TODO: Replace with something general. This is an ugly hack to make dittforslag.no scripthacking-safe.
