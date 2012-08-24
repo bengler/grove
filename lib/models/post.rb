@@ -147,7 +147,10 @@ class Post < ActiveRecord::Base
     keychain.mark result.keys
     keychain.unmarked.each do |key, uid|
       post = Post.find_by_uid(uid)
-      $memcached.set(key, post.attributes.to_json) if post
+      if post
+        $memcached.set(key, post.attributes.to_json) if post
+        post = Post.instantiate(Yajl::Parser.parse(post.attributes.to_json))
+      end
       result[key] = post
     end
     keychain.keys.map {|key| result[key]}

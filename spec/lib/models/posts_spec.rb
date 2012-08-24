@@ -63,32 +63,46 @@ describe Post do
     Post.by_uid("post:area51.vaktemsterkontoret.forum2").map(&:document).map{|document| document[:text]}.sort.should eq ['4']
   end
 
-  it "has a fancy method to get a lot of posts with readthrough caching (memcached)" do
-    doc1 = Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1", :document => {:text => "1"})
-    doc2 = Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1", :document => {:text => "2"})
-    posts = Post.cached_find_all_by_uid([doc1.uid, doc2.uid])
-    posts.first.document[:text].should eq '1'
-    # Have a look in the cache to verify that the documents got there
-    post = JSON.parse($memcached.get(doc1.cache_key))
-    post['document']['text'].should eq '1'
-    # Verify that the order matches the request
-    posts = Post.cached_find_all_by_uid([doc2.uid, doc1.uid])
-    posts.first.document['text'].should eq '2'
-    # Change the cached document to verify that it actually reads through the cache
-    post = JSON.parse($memcached.get(doc1.cache_key))
-    post['document'] = "sentinel"
-    $memcached.set(doc1.cache_key, post.to_json)
-    posts = Post.cached_find_all_by_uid([doc1.uid])
-    posts.first.document.should eq 'sentinel'
-    # Delete one of the cached documents to verify that the finder can perform with only partial cache hits
-    $memcached.delete(doc1.cache_key)
-    posts = Post.cached_find_all_by_uid([doc1.uid, doc2.uid])
-    posts.first.document[:text].should eq '1'
-    # Update one to verify that the cache is invalidated
-    doc1.document = {"text" => "watchdog"}
-    doc1.save!
-    posts = Post.cached_find_all_by_uid([doc1.uid])
-    posts.first.document.should eq("text" => 'watchdog')
+  describe "readthrough cache" do
+    let(:doc1) { Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1", :document => {:text => "1"}) }
+    let(:doc2) { Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1", :document => {:text => "2"}) }
+
+    it "gets primed on fetch" do
+      Post.cached_find_all_by_uid([doc1.uid])
+
+      post = JSON.parse($memcached.get(doc1.cache_key))
+      post['document']['text'].should eq '1'
+    end
+
+    it "reads from the cache" do
+      doc1.document = 'sentinel'
+      $memcached.set(doc1.cache_key, doc1.attributes.to_json)
+
+      posts = Post.cached_find_all_by_uid([doc1.uid])
+      posts.first.document.should eq 'sentinel'
+    end
+
+    it "respects order in the request" do
+      $memcached.set(doc1.cache_key, doc1.attributes.to_json)
+
+      posts = Post.cached_find_all_by_uid([doc2.uid, doc1.uid])
+      posts.map {|post| post.document['text'] }.should eq(['2', '1'])
+    end
+
+    it "performs with partial hits" do
+      $memcached.set(doc2.cache_key, doc2.attributes.to_json)
+
+      posts = Post.cached_find_all_by_uid([doc1.uid, doc2.uid])
+      posts.map{|p| p.document['text']}.should eq(['1', '2'])
+    end
+
+    it "invalidates the cache" do
+      $memcached.set(doc1.cache_key, doc1.attributes.to_json)
+      doc1.document = "watchdog"
+      doc1.save!
+      posts = Post.cached_find_all_by_uid([doc1.uid])
+      posts.first.document.should eq 'watchdog'
+    end
   end
 
   it "knows how to handle non-existant posts when using cached_find_all_by_uid" do
