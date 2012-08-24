@@ -250,6 +250,7 @@ class GroveV1 < Sinatra::Base
 
 
   # Get current identity's posts for a given path
+  # TODO: DEPRECATE! This can be done using the general GET method. Can we remove this?
   get '/posts' do
     require_identity
     path = params[:path]
