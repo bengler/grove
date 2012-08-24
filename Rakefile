@@ -10,6 +10,9 @@ end
 namespace :bagera do
   desc "trigger initial delta migrations"
   task :trigger_delta => :environment do
+    require 'logger'
+
+    LOGGER ||= Logger.new(STDOUT)
 
     LOGGER.info "Beginning symlink/import process for #{Post.where(:klass => 'post.event').count} events."
 
