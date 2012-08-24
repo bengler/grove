@@ -1,9 +1,13 @@
 class DocumentValidator < ActiveModel::Validator
   def validate(record)
-    return if record.document.nil?
+    validate_field(record, :document)
+    validate_field(record, :external_document)
+  end
 
-    unless record.document.class == Hash
-      record.errors[:base] << "The document must be a hash."
+  def validate_field(record, field)
+    value = record.send(field)
+    if value.present? && value.class != Hash
+      record.errors[:base] << "The `#{field}` must be a hash."
     end
   end
 end

@@ -4,6 +4,8 @@ describe Post do
   context "validation" do
     it { Post.new(:document => nil, :klass => 'post.doc', :canonical_path => 'mit.cs').should be_valid }
     it { Post.new(:document => '1', :klass => 'post.doc', :canonical_path => 'mit.cs').should_not be_valid }
+    it { Post.new(:external_document => nil, :klass => 'post.doc', :canonical_path => 'mit.cs').should be_valid }
+    it { Post.new(:external_document => '1', :klass => 'post.doc', :canonical_path => 'mit.cs').should_not be_valid }
   end
 
   it "gets attached to a location" do
