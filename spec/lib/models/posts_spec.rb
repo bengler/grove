@@ -1,302 +1,320 @@
 require 'spec_helper'
 
 describe Post do
-  context "validation" do
-    it { Post.new(:document => nil, :klass => 'post.doc', :canonical_path => 'mit.cs').should be_valid }
-    it { Post.new(:document => '1', :klass => 'post.doc', :canonical_path => 'mit.cs').should_not be_valid }
-    it { Post.new(:external_document => nil, :klass => 'post.doc', :canonical_path => 'mit.cs').should be_valid }
-    it { Post.new(:external_document => '1', :klass => 'post.doc', :canonical_path => 'mit.cs').should_not be_valid }
+
+  context "from uid" do
+    let(:card) { Post.create!(:uid => "post.card:area51.vaktmesterkontoret.forum1") }
+    subject { card }
+
+    its(:realm) { should eq('area51') }
+    its(:canonical_path) { should eq('area51.vaktmesterkontoret.forum1') }
+    its(:klass) { should eq('post.card') }
   end
 
-  it "gets attached to a location" do
-    p = Post.create!(:canonical_path => "area51.vaktmesterkontoret.forum1")
-    p.locations.count.should eq 1
-    p.locations.first.path.to_s.should eq "area51.vaktmesterkontoret.forum1"
-    p.realm.should eq "area51"
+  let(:default_attributes) do
+    {
+      :klass => 'post.doc',
+      :canonical_path => "area51.vaktmesterkontoret.forum1",
+      :document => {'text' => '1'}
+    }
   end
 
-  it "can genereate an uid" do
-    p = Post.create!(:canonical_path => "area51.vaktmesterkontoret.forum1")
-    p.uid.should eq "post:area51.vaktmesterkontoret.forum1$#{p.id}"
-  end
+  let(:post) { Post.create!(default_attributes) }
 
-  it "can have a child klass" do
-    p = Post.create!(:uid => "post.assignment:area51")
-    p.uid.should eq("post.assignment:area51$#{p.id}")
-  end
+  subject { post }
 
-  it "can retrieve one by uid" do
-    p1 = Post.create!(:canonical_path => "area51.vaktmesterkontoret.forum1", :document => {:text => "1"})
-    p2 = Post.create!(:canonical_path => "area51.vaktmesterkontoret.forum2", :document => {:text => "2"})
-    p3 = Post.create!(:canonical_path => "area51.vaktmesterkontoret.forum3", :document => {:text => "3"})
-    Post.find_by_uid(p1.uid).document[:text].should eq '1'
-    Post.find_by_uid(p2.uid).document[:text].should eq '2'
-    Post.find_by_uid(p3.uid).document[:text].should eq '3'
-    Post.find_by_uid("post:area51.vaktmesterkontoret.forumX$2").should be_nil
-  end
+  its(:realm) { should eq('area51') }
+  its(:uid) { should eq("post.doc:area51.vaktmesterkontoret.forum1$#{post.id}") }
 
-  it "filters by realm" do
-    uid = "post:area51.vaktmesterkontoret.forum1"
-    p = Post.create!(:uid => uid)
-    Post.create!(:uid => "post:oz.other.place")
+  context "locations" do
 
-    posts = Post.filtered_by('realm' => 'area51')
-    posts.size.should eq(1)
-    posts.first.uid.should eq(p.uid)
-  end
-
-  it "can assign realm, canonical_path by assigning uid" do
-    p = Post.create!(:uid => "post:area51.vaktmesterkontoret.forum1")
-    p.realm.should eq "area51"
-    p.canonical_path.should eq "area51.vaktmesterkontoret.forum1"
-  end
-
-  it "can retrieve a collection of posts with a wildcard uid" do
-    Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1", :document => {:text => "1"})
-    Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1", :document => {:text => "2"})
-    Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1", :document => {:text => "3"})
-    Post.create!(:uid => "post:area51.vaktemsterkontoret.forum2", :document => {:text => "4"})
-    Post.create!(:uid => "post:area52.vaktemsterkontoret.forum2", :document => {:text => "5"})
-    Post.by_uid("post:*").map(&:document).map{|document| document[:text]}.sort.should eq ['1', '2', '3', '4', '5']
-    Post.by_uid("post:area51.*").map(&:document).map{|document| document[:text]}.sort.should eq ['1', '2', '3', '4']
-    Post.by_uid("post:area51.vaktemsterkontoret.forum1").map(&:document).map{|document| document[:text]}.sort.should eq ['1', '2', '3']
-    Post.by_uid("post:area51.vaktemsterkontoret.forum2").map(&:document).map{|document| document[:text]}.sort.should eq ['4']
-  end
-
-  describe "readthrough cache" do
-    let(:doc1) { Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1", :document => {:text => "1"}) }
-    let(:doc2) { Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1", :document => {:text => "2"}) }
-
-    it "gets primed on fetch" do
-      Post.cached_find_all_by_uid([doc1.uid])
-
-      post = JSON.parse($memcached.get(doc1.cache_key))
-      post['document']['text'].should eq '1'
+    it "defaults to the canonical location" do
+      subject.locations.map { |loc| loc.path.to_s }.should eq(["area51.vaktmesterkontoret.forum1"])
     end
 
-    it "reads from the cache" do
-      doc1.document = 'sentinel'
-      $memcached.set(doc1.cache_key, doc1.attributes.to_json)
-
-      posts = Post.cached_find_all_by_uid([doc1.uid])
-      posts.first.document.should eq 'sentinel'
+    it "cannot delete the canonical path" do
+      Location.declare!("x.y.z").posts << post
+      ->{ post.remove_path!('area51.vaktmesterkontoret.forum1') }.should raise_error ArgumentError
+      post.reload
+      post.paths.to_a.sort.should eq(['area51.vaktmesterkontoret.forum1', 'x.y.z'])
     end
 
-    it "respects order in the request" do
-      $memcached.set(doc1.cache_key, doc1.attributes.to_json)
+    specify "are like symlinks" do
+      symlink = "area51.vikarkontoret.forum1"
+      Location.declare!(symlink).posts << post
 
-      posts = Post.cached_find_all_by_uid([doc2.uid, doc1.uid])
-      posts.map {|post| post.document['text'] }.should eq(['2', '1'])
+      Post.find_by_uid("post.doc:#{symlink}$#{post.id}").should eq(post)
     end
 
-    it "performs with partial hits" do
-      $memcached.set(doc2.cache_key, doc2.attributes.to_json)
+    specify "are not returned in duplicate" do
+      symlink = "area51.vikarkontoret.forum1"
+      Location.declare!(symlink).posts << post
 
-      posts = Post.cached_find_all_by_uid([doc1.uid, doc2.uid])
-      posts.map{|p| p.document['text']}.should eq(['1', '2'])
+      Post.by_uid("post.doc:*").should eq([post])
     end
-
-    it "invalidates the cache" do
-      $memcached.set(doc1.cache_key, doc1.attributes.to_json)
-      doc1.document = "watchdog"
-      doc1.save!
-      posts = Post.cached_find_all_by_uid([doc1.uid])
-      posts.first.document.should eq 'watchdog'
-    end
-  end
-
-  it "knows how to handle non-existant posts when using cached_find_all_by_uid" do
-    posts = Post.cached_find_all_by_uid(["post:out.of.this$1"])
-    posts.should eq [nil]
-  end
-
-  it "does not try to retrieve wildcards from the cache" do
-    ->{ Post.cached_find_all_by_uid(["post:with.wildcard.*"]) }.should raise_error ArgumentError
-  end
-
-  it "does not try to retrieve pipes from the cache" do
-    ->{ Post.cached_find_all_by_uid(["post:with.pipes.a|b|c"]) }.should raise_error ArgumentError
-  end
-
-  it "can scope posts by tag" do
-    Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {:text => '1'})
-    Post.create!(:uid => "post:a.b.c", :tags => ["capitals", "paris"], :document => {:text => '2'})
-    Post.create!(:uid => "post:a.b.c", :tags => ["france", "lyon"], :document => {:text => '3'})
-    Post.with_tags("paris").all.map(&:document).map{|document| document[:text]}.sort.should eq ['1', '2']
-    Post.with_tags("france").all.map(&:document).map{|document| document[:text]}.sort.should eq ['1', '3']
-    Post.with_tags(["france", "paris"]).all.map(&:document).map{|document| document[:text]}.sort.should eq ['1']
-  end
-
-  it "can put a post in several locations" do
-    doc1 = Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1", :document => {:text => "1"})
-    Location.declare!("area51.vikarkontoret.forum1").posts << doc1
-    Location.declare!("area51.vikarkontoret.forum2").posts << doc1
-    Post.create!(:uid => "post:area51.somewhereelse.forum1", :document => {:text => "2"})
-    Post.by_uid("post:area51.*").all.map(&:document).map{|document| document[:text]}.sort.should eq ['1', '2']
-    Post.by_uid("post:highway61.*").count.should eq 0
-    Post.by_uid("post:area51.vikarkontoret.*").first.document[:text].should eq '1'
-  end
-
-  it "will only find by uids that are fully constrained (with an oid)" do
-    doc = Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1", :document => {:text => "1"})
-    Post.find_by_uid(doc.uid).should_not be_nil
-    Post.find_by_uid("post:area51.vaktemsterkontoret.forum1").should be_nil
-  end
-
-  # TODO: This should be configurable
-  it "sanitizes some fields if the content is json" do
-    Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
-    Post.first.document['text'].should eq "hei"
   end
 
   it 'atomically adds a path' do
-    post = Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
     post.should_not_receive(:save)
     post.should_not_receive(:save!)
 
-    post.add_path!("a.b.d")
+    post.add_path!("x.y.z")
 
     post.reload
-    post.paths.to_a.sort.should eq(["a.b.c", "a.b.d"])
+    post.paths.to_a.sort.should eq(['area51.vaktmesterkontoret.forum1', 'x.y.z'])
   end
 
   it 'atomically deletes a path' do
-    post = Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"hello" => "spaceboy"})
-    other_post = Post.create!(:uid => "post:a.b.c.d.e", :tags => ["wine", "dining"], :document => {"hello" => "cowgirl"})
-    Location.declare!("a.b.d").posts << post
-    Location.declare!("a.b.d").posts << other_post
+    other_post = Post.create!(:uid => "post:a.b.c.d.e", :document => {"text" => "2"})
+    Location.declare!("x.y.z").posts << post
+    Location.declare!("x.y.z").posts << other_post
 
     post.should_not_receive(:save)
     post.should_not_receive(:save!)
 
-    post.remove_path!("a.b.d")
+    post.remove_path!("x.y.z")
 
     post.reload
     other_post.reload
 
-    post.paths.to_a.should eq(["a.b.c"])
-    other_post.paths.to_a.sort.should eq(["a.b.c.d.e", "a.b.d"])
+    post.paths.to_a.should eq(["area51.vaktmesterkontoret.forum1"])
+    other_post.paths.to_a.sort.should eq(["a.b.c.d.e", "x.y.z"])
   end
 
-  it "cannot delete the canonical path" do
-    post = Post.create!(:uid => "post:a.b.c", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
-    Location.declare!("a.b.d").posts << post
+  describe "finders and filters" do
 
-    ->{ post.remove_path!("a.b.c") }.should raise_error ArgumentError
-
-    post.reload
-    post.paths.to_a.sort.should eq(["a.b.c", "a.b.d"])
-  end
-
-
-  context "searching for restricted documents" do
-
-    it "will fail without an identity" do
-      identity = DeepStruct.wrap({})
-      post = Post.create!(:uid => "post:a.b.c", :document => {:text => "xyzzy"}, :created_by => 1337, :restricted => true)
-      Post.with_restrictions(identity).size.should eq 0
-      post.visible_to?(identity).should eq false
+    it "finds by uid" do
+      Post.find_by_uid(post.uid).document['text'].should eq('1')
     end
 
-    it "will fail if identity is not the document creator" do
-      identity = DeepStruct.wrap({:id => 1337, :god => false})
-      post = Post.create!(:uid => "post:a.b.c", :document => {:text => "xyzzy"}, :created_by => 1, :restricted => true)
-      Post.with_restrictions(identity).size.should eq 0
-      post.visible_to?(identity).should eq false
+    it "returns nil for non-existant posts" do
+      Post.find_by_uid("post:area51.vaktmesterkontoret.forumX$2").should be_nil
     end
 
-    it "succeed if identity has god status" do
-      identity = DeepStruct.wrap({:id => 1337, :god => true})
-      post = Post.create!(:uid => "post:a.b.c", :document => {:text => "xyzzy"}, :created_by => 1, :restricted => true)
-      Post.with_restrictions(identity).size.should eq 1
-      post.visible_to?(identity).should eq true
+    it "filters by realm" do
+      Post.create!(:uid => "post:oz.other.place")
+
+      posts = Post.filtered_by('realm' => post.realm)
+      posts.size.should eq(1)
+      posts.first.uid.should eq(post.uid)
     end
 
-    it "succeed if identity is the document creator" do
-      identity = DeepStruct.wrap({:id => 1337, :god => false})
-      post = Post.create!(:uid => "post:a.b.c", :document => {:text => "xyzzy"}, :created_by => 1337, :restricted => true)
-      Post.with_restrictions(identity).size.should eq 1
-      post.visible_to?(identity).should eq true
-    end
+    context "filters tags" do
+      before(:each) do
+        Post.create!(:uid => "post:x.y.z", :tags => ["france", "paris"], :document => {'text' => '1'})
+        Post.create!(:uid => "post:x.y.z", :tags => ["capitals", "paris"], :document => {'text' => '2'})
+        Post.create!(:uid => "post:x.y.z", :tags => ["france", "lyon"], :document => {'text' => '3'})
+      end
 
-    it "returns filters out inaccessible documents" do
-      identity = DeepStruct.wrap({:id => 1337, :god => false})
-      post = Post.create!(:uid => "post:a.b.c", :document => {:text => "xyzzy"}, :created_by => 1337, :restricted => true)
-      another_post = Post.create!(:uid => "post:a.b.c", :document => {:text => "xyzzy"}, :created_by => 1, :restricted => true)
-      posts = []
-      [post, another_post].map{|p| p.visible_to?(identity)? posts << p : posts << nil }
-      posts.count.should eq 2
-      posts[0].should eq post
-      posts[1].should eq nil
-    end
+      it "finds only posts matching tag" do
+        Post.with_tags("paris").all.map {|p| p.document['text']}.sort.should eq ['1', '2']
+      end
 
-  end
-
-  context "Moderation of external documents" do
-    it "returns the external_document attribute if the document attribute is not set" do
-      post = Post.create!(:uid => "post:some.ext.thing", :external_document => {:title => "the quick brown fox"}, :created_by => 1337)
-      post.merged_document[:title].should eq "the quick brown fox"
-    end
-
-    it "merges document into external_document with key/value pairs from document overriding external_document pairs" do
-      post = Post.create!(:uid => "post:some.ext.thing", :external_document => {
-        :brown => "fox",
-        :lazy => "dog"
-      }, :created_by => 1337)
-
-      post.document = {:brown => "coyote"}
-
-      post.merged_document.should eq(:brown => "coyote", :lazy => "dog")
-    end
-
-    it "keeps track of when the document was last updated" do
-      post = Post.create!(:uid => "post:some.ext.thing", :document => {:title => "the quick brown fox"}, :created_by => 1337)
-      post.document_updated_at.should_not be_nil
-    end
-
-    it "keeps track of when the external document was last updated" do
-      post = Post.create!(:uid => "post:some.ext.thing", :external_document => {:title => "the quick brown fox"}, :created_by => 1337)
-      post.external_document_updated_at.should_not be_nil
-    end
-
-    it "marks a post as conflicted if post has an external document newer than the document and document overrides any of its keys" do
-      post = Post.create!(:uid => "post:a.b.c", :document => {:title => "the quick brown fox"}, :created_by => 1337)
-      Timecop.freeze(Date.today + 1) do
-        post.external_document = {:title => "jumps over the lazy dog"}
-        post.external_document_updated_at.to_i.should be > post.document_updated_at.to_i
-        post.save
-        post.conflicted.should be_true
+      it "finds only posts matching ALL tags" do
+        Post.with_tags(["france", "paris"]).all.map{|p| p.document['text']}.sort.should eq ['1']
       end
     end
 
-    it "doesn't mark a post as conflicted if there's no external document" do
-      post = Post.create!(:uid => "post:a.b.c", :document => {:title => "the quick brown fox"}, :created_by => 1337)
-      post.conflicted.should be_false
-    end
+    describe "wildcard uids" do
+      before(:each) do
+        Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1", :document => {:text => "1"})
+        Post.create!(:uid => "post:area51.vaktemsterkontoret.forum1", :document => {:text => "2"})
+        Post.create!(:uid => "post:area51.vaktemsterkontoret.forum2", :document => {:text => "3"})
+        Post.create!(:uid => "post:area52.vaktemsterkontoret.forum2", :document => {:text => "4"})
+      end
 
-    it "doesn't mark a post as conflicted if there's only an external document" do
-      post = Post.create!(:uid => "post:a.b.c", :external_document => {:title => "the quick brown fox"}, :created_by => 1337)
-      post.conflicted.should be_false
-    end
+      it "finds on wildcard with klass" do
+        Post.by_uid("post:*").map(&:document).map{|document| document[:text]}.sort.should eq ['1', '2', '3', '4']
+      end
 
-    it "keeps only modified versions of keys in external_document" do
-      post = Post.create!(:uid => "post:a.b.c", :external_document => {:quick => "fox", :lazy => "dog"}, :created_by => 1337)
-      post.document = {:quick => "coyote", :lazy => "dog"}
-      post.save
-      post.document.should eq({:quick => "coyote"})
-      post.merged_document.should eq({:quick => "coyote", :lazy => "dog"})
-      post.external_document.should eq({:quick => "fox", :lazy => "dog"})
-    end
+      it "finds on wildcard with partial path" do
+        Post.by_uid("post:area51.*").map(&:document).map{|document| document[:text]}.sort.should eq ['1', '2', '3']
+      end
 
-    it "mark a post as conflicted only if keys in document are also in external_document" do
-      post = Post.create!(:uid => "post:a.b.c", :document => {:brown => "fox"}, :created_by => 1337)
-      Timecop.freeze(Date.today + 1) do
-        post.external_document = {:lazy => "dog"}
-        post.external_document_updated_at.to_i.should be > post.document_updated_at.to_i
-        post.save
-        post.conflicted.should be_false
+      it "finds on wildcard with fully specified path" do
+        Post.by_uid("post:area51.vaktemsterkontoret.forum1").map(&:document).map{|document| document[:text]}.sort.should eq ['1', '2']
       end
     end
+
+    it "returns an empty set if there are no matches" do
+      Post.by_uid("post:highway61.*").should eq([])
+    end
+
+    describe "readthrough cache" do
+      let(:doc1) { post }
+      let(:doc2) { Post.create!(:uid => "post.doc:area51.vaktemsterkontoret.forum1", :document => {:text => "2"}) }
+
+      it "gets primed on fetch" do
+        Post.cached_find_all_by_uid([doc1.uid])
+
+        post = JSON.parse($memcached.get(doc1.cache_key))
+        post['document']['text'].should eq '1'
+      end
+
+      it "reads from the cache" do
+        doc1.document = 'sentinel'
+        $memcached.set(doc1.cache_key, doc1.attributes.to_json)
+
+        posts = Post.cached_find_all_by_uid([doc1.uid])
+        posts.first.document.should eq 'sentinel'
+      end
+
+      it "respects order in the request" do
+        $memcached.set(doc1.cache_key, doc1.attributes.to_json)
+
+        posts = Post.cached_find_all_by_uid([doc2.uid, doc1.uid])
+        posts.map {|post| post.document['text'] }.should eq(['2', '1'])
+      end
+
+      it "performs with partial hits" do
+        $memcached.set(doc2.cache_key, doc2.attributes.to_json)
+
+        posts = Post.cached_find_all_by_uid([doc1.uid, doc2.uid])
+        posts.map{|p| p.document['text']}.should eq(['1', '2'])
+      end
+
+      it "invalidates the cache" do
+        $memcached.set(doc1.cache_key, doc1.attributes.to_json)
+        doc1.document = "watchdog"
+        doc1.save!
+        posts = Post.cached_find_all_by_uid([doc1.uid])
+        posts.first.document.should eq 'watchdog'
+      end
+
+      it "returns nil placeholders for non-existant posts" do
+        posts = Post.cached_find_all_by_uid(["post:out.of.this$1"])
+        posts.should eq [nil]
+      end
+
+      it "bails on wildcards" do
+        ->{ Post.cached_find_all_by_uid(["post:with.wildcard.*"]) }.should raise_error ArgumentError
+      end
+
+      it "bails on pipes" do
+        ->{ Post.cached_find_all_by_uid(["post:with.pipes.a|b|c"]) }.should raise_error ArgumentError
+      end
+    end
+  end
+
+  context "restricted documents" do
+
+    before(:each) do
+      default_attributes.merge!(:restricted => true, :created_by => 42)
+    end
+
+    let(:nobody) { DeepStruct.wrap({}) }
+    let(:john_q_public) { DeepStruct.wrap({:id => 101, :god => false}) }
+    let(:alice) { DeepStruct.wrap({:id => 42, :god => false}) }
+    let(:zeus) { DeepStruct.wrap({:id => 1337, :god => true}) }
+
+    specify "are inaccessible without an identity" do
+      post.visible_to?(nobody).should eq false
+      Post.with_restrictions(nobody).size.should eq 0
+    end
+
+    specify "are inaccessible to random people" do
+      post.visible_to?(john_q_public).should eq false
+      Post.with_restrictions(john_q_public).size.should eq 0
+    end
+
+    specify "are accessible to document creator" do
+      post.visible_to?(alice).should eq true
+      Post.with_restrictions(alice).size.should eq 1
+    end
+
+    specify "are accessible to god" do
+      post.visible_to?(zeus).should eq true
+      Post.with_restrictions(zeus).size.should eq 1
+    end
+  end
+
+  describe "conflicts" do
+
+    let(:external_document) do
+      {'title' => 'Greeting', 'text' => 'Hello, World!'}
+    end
+
+    let(:document) do
+      {}
+    end
+
+    let(:external_attributes) do
+      default_attributes.merge(:document => document, :external_document => external_document)
+    end
+
+    let(:external_post) { Post.create!(external_attributes) }
+
+    it "isn't conflicted without an external document" do
+      post.conflicted?.should == false
+    end
+
+    it "isn't conflicted without a document" do
+      doc = Post.create!(default_attributes.merge(:document => nil, :external_document => external_document))
+      doc.conflicted?.should == false
+    end
+
+    it "tracks updated at for document" do
+      previous_update = external_post.document_updated_at
+      previous_sync = external_post.external_document_updated_at
+      external_post.document = external_post.document.merge!('ps' => 'Call me!')
+      external_post.save!
+      external_post.document_updated_at.should > previous_update
+      external_post.external_document_updated_at.should == previous_sync
+    end
+
+    it "tracks updated at for external document" do
+      previous_update = external_post.document_updated_at
+      previous_sync = external_post.external_document_updated_at
+      external_post.external_document = external_post.external_document.merge!('ps' => 'Call me!')
+      external_post.save!
+      external_post.document_updated_at.should == previous_update
+      external_post.external_document_updated_at.should > previous_sync
+    end
+
+    context "when merged" do
+      it "defaults to the external document" do
+        external_post.merged_document['text'].should eq "Hello, World!"
+      end
+
+      it "gets overridden by values in document" do
+        document.merge!('text' => 'Hiya, Cowboys!')
+        external_post.merged_document['text'].should eq 'Hiya, Cowboys!'
+      end
+    end
+
+    context "with a newer sync than document" do
+      it "is conflicted with overridden keys" do
+        document.merge!('text' => 'Hey, there.')
+        external_post.external_document = external_post.external_document.merge!('ps' => 'Call me!')
+        external_post.save
+        external_post.conflicted?.should == true
+      end
+
+      it "is not conflicted without overridden keys" do
+        document.merge!('who' => 'Everybody!')
+        external_post.external_document = external_post.external_document.merge!('ps' => 'Call me!')
+        external_post.save
+        external_post.conflicted?.should == false
+      end
+    end
+
+    context "when document is newer than sync" do
+      before(:each) do
+        document.merge!('text' => 'Hey, there.')
+        external_post.document = external_post.document.merge!('ps' => 'Call me!')
+        external_post.save!
+      end
+
+      it "is not conflicted" do
+        external_post.conflicted?.should == false
+      end
+    end
+  end
+
+  # TODO: This should be configurable
+  it "sanitizes some fields if the content is json" do
+    Post.create!(:uid => "post:x.y.z", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
+    Post.first.document['text'].should eq "hei"
   end
 
 end
