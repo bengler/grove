@@ -1,6 +1,8 @@
 # encoding: utf-8
 require_relative '../cache_key'
 require_relative '../cache_keychain'
+require_relative './post/document_validator'
+
 class Post < ActiveRecord::Base
   class CanonicalPathConflict < StandardError; end
 
@@ -14,6 +16,7 @@ class Post < ActiveRecord::Base
   validates_presence_of :realm
 
   validate :canonical_path_must_be_valid
+  validates_with DocumentValidator
   validates_format_of :klass, :with => /^post(\.|$)/
   before_validation :assign_realm, :set_default_klass
 
@@ -227,6 +230,12 @@ class Post < ActiveRecord::Base
   def canonical_path_must_be_valid
     unless Pebblebed::Uid.valid_path?(self.canonical_path) && !Pebblebed::Uid.valid_wildcard_path?(self.canonical_path)
       error.add :base, "#{self.canonical_path.inspect} is an invalid path."
+    end
+  end
+
+  def document_must_be_hash
+    unless self.document.class == Hash
+      error.add :base, "Document must be a hash."
     end
   end
 

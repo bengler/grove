@@ -1,6 +1,11 @@
 require 'spec_helper'
 
 describe Post do
+  context "validation" do
+    it { Post.new(:document => nil, :klass => 'post.doc', :canonical_path => 'mit.cs').should be_valid }
+    it { Post.new(:document => '1', :klass => 'post.doc', :canonical_path => 'mit.cs').should_not be_valid }
+  end
+
   it "gets attached to a location" do
     p = Post.create!(:canonical_path => "area51.vaktmesterkontoret.forum1")
     p.locations.count.should eq 1
@@ -78,10 +83,10 @@ describe Post do
     posts = Post.cached_find_all_by_uid([doc1.uid, doc2.uid])
     posts.first.document[:text].should eq '1'
     # Update one to verify that the cache is invalidated
-    doc1.document = "watchdog"
+    doc1.document = {"text" => "watchdog"}
     doc1.save!
     posts = Post.cached_find_all_by_uid([doc1.uid])
-    posts.first.document.should eq 'watchdog'
+    posts.first.document.should eq("text" => 'watchdog')
   end
 
   it "knows how to handle non-existant posts when using cached_find_all_by_uid" do
