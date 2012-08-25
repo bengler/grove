@@ -92,7 +92,7 @@ class Post < ActiveRecord::Base
   end
 
   def may_be_managed_by?(identity)
-    new_record? || identity.god || created_by == identity.id
+    new_record? || editable_by?(identity)
   end
 
   def external_document=(external_document)
