@@ -230,9 +230,22 @@ describe Post do
     end
   end
 
-  describe "conflicts" do
+  describe "document store" do
 
-    # The document store in post consists of
+    context "without external document" do
+      it "isn't conflicted" do
+        article.conflicted?.should == false
+      end
+    end
+
+    context "with only an external document" do
+      it "isn't conflicted" do
+        doc = Post.create!(default_attributes.merge(:document => nil, :external_document => {'text' => '1'}))
+        doc.conflicted?.should == false
+      end
+    end
+
+    # The document store in `post` consists of
     # :external_document
     # :document
     # :merged_document (read-only)
@@ -245,83 +258,75 @@ describe Post do
     #
     # The merged document is the combination of the two.
 
-    let(:external_document) do
-      {'title' => 'Greeting', 'text' => 'Hello, World!'}
+    let(:memo) do
+      {'observed' => 'explosion', 'cause' => 'alien aircraft crash'}
     end
 
-    let(:document) do
+    let(:lies) do
       {}
     end
 
-    let(:external_attributes) do
-      default_attributes.merge(:document => document, :external_document => external_document)
+    let(:press_release_attributes) do
+      default_attributes.merge(:document => lies, :external_document => memo)
     end
 
-    let(:external_post) { Post.create!(external_attributes) }
-
-    it "isn't conflicted without an external document" do
-      article.conflicted?.should == false
-    end
-
-    it "isn't conflicted without a document" do
-      doc = Post.create!(default_attributes.merge(:document => nil, :external_document => external_document))
-      doc.conflicted?.should == false
-    end
+    let(:press_release) { Post.create!(press_release_attributes) }
 
     it "tracks updated at for document" do
-      previous_update = external_post.document_updated_at
-      previous_sync = external_post.external_document_updated_at
-      external_post.document = external_post.document.merge!('ps' => 'Call me!')
-      external_post.save!
-      external_post.document_updated_at.should > previous_update
-      external_post.external_document_updated_at.should == previous_sync
+      previous_update = press_release.document_updated_at
+      previous_sync = press_release.external_document_updated_at
+      press_release.document = lies.merge!('casualties' => 'none')
+      press_release.save!
+      press_release.document_updated_at.should > previous_update
+      press_release.external_document_updated_at.should == previous_sync
     end
 
     it "tracks updated at for external document" do
-      previous_update = external_post.document_updated_at
-      previous_sync = external_post.external_document_updated_at
-      external_post.external_document = external_post.external_document.merge!('ps' => 'Call me!')
-      external_post.save!
-      external_post.document_updated_at.should == previous_update
-      external_post.external_document_updated_at.should > previous_sync
+      previous_update = press_release.document_updated_at
+      previous_sync = press_release.external_document_updated_at
+      press_release.external_document = memo.merge!('casualties' => '4')
+      press_release.save!
+      press_release.document_updated_at.should == previous_update
+      press_release.external_document_updated_at.should > previous_sync
     end
 
-    context "when merged" do
-      it "defaults to the external document" do
-        external_post.merged_document['text'].should eq "Hello, World!"
+    describe "merged value" do
+      it "defaults to the external document's value" do
+        press_release.merged_document['cause'].should eq 'alien aircraft crash'
       end
 
       it "gets overridden by values in document" do
-        document.merge!('text' => 'Hiya, Cowboys!')
-        external_post.merged_document['text'].should eq 'Hiya, Cowboys!'
+        lies.merge!('cause' => 'mining accident')
+        press_release.merged_document['cause'].should eq 'mining accident'
       end
     end
 
     context "with a newer sync than document" do
       it "is conflicted with overridden keys" do
-        document.merge!('text' => 'Hey, there.')
-        external_post.external_document = external_post.external_document.merge!('ps' => 'Call me!')
-        external_post.save
-        external_post.conflicted?.should == true
+        lies.merge!('cause' => 'mining accident')
+        press_release # trigger creation with override
+        press_release.external_document = memo.merge!('location' => 'the desert')
+        press_release.save
+        press_release.conflicted?.should == true
       end
 
       it "is not conflicted without overridden keys" do
-        document.merge!('who' => 'Everybody!')
-        external_post.external_document = external_post.external_document.merge!('ps' => 'Call me!')
-        external_post.save
-        external_post.conflicted?.should == false
+        press_release # trigger creation without override
+        press_release.external_document = memo.merge!('casualties' => '4')
+        press_release.save
+        press_release.conflicted?.should == false
       end
     end
 
     context "when document is newer than sync" do
       before(:each) do
-        document.merge!('text' => 'Hey, there.')
-        external_post.document = external_post.document.merge!('ps' => 'Call me!')
-        external_post.save!
+        press_release # trigger creation
+        press_release.document = lies.merge!('casualties' => 'none')
+        press_release.save!
       end
 
       it "is not conflicted" do
-        external_post.conflicted?.should == false
+        press_release.conflicted?.should == false
       end
     end
   end
