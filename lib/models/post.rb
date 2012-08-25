@@ -133,7 +133,9 @@ class Post < ActiveRecord::Base
   end
 
   def self.cached_find_all_by_uid(uids)
-    raise ArgumentError, "No wildcards allowed" if uids.join =~ /[\*\|]/
+    if uids.any? {|uid| Pebblebed::Uid.wildcard_path?(uid)}
+      raise ArgumentError, "No wildcards allowed"
+    end
 
     keychain = CacheKeychain.new(uids)
 

@@ -191,6 +191,10 @@ describe Post do
       it "bails on pipes" do
         ->{ Post.cached_find_all_by_uid(["post:with.pipes.a|b|c"]) }.should raise_error ArgumentError
       end
+
+      it "bails on caret" do
+        ->{ Post.cached_find_all_by_uid(["post:with.caret.^a.b.c"]) }.should raise_error ArgumentError
+      end
     end
   end
 
