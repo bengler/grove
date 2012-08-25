@@ -198,38 +198,68 @@ describe Post do
     end
   end
 
-  context "restricted documents" do
+  context "access control" do
 
     let(:nobody) { DeepStruct.wrap({}) }
     let(:john_q_public) { DeepStruct.wrap({:id => 101, :god => false}) }
     let(:alice) { DeepStruct.wrap({:id => 42, :god => false}) }
     let(:zeus) { DeepStruct.wrap({:id => 1337, :god => true}) }
 
-    before(:each) do
-      default_attributes.merge!(:restricted => true, :created_by => 42)
+    context "public documents" do
+      before(:each) do
+        default_attributes.merge!(:restricted => false, :created_by => 42)
+      end
+
+      specify "are visible" do
+        article.visible_to?(nobody).should eq true
+        Post.with_restrictions(nobody).size.should eq 1
+      end
+
+      specify "cannot be edited without an identity" do
+        article.editable_by?(nobody).should eq false
+      end
+
+      specify "cannot be edited by just anyone" do
+        article.editable_by?(john_q_public).should eq false
+      end
+
+      specify "can be edited by the owner" do
+        article.editable_by?(alice).should eq true
+      end
+
+      specify "can be edited by god" do
+        article.editable_by?(zeus).should eq true
+      end
     end
 
-    specify "are inaccessible without an identity" do
-      article.visible_to?(nobody).should eq false
-      Post.with_restrictions(nobody).size.should eq 0
+    context "restricted documents" do
+
+      before(:each) do
+        default_attributes.merge!(:restricted => true, :created_by => 42)
+      end
+
+      specify "are inaccessible without an identity" do
+        article.visible_to?(nobody).should eq false
+        Post.with_restrictions(nobody).size.should eq 0
+      end
+
+      specify "are inaccessible to random people" do
+        article.visible_to?(john_q_public).should eq false
+        Post.with_restrictions(john_q_public).size.should eq 0
+      end
+
+      specify "are accessible to document creator" do
+        article.visible_to?(alice).should eq true
+        Post.with_restrictions(alice).size.should eq 1
+      end
+
+      specify "are accessible to god" do
+        article.visible_to?(zeus).should eq true
+        Post.with_restrictions(zeus).size.should eq 1
+      end
     end
 
-    specify "are inaccessible to random people" do
-      article.visible_to?(john_q_public).should eq false
-      Post.with_restrictions(john_q_public).size.should eq 0
-    end
-
-    specify "are accessible to document creator" do
-      article.visible_to?(alice).should eq true
-      Post.with_restrictions(alice).size.should eq 1
-    end
-
-    specify "are accessible to god" do
-      article.visible_to?(zeus).should eq true
-      Post.with_restrictions(zeus).size.should eq 1
-    end
   end
-
   describe "document store" do
 
     context "without external document" do

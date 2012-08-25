@@ -77,15 +77,18 @@ class Post < ActiveRecord::Base
   }
 
   def visible_to?(identity)
-    return true unless self.restricted
-    return true if identity && identity.respond_to?(:god) && identity.god
-    return (identity && identity.respond_to?(:id) && identity.id == self.created_by)
+    return true unless restricted
+    return false if nobody?(identity)
+    return identity.god || identity.id == created_by
+  end
+
+  def nobody?(identity)
+    !identity || !identity.respond_to?(:id)
   end
 
   def editable_by?(identity)
-    return false unless identity
-    return true if identity.respond_to?(:god) && identity.god
-    return (identity.respond_to?(:id) && identity.id == self.created_by)
+    return false if nobody?(identity)
+    return identity.god || identity.id == created_by
   end
 
   def may_be_managed_by?(identity)
