@@ -10,9 +10,9 @@ class Post < ActiveRecord::Base
   # A proxy class to present the locations relation as a set of strings
   class LocationsAccessor < Set
     def initialize(object, initial_value = nil)
-      @object = object      
-      super(initial_value || 
-        @object.attributes['paths'] || 
+      @object = object
+      super(initial_value ||
+        @object.attributes['paths'] ||
         @object.locations.map{ |location| location.path.to_s })
     end
 

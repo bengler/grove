@@ -8,7 +8,7 @@ class Readmark < ActiveRecord::Base
     select("readmarks.*").joins(:location).where(:locations => PebblePath.to_conditions(path)) unless path == '*'
   }
 
-  # Set the current readmark for a user in a given path in an idempotent way. Typically called as the 
+  # Set the current readmark for a user in a given path in an idempotent way. Typically called as the
   # user is reading.
   def self.set!(identity, path, post_id)
     raise ArgumentError, "Invalid path" unless Pebblebed::Uid.valid_path?(path)
@@ -40,7 +40,7 @@ class Readmark < ActiveRecord::Base
     self.save!
   end
 
-  def count_actual_unread 
+  def count_actual_unread
     Post.by_path("#{self.path}.*").where("posts.id > ?", self.post_id).count
   end
 
@@ -51,7 +51,7 @@ class Readmark < ActiveRecord::Base
       update_all("unread_count = unread_count + (#{diff.to_i})")
   end
 
-  def create_location_from_path    
+  def create_location_from_path
     self.location = Location.declare!(@path) if @path
   end
 end

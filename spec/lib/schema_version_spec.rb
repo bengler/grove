@@ -6,3 +6,4 @@ describe SchemaVersion do
     SchemaVersion.untag_key("key$%$schema:123").should eq "key"
   end
 end
+
