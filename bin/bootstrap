@@ -1,0 +1,136 @@
+#!/bin/bash
+
+NAME=grove
+
+main() {
+	dependencies
+
+	postgresql_dependencies
+	postgresql_setup
+	memcached_dependencies
+	rabbitmq_dependencies
+	rubygem_dependencies
+	database_migrations
+}
+
+dependencies() {
+	echo
+	echo "Checking the following dependencies..."
+	echo "[ ] postgresql"
+	echo "    ( ) $NAME user"
+	echo "    ( ) $NAME development database"
+	echo "[ ] memcached"
+	echo "[ ] rabbitmq"
+	echo "[ ] ruby gems"
+	echo
+}
+
+postgresql_dependencies() {
+	echo
+	which psql > /dev/null 2>&1
+	if [ $? -eq 0 ]
+	then
+		echo "[x] postgresql"
+		postgresql_requirements
+	else
+		echo "[ ] postgresql"
+		echo
+		echo "    You're going to need postgresql."
+		postgresql_requirements
+		echo "    If you have homebrew, try:"
+		echo
+		echo "    brew install postgresql"
+		exit 1
+	fi
+}
+
+postgresql_requirements() {
+	echo
+	echo "  NOTE: We generally use version 9.1.x,"
+	echo "  but it will probably work with older versions as well."
+	echo "  The only exotic feature we depend on is tsvector."
+	echo
+}
+
+postgresql_setup() {
+
+	EXISTS=`psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='$NAME'"`
+	if [ $EXISTS -eq 1 ]
+	then
+		echo "    (x) $NAME user"
+		echo
+		echo "         NOTE: This user needs to be able to create the test database with 'rake db:test:prepare'"
+		echo
+	else
+		echo
+		echo "    (x) creating a postgresql user named '$NAME'"
+		echo "        NOTE: It's being given superuser capabalities because it needs to"
+		echo "              create the test database with 'rake db:test:prepare'"
+		echo
+
+		createuser -sdR $NAME
+	fi
+
+	DB=${NAME}_development
+	psql -l | grep $DB > /dev/null 2>&1
+	if [ $? -ne 0 ]
+	then
+		echo "    (x) creating a database '$DB'"
+		createdb -O $NAME $DB
+	else
+		echo "    (x) $DB database"
+	fi
+}
+
+memcached_dependencies() {
+
+	echo
+	which memcached > /dev/null 2>&1
+	if [ $? -eq 0 ]
+	then
+		echo "[x] memcached"
+	else
+		echo "[ ] memcached"
+		echo
+		echo "    You're going to need memcached"
+		echo "    If you use homebrew, try:"
+		echo
+		echo "    brew install memcached"
+		exit 1
+	fi
+}
+
+rabbitmq_dependencies() {
+	echo
+	which rabbitmq-server > /dev/null 2>&1
+	if [ $? -eq 0 ]
+	then
+		echo "[x] rabbitmq"
+	else
+		echo "[ ] rabbitmq"
+		echo
+		echo "    You're going to need rabbitmq"
+		echo "    If you use homebrew, try:"
+		echo
+		echo "    brew install rabbitmq"
+		exit 1
+	fi
+
+}
+
+rubygem_dependencies() {
+	echo
+	bundle check
+	if [ $? -ne 0 ]
+	then
+		bundle install
+	fi
+}
+
+database_migrations() {
+	bundle exec rake db:migrate
+	echo
+}
+
+main
+
