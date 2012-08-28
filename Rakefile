@@ -31,6 +31,31 @@ namespace :bagera do
   end
 end
 
+namespace :river do
+  desc "put all posts into the river with event 'exists'"
+  task :put_existing => :environment do
+    require 'logger'
+
+    LOGGER ||= Logger.new(STDOUT)
+
+    river = Pebblebed::River.new
+    posts = Post.where(:restricted => false)
+    LOGGER.info "Touching all #{posts.count} unrestricted events"
+    posts.find_each do |post|
+      begin
+        river.publish(:event => 'exists', :uid => post.uid, :attributes => post.attributes.update('document' => post.merged_document))
+      rescue RuntimeError => e
+        LOGGER.warn "Error publishing post to river."
+        LOGGER.error e
+      else
+        LOGGER.info "Published #{post.uid} to river with 'exists' event."
+      end
+    end
+
+  end
+end
+
+
 namespace :db do
 
   desc "bootstrap db user, recreate, run migrations"
