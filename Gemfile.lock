@@ -12,14 +12,6 @@ GIT
       rack (>= 0.9.1)
 
 GIT
-  remote: git@github.com:bengler/capistrano-bengler.git
-  revision: a6ff1c753efbe10d80199596711e418644390f1d
-  specs:
-    capistrano-bengler (0.0.17)
-      capistrano (>= 2.9)
-      capistrano-ext (>= 1.2.1)
-
-GIT
   remote: git@github.com:bengler/pebbles-cors.git
   revision: 3e66f7908e40660f9974aa272fddfa12819117cb
   specs:
@@ -49,14 +41,6 @@ GEM
     backports (2.5.3)
     builder (3.0.0)
     bunny (0.8.0)
-    capistrano (2.9.0)
-      highline
-      net-scp (>= 1.0.0)
-      net-sftp (>= 2.0.0)
-      net-ssh (>= 2.0.14)
-      net-ssh-gateway (>= 1.1.0)
-    capistrano-ext (1.2.1)
-      capistrano (>= 1.0.0)
     crack (0.3.1)
     curb (0.8.1)
     dalli (2.0.5)
@@ -67,13 +51,6 @@ GEM
     i18n (0.6.1)
     kgio (2.7.4)
     multi_json (1.3.6)
-    net-scp (1.0.4)
-      net-ssh (>= 1.99.1)
-    net-sftp (2.0.5)
-      net-ssh (>= 2.0.9)
-    net-ssh (2.5.2)
-    net-ssh-gateway (1.1.0)
-      net-ssh (>= 1.99.1)
     nokogiri (1.5.5)
     pathbuilder (0.0.2)
     pebble_path (0.0.2)
@@ -149,8 +126,6 @@ DEPENDENCIES
   activerecord
   approvals
   bengler_test_helper!
-  capistrano (~> 2.9.0)
-  capistrano-bengler!
   curb
   dalli
   pebble_path

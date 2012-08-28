@@ -26,8 +26,6 @@ group :development, :test do
   # rack v. 1.3.5
   gem 'rack-test'
   gem 'simplecov'
-  gem 'capistrano', '~> 2.9.0', :require => false
-  gem 'capistrano-bengler', :git => "git@github.com:bengler/capistrano-bengler.git", :require => false
   gem 'timecop'
   gem 'vcr'
   gem 'webmock'
