@@ -1,0 +1,23 @@
+---
+common: &common
+  adapter: postgresql
+  encoding: unicode
+  host: localhost
+  pool: 5
+  username: grove
+
+production:
+  database: grove_production
+  password: 
+  <<: *common
+
+development:
+  database: grove_development
+  password: 
+  <<: *common
+
+test:
+  database: grove_test
+  password: 
+  min_messages: WARNING
+  <<: *common

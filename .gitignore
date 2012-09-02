@@ -8,3 +8,4 @@ coverage/
 .approvals
 *.received.txt
 config/site.rb
+config/database.yml
