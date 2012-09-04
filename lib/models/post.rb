@@ -240,12 +240,6 @@ class Post < ActiveRecord::Base
     end
   end
 
-  def document_must_be_hash
-    unless self.document.class == Hash
-      error.add :base, "Document must be a hash."
-    end
-  end
-
   def set_default_klass
     self.klass ||= "post"
   end
