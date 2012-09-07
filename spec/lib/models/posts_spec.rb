@@ -173,10 +173,10 @@ describe Post do
 
       it "invalidates the cache" do
         $memcached.set(article.cache_key, article.attributes.to_json)
-        article.document = "watchdog"
+        article.document = {'text' => "watchdog"}
         article.save!
         posts = Post.cached_find_all_by_uid([article.uid])
-        posts.first.document.should eq 'watchdog'
+        posts.first.document.should eq('text' => 'watchdog')
       end
 
       it "returns nil placeholders for non-existant posts" do
