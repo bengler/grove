@@ -7,10 +7,12 @@ describe "API v1 posts" do
     GroveV1
   end
 
+  before :each do
+    Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(stub(:get => the_identity))
+  end
+
   context "with a logged in user" do
-    before :each do
-      Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>1337, :god => false}))
-    end
+    let(:the_identity) { DeepStruct.wrap(:identity => {:id=>1337, :god => false}) }
 
     it "can set a readmark" do
       put "/readmarks/a.b.c/post:a.b.c$10"
@@ -61,9 +63,7 @@ describe "API v1 posts" do
 
 
   context "with no current user" do
-    before :each do
-      Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>nil, :god => nil}))
-    end
+    let(:the_identity) { DeepStruct.wrap({}) }
 
     it "can't get or set readmarks" do
       get "/readmarks/*"

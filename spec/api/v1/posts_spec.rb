@@ -19,10 +19,12 @@ describe "API v1 posts" do
     {:method => :put, :endpoint => '/posts/post:a.b.c$1/tags/:tags'}
   ]
 
+  before :each do
+    Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(stub(:get => the_identity))
+  end
+
   context "with a logged in user" do
-    before :each do
-      Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>1337, :god => false}))
-    end
+    let(:the_identity) { DeepStruct.wrap(:identity => {:id=>1337, :god => false}) }
 
     describe "POST /posts/:uid" do
 
@@ -543,9 +545,7 @@ describe "API v1 posts" do
   end
 
   context "with a logged in god" do
-    before :each do
-      Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {:id=>1337, :god => true}))
-    end
+    let(:the_identity) { DeepStruct.wrap(:identity => {:id=>1337, :god => true}) }
 
     it "can undelete a document" do
       post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 10)
@@ -577,9 +577,7 @@ describe "API v1 posts" do
   end
 
   context "with no current user" do
-    before :each do
-      Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(DeepStruct.wrap(:me => {}))
-    end
+    let(:the_identity) { DeepStruct.wrap({}) }
 
     describe "has no access to user endpoints" do
       user_endpoints.each do |forbidden|
