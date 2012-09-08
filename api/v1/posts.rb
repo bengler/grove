@@ -57,7 +57,7 @@ class GroveV1 < Sinatra::Base
       halt 500, e.message
     end
 
-    pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
+    pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
   end
 
   delete "/posts/:uid" do |uid|
@@ -125,7 +125,7 @@ class GroveV1 < Sinatra::Base
       end
       halt 404, "No such post" unless @post
       halt 403, "Forbidden" unless @post.visible_to?(current_identity)
-      pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
+      pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
     end
   end
 
@@ -144,7 +144,7 @@ class GroveV1 < Sinatra::Base
     end
 
     @post.touch
-    pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/benglerpebbles/petroglyph/issues/5
+    pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
   end
 
   post "/posts/:uid/paths/:path" do |uid, path|
