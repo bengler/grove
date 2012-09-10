@@ -177,16 +177,13 @@ class Post < ActiveRecord::Base
   end
 
   def add_path!(path)
-    Location.declare!(path).posts << self
+    self.paths << path
+    self.save!
   end
 
   def remove_path!(path)
-    if path == canonical_path
-      raise ArgumentError.new(:cannot_delete_canonical_path)
-    end
-
-    location = self.locations.by_path(path).first
-    location.posts -= [self]
+    self.paths.delete path
+    self.save!
   end
 
   # Add an occurrence without having to save the post.
