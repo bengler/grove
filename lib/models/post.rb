@@ -76,6 +76,10 @@ class Post < ActiveRecord::Base
     scope
   }
 
+  def attributes_for_export
+    attributes.update('document' => merged_document).merge('paths' => paths.to_a)
+  end
+
   def visible_to?(identity)
     return true unless restricted
     return false if nobody?(identity)

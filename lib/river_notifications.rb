@@ -25,7 +25,7 @@ class RiverNotifications < ActiveRecord::Observer
   end
 
   def publish(post, event)
-    self.class.river.publish(:event => event, :uid => post.uid, :attributes => post.attributes.update('document' => post.merged_document))
+    self.class.river.publish(:event => event, :uid => post.uid, :attributes => post.attributes_for_export)
   end
 
 end
