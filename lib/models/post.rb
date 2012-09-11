@@ -136,8 +136,14 @@ class Post < ActiveRecord::Base
   end
 
   def self.cached_find_all_by_uid(uids)
-    if uids.any? {|uid| Pebblebed::Uid.wildcard_path?(uid)}
-      raise ArgumentError, "No wildcards allowed"
+    if uids.any? {|uid|
+        parsed = Pebblebed::Uid.new(uid)
+        parsed.realm.blank? or parsed.realm == "*"
+      }
+      raise ArgumentError, "Realm must be part of the uid"
+    end
+    if uids.any? {|uid| Pebblebed::Uid.new(uid).oid.blank?}
+      raise ArgumentError, "Oid must be part of the uid"
     end
 
     keychain = CacheKeychain.new(uids)

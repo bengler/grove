@@ -183,8 +183,19 @@ describe Post do
         posts.should eq [nil]
       end
 
-      it "bails on wildcards" do
+      it "returns list of posts by oids" do
+        posts = Post.cached_find_all_by_uid(["post.doc:area51.*$#{memo.id}","post.doc:area51.*$23344234234"])
+        posts.length.should eq 2
+        posts.first.should eq memo
+        posts.last.should eq nil
+      end
+
+      it "bails when no oid is given" do
         ->{ Post.cached_find_all_by_uid(["post:with.wildcard.*"]) }.should raise_error ArgumentError
+      end
+
+      it "bails when no realm is given" do
+        ->{ Post.cached_find_all_by_uid(["post.event:*$23344234234"]) }.should raise_error ArgumentError
       end
 
       it "bails on pipes" do
