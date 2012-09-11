@@ -43,7 +43,7 @@ namespace :river do
     LOGGER.info "Touching all #{posts.count} unrestricted events"
     posts.find_each do |post|
       begin
-        river.publish(:event => 'exists', :uid => post.uid, :attributes => post.attributes.update('document' => post.merged_document))
+        river.publish(:event => 'exists', :uid => post.uid, :attributes => post.attributes_for_export)
       rescue RuntimeError => e
         LOGGER.warn "Error publishing post to river."
         LOGGER.error e
