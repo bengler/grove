@@ -194,6 +194,10 @@ describe Post do
         ->{ Post.cached_find_all_by_uid(["post:with.wildcard.*"]) }.should raise_error ArgumentError
       end
 
+      it "bails when no klass is given" do
+        ->{ Post.cached_find_all_by_uid(["*:with.wildcard.*"]) }.should raise_error ArgumentError
+      end
+
       it "bails when no realm is given" do
         ->{ Post.cached_find_all_by_uid(["post.event:*$23344234234"]) }.should raise_error ArgumentError
       end

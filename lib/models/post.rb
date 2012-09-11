@@ -136,12 +136,7 @@ class Post < ActiveRecord::Base
   end
 
   def self.cached_find_all_by_uid(uids)
-    if uids.any? {|uid|!Pebblebed::Uid.valid_label?(Pebblebed::Uid.new(uid).realm)}
-      raise ArgumentError, "A valid realm must be part of the uid"
-    end
-    if uids.any? {|uid| Pebblebed::Uid.new(uid).oid.blank?}
-      raise ArgumentError, "Oid must be part of the uid"
-    end
+    uids.any? {|uid| validate_uid_query(uid)}
 
     keychain = CacheKeychain.new(uids)
 
@@ -278,5 +273,15 @@ class Post < ActiveRecord::Base
         paths.each { |path| Readmark.post_added(path, self.id)}
       end
     end
+  end
+
+  def self.validate_uid_query(uid)
+    parsed = Pebblebed::Uid.raw_parse(uid)
+    raise ArgumentError, "Klass must be part of the uid, no wildcards allowed" if
+      parsed.first == "*" or parsed.first.blank?
+    raise ArgumentError, "A valid realm must be part of the uid" if
+      !Pebblebed::Uid.valid_label?(Pebblebed::Uid.new(uid).realm)
+    raise ArgumentError, "oid must be part of the uid, no wildcards allowed" if
+      Pebblebed::Uid.new(uid).oid.blank? or Pebblebed::Uid.new(uid).oid == "*"
   end
 end
