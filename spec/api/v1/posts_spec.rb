@@ -347,6 +347,16 @@ describe "API v1 posts" do
         last_response.status.should be 404
       end
 
+      it "deletes a document by external id" do
+        post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 1337, :external_id => "foo_1")
+        get "/posts/#{post.uid}"
+        last_response.status.should be 200
+        delete "/posts/post:a.b.c?external_id=foo_1"
+        last_response.status.should be 204
+        get "/posts/#{post.uid}"
+        last_response.status.should be 404
+      end
+
       it "cannot delete someone elses document" do
         post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 666)
         delete "/posts/#{post.uid}"

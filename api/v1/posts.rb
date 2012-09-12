@@ -63,7 +63,11 @@ class GroveV1 < Sinatra::Base
   delete "/posts/:uid" do |uid|
     require_identity
 
-    @post = Post.find_by_uid(uid)
+    if params[:external_id]
+      @post = Post.find_by_external_id(params[:external_id])
+    else
+      @post = Post.find_by_uid(uid)
+    end
     halt 404, "No post with uid #{uid}" unless @post
 
     unless @post.may_be_managed_by?(current_identity)
