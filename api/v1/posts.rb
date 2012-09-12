@@ -130,7 +130,7 @@ class GroveV1 < Sinatra::Base
   end
 
   get "/posts/:uid/count" do |uid|
-    {:uid => uid, :count => Post.by_uid(uid).with_restrictions(current_identity).count}.to_json
+    {:uid => uid, :count => Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity).count}.to_json
   end
 
   put "/posts/:uid/touch" do |uid|
