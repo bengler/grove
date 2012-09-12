@@ -77,7 +77,7 @@ class Post < ActiveRecord::Base
   }
 
   def attributes_for_export
-    attributes.update('document' => merged_document).merge('paths' => paths.to_a)
+    attributes.update('document' => merged_document).merge('paths' => paths.to_a, 'uid' => uid)
   end
 
   def visible_to?(identity)
