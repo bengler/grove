@@ -65,10 +65,12 @@ class GroveV1 < Sinatra::Base
 
     if params[:external_id]
       @post = Post.find_by_external_id(params[:external_id])
+      halt 404, "No post with external_id #{params[:external_id]}" unless @post
     else
       @post = Post.find_by_uid(uid)
+      halt 404, "No post with uid #{uid}" unless @post
     end
-    halt 404, "No post with uid #{uid}" unless @post
+
 
     unless @post.may_be_managed_by?(current_identity)
       halt 403, "Post is owned by a different user (#{@post.created_by})"
