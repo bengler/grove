@@ -136,7 +136,7 @@ class Post < ActiveRecord::Base
   end
 
   def self.cached_find_all_by_uid(uids)
-    uids.any? {|uid| validate_uid_query(uid)}
+    uids.any? {|uid| validate_uid_query!(uid)}
 
     keychain = CacheKeychain.new(uids)
 
@@ -275,7 +275,7 @@ class Post < ActiveRecord::Base
     end
   end
 
-  def self.validate_uid_query(uid)
+  def self.validate_uid_query!(uid)
     parsed = Pebblebed::Uid.raw_parse(uid)
     raise ArgumentError, "Klass must be part of the uid, no wildcards allowed" if
       parsed.first == "*" or parsed.first.blank?
