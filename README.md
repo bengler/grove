@@ -89,10 +89,14 @@ The body of the post/put must be the Grove posting in json format and wrapped in
 
 REMEMBER TO WRAP YOUR POSTINGS IN A `post`-NAMESPACE. Like this:
 
-    {"post":
+    {"post":{
       "document": {"body": "Hello Grove!"},
-      "tags": ['welcome', 'tutorial']
+      "tags": ["welcome", "tutorial"]}
     }
+
+Command-line example, curling grove for fun and profit:
+
+	curl -XPOST 'http://example.com/api/grove/v1/posts/post.todo:dna.org.a.b' --data '{"session":"session_name","post":{"document": {"body": "Hello Grove!"},"tags": ["welcome", "tutorial"]}}' -H "Content-Type: application/json"
 
 ## Delete/reinstate a posting
 
