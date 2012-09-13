@@ -70,7 +70,7 @@ class Post < ActiveRecord::Base
     scope = relation
     if !identity || !identity.respond_to?(:id)
       scope = scope.where(:restricted => false)
-    elsif !identity.god?
+    elsif !identity.god
       scope = scope.where('not restricted or created_by = ?', identity.id)
     end
     scope
