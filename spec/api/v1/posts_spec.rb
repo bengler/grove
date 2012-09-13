@@ -555,7 +555,7 @@ describe "API v1 posts" do
   end
 
   context "with a logged in god" do
-    let(:the_identity) { DeepStruct.wrap(:identity => {:id=>1337, :god => true}) }
+    let(:the_identity) { DeepStruct.wrap("identity" => {"id" => 1337, "god" => true}) }
 
     it "can undelete a document" do
       post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 10)
