@@ -18,6 +18,7 @@ gem 'bengler_test_helper',  :git => "git://github.com/bengler/bengler_test_helpe
 gem 'sanitize'
 gem 'curb'
 gem 'pebble_path'
+gem 'airbrake', '~> 3.1.4', :require => false
 
 group :development, :test do
   gem 'rspec', '~> 2.8'
