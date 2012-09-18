@@ -5,7 +5,7 @@ class RiverNotifications < ActiveRecord::Observer
   observe :post
 
   def self.river
-    river = Pebblebed::River.new
+    @river ||= Pebblebed::River.new
   end
 
   def after_create(post)
