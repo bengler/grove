@@ -1,3 +1,5 @@
+# These tests cover group-related security. For plain restrited documents, see post_spec.rb
+
 require 'spec_helper'
 
 describe "Post security" do
