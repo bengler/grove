@@ -71,7 +71,11 @@ class Post < ActiveRecord::Base
     if !identity || !identity.respond_to?(:id)
       scope = scope.where(:restricted => false)
     elsif !identity.god
-      scope = scope.where('not restricted or created_by = ?', identity.id)
+      scope = scope.
+        joins(:locations).
+        joins("left outer join group_locations on group_locations.location_id = locations.id").
+        joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{identity.id}").
+        where(['not restricted or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
     end
     scope
   }

@@ -12,6 +12,23 @@ GIT
       rack (>= 0.9.1)
 
 GIT
+  remote: git@github.com:bengler/pebblebed.git
+  revision: e1d10701e9c94ec937533c4a35a5a8f337c3ba0f
+  branch: security_client
+  specs:
+    pebblebed (0.0.22)
+      activesupport
+      bunny
+      curb (>= 0.7.14)
+      deepstruct (>= 0.0.2)
+      futurevalue
+      i18n
+      nokogiri
+      pathbuilder
+      queryparams
+      yajl-ruby
+
+GIT
   remote: git@github.com:bengler/pebbles-cors.git
   revision: 3e66f7908e40660f9974aa272fddfa12819117cb
   specs:
@@ -61,17 +78,6 @@ GEM
     pathbuilder (0.0.2)
     pebble_path (0.0.3)
       pebblebed (>= 0.0.15)
-    pebblebed (0.0.22)
-      activesupport
-      bunny
-      curb (>= 0.7.14)
-      deepstruct (>= 0.0.2)
-      futurevalue
-      i18n
-      nokogiri
-      pathbuilder
-      queryparams
-      yajl-ruby
     petroglyph (0.0.3)
       tilt
     pg (0.13.2)
@@ -136,7 +142,7 @@ DEPENDENCIES
   curb
   dalli
   pebble_path
-  pebblebed
+  pebblebed!
   pebbles-cors!
   petroglyph
   pg

@@ -29,6 +29,76 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: group_locations; Type: TABLE; Schema: public; Owner: grove; Tablespace: 
+--
+
+CREATE TABLE group_locations (
+    id integer NOT NULL,
+    group_id integer,
+    location_id integer
+);
+
+
+ALTER TABLE public.group_locations OWNER TO grove;
+
+--
+-- Name: group_locations_id_seq; Type: SEQUENCE; Schema: public; Owner: grove
+--
+
+CREATE SEQUENCE group_locations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.group_locations_id_seq OWNER TO grove;
+
+--
+-- Name: group_locations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: grove
+--
+
+ALTER SEQUENCE group_locations_id_seq OWNED BY group_locations.id;
+
+
+--
+-- Name: group_memberships; Type: TABLE; Schema: public; Owner: grove; Tablespace: 
+--
+
+CREATE TABLE group_memberships (
+    id integer NOT NULL,
+    group_id integer,
+    identity_id integer,
+    created_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.group_memberships OWNER TO grove;
+
+--
+-- Name: group_memberships_id_seq; Type: SEQUENCE; Schema: public; Owner: grove
+--
+
+CREATE SEQUENCE group_memberships_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.group_memberships_id_seq OWNER TO grove;
+
+--
+-- Name: group_memberships_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: grove
+--
+
+ALTER SEQUENCE group_memberships_id_seq OWNED BY group_memberships.id;
+
+
+--
 -- Name: locations; Type: TABLE; Schema: public; Owner: grove; Tablespace: 
 --
 
@@ -221,6 +291,20 @@ ALTER TABLE public.schema_migrations OWNER TO grove;
 -- Name: id; Type: DEFAULT; Schema: public; Owner: grove
 --
 
+ALTER TABLE ONLY group_locations ALTER COLUMN id SET DEFAULT nextval('group_locations_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: grove
+--
+
+ALTER TABLE ONLY group_memberships ALTER COLUMN id SET DEFAULT nextval('group_memberships_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: grove
+--
+
 ALTER TABLE ONLY locations ALTER COLUMN id SET DEFAULT nextval('locations_id_seq'::regclass);
 
 
@@ -243,6 +327,22 @@ ALTER TABLE ONLY posts ALTER COLUMN id SET DEFAULT nextval('posts_id_seq'::regcl
 --
 
 ALTER TABLE ONLY readmarks ALTER COLUMN id SET DEFAULT nextval('readmarks_id_seq'::regclass);
+
+
+--
+-- Name: group_locations_pkey; Type: CONSTRAINT; Schema: public; Owner: grove; Tablespace: 
+--
+
+ALTER TABLE ONLY group_locations
+    ADD CONSTRAINT group_locations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: group_memberships_pkey; Type: CONSTRAINT; Schema: public; Owner: grove; Tablespace: 
+--
+
+ALTER TABLE ONLY group_memberships
+    ADD CONSTRAINT group_memberships_pkey PRIMARY KEY (id);
 
 
 --
@@ -278,6 +378,20 @@ ALTER TABLE ONLY readmarks
 
 
 --
+-- Name: index_group_locations_on_group_id_and_location_id; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+--
+
+CREATE UNIQUE INDEX index_group_locations_on_group_id_and_location_id ON group_locations USING btree (group_id, location_id);
+
+
+--
+-- Name: index_group_memberships_on_group_id_and_identity_id; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+--
+
+CREATE UNIQUE INDEX index_group_memberships_on_group_id_and_identity_id ON group_memberships USING btree (group_id, identity_id);
+
+
+--
 -- Name: index_locations_on_labels; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
 --
 
@@ -303,6 +417,13 @@ CREATE INDEX index_occurrence_entries_on_at ON occurrence_entries USING btree (a
 --
 
 CREATE INDEX index_occurrence_entries_on_post_id_and_label ON occurrence_entries USING btree (post_id, label);
+
+
+--
+-- Name: index_posts_on_conflicted; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+--
+
+CREATE INDEX index_posts_on_conflicted ON posts USING btree (conflicted);
 
 
 --
@@ -373,6 +494,14 @@ CREATE INDEX index_readmarks_on_owner ON readmarks USING btree (owner);
 --
 
 CREATE UNIQUE INDEX unique_schema_migrations ON schema_migrations USING btree (version);
+
+
+--
+-- Name: group_locations_location_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: grove
+--
+
+ALTER TABLE ONLY group_locations
+    ADD CONSTRAINT group_locations_location_id_fkey FOREIGN KEY (location_id) REFERENCES locations(id);
 
 
 --
