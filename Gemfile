@@ -8,7 +8,7 @@ gem 'activerecord', :require => 'active_record'
 gem 'pg'
 gem 'yajl-ruby', :require => "yajl"
 gem 'petroglyph'
-gem 'pebblebed'
+gem 'pebblebed', :git => "git@github.com:bengler/pebblebed.git", :branch => "security_client"
 gem 'pebbles-cors', :git => 'git@github.com:bengler/pebbles-cors.git'
 gem 'dalli'
 gem 'ts_vector_tags'
@@ -19,6 +19,8 @@ gem 'sanitize'
 gem 'curb'
 gem 'pebble_path'
 gem 'airbrake', '~> 3.1.4', :require => false
+gem 'servolux'
+gem 'main'
 
 group :development, :test do
   gem 'rspec', '~> 2.8'
