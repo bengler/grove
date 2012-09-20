@@ -26,6 +26,18 @@ describe Post do
   its(:realm) { should eq('area51') }
   its(:uid) { should eq("post.doc:area51.secret.research$#{article.id}") }
 
+  context "validations" do
+
+    it "validates format of external_id" do
+      lambda {
+        Post.create!(default_attributes.merge(:external_id => "123:werwer"))
+      }.should raise_error ActiveRecord::RecordInvalid, "Validation failed: External must start with a non-digit character"
+      lambda {
+        Post.create!(default_attributes.merge(:external_id => "pippi_2323"))
+      }.should_not raise_error
+    end
+  end
+
   context "locations" do
 
     it "defaults to the canonical location" do

@@ -64,8 +64,8 @@ describe "API v1 posts" do
       end
 
       it "can't update a deleted external document" do
-        p = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => 1337, :deleted => true, :external_id => '123')
-        post "/posts/#{p.uid}", :post => {:document => {'text' => '2'}, :external_id => '123'}
+        p = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => 1337, :deleted => true, :external_id => 'foo_123')
+        post "/posts/#{p.uid}", :post => {:document => {'text' => '2'}, :external_id => 'foo_123'}
         last_response.status.should eq 404
       end
 
@@ -227,6 +227,16 @@ describe "API v1 posts" do
         get "/posts/post:*$#{post.id}"
         result = JSON.parse(last_response.body)
         result['post']['document'].should eq post.document
+      end
+
+      it "can retrieve a document by external_id" do
+        external_id = "pippi_232323"
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'}, :external_id => external_id)
+        get "/posts/#{external_id}"
+        last_response.status.should == 200
+        result = JSON.parse(last_response.body)['post']
+        result['uid'].should eq "post:a.b.c$#{p.id}"
+        result['external_id'].should eq external_id
       end
 
       it "filters by creator" do
