@@ -117,6 +117,10 @@ A number of specific posts may be retrieved by specifying a comma separated list
 
     GET /posts/post.event:apdm.bagera.events.facebook$121,post.banan:apdm.bagera$2323
 
+A specific posting may be retrieved by specifying an external_id as uid to this endpoint. E.g.
+
+    GET /posts/myapp_2323
+
 The result is returned as an array in the namespace `posts` in the same order as the posts are specified in the request. If a document could not be found, the result array gets a null entry.
 
 The real meat and potatoes worker action in Grove however is the wildcard posts query. By using wildcards in the uid, collections of posts may be retrieved. Wildcards may be replace parts of the class, path and oid. Examples:

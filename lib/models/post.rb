@@ -17,6 +17,10 @@ class Post < ActiveRecord::Base
   validate :canonical_path_must_be_valid
   validates_with DocumentValidator
   validates_format_of :klass, :with => /^post(\.|$)/
+  validates_format_of :external_id,
+    :with => /^[a-zA-Z_-][a-zA-Z0-9_-]*$/,
+    :if => lambda { |record| !record.external_id.nil? },
+    :message => "must start with a non-digit character"
   before_validation :assign_realm, :set_default_klass
 
   before_save :revert_unmodified_values
