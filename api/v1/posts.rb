@@ -114,7 +114,7 @@ class GroveV1 < Sinatra::Base
       uids = uid.split(/\s*,\s*/).compact
       @posts = filter_visible_posts(Post.cached_find_all_by_uid(uids))
       pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => nil}
-    elsif (oid == '*' || oid == '' || oid.nil?) and uid !~ /^[a-zA-Z_-][a-zA-Z0-9_-]*$/
+    elsif uid =~ /:/ and (oid == '*' || oid == '' || oid.nil?)
       # Retrieve a collection by wildcards
       @posts = Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity)
       @posts = apply_occurrence_scope(@posts, params['occurrence'])
