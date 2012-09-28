@@ -22,6 +22,11 @@ gem 'airbrake', '~> 3.1.4', :require => false
 gem 'servolux'
 gem 'main'
 
+# Because of a bug in rack-protection (https://github.com/rkh/rack-protection/commit/a91810fa) that affects
+# cors-requests we'll need to get rack-protection from github
+# This can safely be changed to the official rubygems version '> 1.2.0' whenever it is released
+gem 'rack-protection', :git => 'git://github.com/rkh/rack-protection.git'
+
 group :development, :test do
   gem 'rspec', '~> 2.8'
   # a monkeypatch in rack 1.3.4 causes :WFKV_ to be declared twice

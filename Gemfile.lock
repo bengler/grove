@@ -12,6 +12,13 @@ GIT
       rack (>= 0.9.1)
 
 GIT
+  remote: git://github.com/rkh/rack-protection.git
+  revision: 4a771b640d70dc1acc54b93e654537a5efec0491
+  specs:
+    rack-protection (1.2.0)
+      rack
+
+GIT
   remote: git@github.com:bengler/pebbles-cors.git
   revision: 3e66f7908e40660f9974aa272fddfa12819117cb
   specs:
@@ -86,8 +93,6 @@ GEM
     pg (0.13.2)
     queryparams (0.0.3)
     rack (1.4.1)
-    rack-protection (1.2.0)
-      rack
     rack-test (0.6.1)
       rack (>= 1.0)
     raindrops (0.8.1)
@@ -152,6 +157,7 @@ DEPENDENCIES
   petroglyph
   pg
   rack-contrib!
+  rack-protection!
   rack-test
   rake
   rspec (~> 2.8)
