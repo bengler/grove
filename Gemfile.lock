@@ -20,9 +20,10 @@ GIT
 
 GIT
   remote: git@github.com:bengler/pebbles-cors.git
-  revision: 3e66f7908e40660f9974aa272fddfa12819117cb
+  revision: 6672a5b23d2b283e3feebf6de4a9b991dd0b262a
   specs:
     pebbles-cors (0.0.1)
+      dalli
       pebblebed
       rack
 
@@ -77,7 +78,7 @@ GEM
     pathbuilder (0.0.2)
     pebble_path (0.0.3)
       pebblebed (>= 0.0.15)
-    pebblebed (0.0.23)
+    pebblebed (0.0.24)
       activesupport
       bunny
       curb (>= 0.7.14)
