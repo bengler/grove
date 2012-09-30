@@ -9,6 +9,7 @@ class UnauthorizedChangeError < Exception; end
 
 class GroveV1 < Sinatra::Base
   set :root, "#{File.dirname(__FILE__)}/v1"
+  set :protection, :except => :http_origin
 
   register Sinatra::Pebblebed
 
