@@ -1,4 +1,4 @@
-require 'pebblebed'
+require 'pebbles-uid'
 require 'cache_key'
 
 class Thing < Struct.new(:uid)
@@ -11,12 +11,12 @@ describe CacheKey do
   end
 
   it "converts UIDs to cache keys" do
-    CacheKey.from_uid('post.doc:a.b.c$42').should eq('post.doc:*$42$%$schema:--1')
+    CacheKey.from_uid('post.doc:a.b.c$42').should eq('post.doc:a.*$42$%$schema:--1')
   end
 
   describe Thing do
     subject { Thing.new('post.card:one.two.three$13') }
 
-    its(:cache_key) { should eq('post.card:*$13$%$schema:--1') }
+    its(:cache_key) { should eq('post.card:one.*$13$%$schema:--1') }
   end
 end

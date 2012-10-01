@@ -185,7 +185,7 @@ describe "API v1 posts" do
           Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})
         end
         posts = Post.limit(3).order('created_at desc').all
-        get "/posts/#{[posts.map(&:uid), "post:does.not.exist$99999999"].flatten.join(',')}"
+        get "/posts/#{[posts.map(&:uid), "post:a.does.not.exist$99999999"].flatten.join(',')}"
         result = JSON.parse(last_response.body)['posts']
         result.size.should eq 4
         result.first['post']['document'].should eq posts.first.document
@@ -223,8 +223,10 @@ describe "API v1 posts" do
         result = JSON.parse(last_response.body)
         result['posts'].size.should eq 1
 
+        # this is not a collection, actually, since
+        # realm and oid are both unambiguous
         post = Post.first
-        get "/posts/post:*$#{post.id}"
+        get "/posts/post:a.*$#{post.id}"
         result = JSON.parse(last_response.body)
         result['post']['document'].should eq post.document
       end

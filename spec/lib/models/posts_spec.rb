@@ -152,7 +152,7 @@ describe Post do
         article.document = 'sentinel'
         $memcached.set(article.cache_key, article.attributes.to_json)
 
-        posts = Post.cached_find_all_by_uid([article.uid])
+        posts = Post.cached_find_all_by_uid([Pebbles::Uid.cache_key(article.uid)])
         posts.first.document.should eq 'sentinel'
       end
 
@@ -188,26 +188,6 @@ describe Post do
         posts.length.should eq 2
         posts.first.should eq memo
         posts.last.should eq nil
-      end
-
-      it "bails when no oid is given" do
-        ->{ Post.cached_find_all_by_uid(["post:with.wildcard.*"]) }.should raise_error ArgumentError
-      end
-
-      it "bails when no klass is given" do
-        ->{ Post.cached_find_all_by_uid(["*:with.wildcard.*"]) }.should raise_error ArgumentError
-      end
-
-      it "bails when no realm is given" do
-        ->{ Post.cached_find_all_by_uid(["post.event:*$23344234234"]) }.should raise_error ArgumentError
-      end
-
-      it "bails on pipes" do
-        ->{ Post.cached_find_all_by_uid(["post:with.pipes.a|b|c"]) }.should raise_error ArgumentError
-      end
-
-      it "bails on caret" do
-        ->{ Post.cached_find_all_by_uid(["post:with.caret.^a.b.c"]) }.should raise_error ArgumentError
       end
     end
   end

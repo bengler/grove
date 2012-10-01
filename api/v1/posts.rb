@@ -108,13 +108,13 @@ class GroveV1 < Sinatra::Base
   end
 
   get "/posts/:uid" do |uid|
-    klass, path, oid = Pebblebed::Uid.raw_parse(uid)
-    if uid =~ /\,/
+    query = Pebbles::Uid.query(uid)
+    if query.list?
       # Retrieve a list of posts
       uids = uid.split(/\s*,\s*/).compact
-      @posts = filter_visible_posts(Post.cached_find_all_by_uid(uids))
+      @posts = filter_visible_posts(Post.cached_find_all_by_uid(query.cache_keys))
       pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => nil}
-    elsif oid == '*' || oid == '' || oid.nil?
+    elsif query.collection?
       # Retrieve a collection by wildcards
       @posts = Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity)
       @posts = apply_occurrence_scope(@posts, params['occurrence'])
@@ -127,7 +127,7 @@ class GroveV1 < Sinatra::Base
       if uid =~ /[\*\|]/
         @post = Post.by_uid(uid).with_restrictions(current_identity).first
       else
-        @post = Post.cached_find_all_by_uid([uid]).first
+        @post = Post.cached_find_all_by_uid(query.cache_keys).first
       end
       halt 404, "No such post" unless @post
       halt 403, "Forbidden" unless @post.visible_to?(current_identity)

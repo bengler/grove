@@ -11,7 +11,7 @@ class Readmark < ActiveRecord::Base
   # Set the current readmark for a user in a given path in an idempotent way. Typically called as the
   # user is reading.
   def self.set!(identity, path, post_id)
-    raise ArgumentError, "Invalid path" unless Pebblebed::Uid.valid_path?(path)
+    raise ArgumentError, "Invalid path" unless Pebbles::Uid.valid_path?(path)
     readmark = Readmark.where("owner = ?", identity).by_path(path).first
     readmark ||= Readmark.create!(:owner => identity, :path => path)
     readmark.post_id = post_id

@@ -1,8 +1,8 @@
 class GroveV1 < Sinatra::Base
-  put "/readmarks/:path/:post_uid" do |path, post_uid|
+  put "/readmarks/:path/:uid" do |path, uid|
     identity_id = current_identity.try(:id)
     halt 403, "No identity" unless identity_id
-    oid = Pebblebed::Uid.new(post_uid).oid
+    oid = Pebbles::Uid.oid(uid)
     readmark = Readmark.set!(identity_id, path, oid.to_i)
     pg :readmark, :locals => { :readmark => readmark }
   end
@@ -11,7 +11,7 @@ class GroveV1 < Sinatra::Base
     identity_id = current_identity.try(:id)
     halt 403, "No identity" unless identity_id
 
-    if Pebblebed::Uid.wildcard_path?(path)
+    if Pebbles::Uid::Path.new(path).wildcard?
       pg :readmarks, :locals => { :readmarks => Readmark.where("owner = ?", identity_id).by_path(path) }
     else
       # This is a fully constrained path - return exactly one readmark

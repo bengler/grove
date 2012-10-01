@@ -1,5 +1,4 @@
 # encoding: utf-8
-require_relative '../cache_keychain'
 require_relative './post/document_validator'
 
 class Post < ActiveRecord::Base
@@ -37,7 +36,7 @@ class Post < ActiveRecord::Base
   }
 
   scope :by_uid, lambda { |uid|
-    _klass, _path, _oid = Pebblebed::Uid.raw_parse(uid)
+    _klass, _path, _oid = Pebbles::Uid.parse(uid)
     scope = by_path(_path)
     scope = scope.where("klass = ?", _klass) unless _klass == '*'
     scope = scope.where("posts.id = ?", _oid.to_i) unless _oid.nil? || _oid == '' || _oid == '*'
@@ -119,19 +118,19 @@ class Post < ActiveRecord::Base
   end
 
   def uid=(value)
-    self.klass, self.canonical_path, _oid = Pebblebed::Uid.raw_parse(value)
+    self.klass, self.canonical_path, _oid = Pebbles::Uid.parse(value)
     raise ArgumentError, "Do not assign oid. It is managed by the model. (omit '...$#{_oid}' from uid)" if _oid != '' && _oid != self.id
   end
 
   def self.find_by_uid(uid)
-    return nil unless Pebblebed::Uid.new(uid).oid
+    return nil unless Pebbles::Uid.oid(uid)
     self.by_uid(uid).first
   end
 
   def self.find_by_external_id_and_uid(external_id, provided_uid)
     return nil if external_id.nil?
 
-    uid = Pebblebed::Uid.new(provided_uid)
+    uid = Pebbles::Uid.new(provided_uid)
     post = self.where(:realm => uid.realm, :external_id => external_id).first
     if post && post.canonical_path != uid.path
       fail CanonicalPathConflict.new(post.uid)
@@ -139,28 +138,25 @@ class Post < ActiveRecord::Base
     post
   end
 
-  def self.cached_find_all_by_uid(uids)
-    uids.any? {|uid| validate_uid_query!(uid)}
-
-    keychain = CacheKeychain.new(uids)
-
+  # Accepts an array of `Pebbles::Uid.cache_key(uid)`s
+  def self.cached_find_all_by_uid(cache_keys)
     result =  Hash[
-      $memcached.get_multi(*keychain.keys).map do |key, value|
+      $memcached.get_multi(*cache_keys.map {|key| CacheKey.wrap(key) }).map do |key, value|
         post = Post.instantiate(Yajl::Parser.parse(value))
         post.readonly!
-        [key, post]
+        [CacheKey.unwrap(key), post]
       end
     ]
-    keychain.mark result.keys
-    keychain.unmarked.each do |key, uid|
-      post = Post.find_by_uid(uid)
+
+    (cache_keys-result.keys).each do |key|
+      post = Post.find_by_uid(key)
       if post
-        $memcached.set(key, post.attributes.to_json) if post
+        $memcached.set(post.cache_key, post.attributes.to_json) if post
         post = Post.instantiate(Yajl::Parser.parse(post.attributes.to_json))
       end
       result[key] = post
     end
-    keychain.keys.map {|key| result[key]}
+    cache_keys.map {|key| result[key]}
   end
 
   # TODO: When we have multiple versions of the api, we will need to
@@ -212,7 +208,7 @@ class Post < ActiveRecord::Base
   private
 
   def invalidate_cache
-    $memcached.delete(self.cache_key)
+    $memcached.delete(cache_key)
   end
 
   # TODO: Replace with something general. This is an ugly hack to make dittforslag.no scripthacking-safe.
@@ -234,7 +230,7 @@ class Post < ActiveRecord::Base
   end
 
   def canonical_path_must_be_valid
-    unless Pebblebed::Uid.valid_path?(self.canonical_path) && !Pebblebed::Uid.valid_wildcard_path?(self.canonical_path)
+    unless Pebbles::Uid.valid_path?(self.canonical_path)
       error.add :base, "#{self.canonical_path.inspect} is an invalid path."
     end
   end
@@ -277,15 +273,5 @@ class Post < ActiveRecord::Base
         paths.each { |path| Readmark.post_added(path, self.id)}
       end
     end
-  end
-
-  def self.validate_uid_query!(uid)
-    parsed = Pebblebed::Uid.raw_parse(uid)
-    raise ArgumentError, "Klass must be part of the uid, no wildcards allowed" if
-      parsed.first == "*" or parsed.first.blank?
-    raise ArgumentError, "A valid realm must be part of the uid" if
-      !Pebblebed::Uid.valid_label?(Pebblebed::Uid.new(uid).realm)
-    raise ArgumentError, "oid must be part of the uid, no wildcards allowed" if
-      Pebblebed::Uid.new(uid).oid.blank? or Pebblebed::Uid.new(uid).oid == "*"
   end
 end
