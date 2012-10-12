@@ -1,5 +1,6 @@
 # encoding: utf-8
 require_relative './post/document_validator'
+require_relative '../cache_key'
 
 class Post < ActiveRecord::Base
   class CanonicalPathConflict < StandardError; end
