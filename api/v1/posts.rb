@@ -126,6 +126,8 @@ class GroveV1 < Sinatra::Base
       # Retrieve a single specific post
       if uid =~ /[\*\|]/
         @post = Post.by_uid(uid).with_restrictions(current_identity).first
+      elsif uid =~ /^[a-zA-Z_-][a-zA-Z0-9_-]*$/
+        @post = Post.find_by_external_id(uid)
       else
         @post = Post.cached_find_all_by_uid(query.cache_keys).first
       end

@@ -1,0 +1,89 @@
+#!/usr/bin/env ruby
+
+require './config/environment.rb'
+
+Thread.abort_on_exception = true
+
+Main do
+  description <<-end
+Grove Security Listener
+
+Listens to the security configuration updates from Checkpoint as they arrive on the river
+and updates the group access tables in Grove accordingly.
+  end
+
+  examples <<-end
+Start the security_listener application:
+
+  security_listener start
+
+Spawn a daemon process and return:
+
+  security_listener start --daemon
+
+Show status of a daemon process:
+
+  security_listener status
+
+Shut down a daemon process:
+
+  security_listener stop
+  end
+
+  option('--pidfile=path', '-p') do
+    description 'Path to PID file.'
+    default '/tmp/delta.pid'
+  end
+
+  mode 'start' do
+    option('--daemon', '-d') do
+      description 'Run as a daemon.'
+    end
+
+    def run
+      d = daemon(
+        params['pidfile'].value,
+        params['daemon'].value ? LOGGER : Logger.new(STDOUT)
+      )
+      if params['daemon'].value
+        d.startup
+      else
+        d.server.startup
+      end
+    end
+  end
+
+  mode 'stop' do
+    def run
+      daemon(params['pidfile'].value, Logger.new(STDOUT)).shutdown
+    end
+  end
+
+  mode 'status' do
+    def run
+      d = daemon(params['pidfile'].value, Logger.new(STDOUT))
+      puts "#{d.name} is #{d.alive? ? 'running' : 'stopped'}"
+      exit d.alive? ? 0 : 1
+    end
+  end
+
+  mode 'kill' do
+    def run
+      daemon(params['pidfile'].value, Logger.new(STDOUT)).kill
+    end
+  end
+
+  def daemon(pidfile, logger)
+    return Servolux::Daemon.new(
+      :server => SecurityListenerDaemon.new(
+        :pid_file => pidfile,
+        :logger => logger
+      ),
+      :nochdir => true
+    )
+  end
+
+  def run
+    help!
+  end
+end
