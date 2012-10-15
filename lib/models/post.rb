@@ -39,7 +39,7 @@ class Post < ActiveRecord::Base
   serialize :external_document
 
   scope :by_path, lambda { |path|
-    select("distinct posts.*").joins(:locations).where(:locations => PebblePath.to_conditions(path)) unless path == '*'
+    select("distinct posts.*").joins(:locations).where(:locations => Pebbles::Path.to_conditions(path)) unless path == '*'
   }
 
   scope :by_uid, lambda { |uid|

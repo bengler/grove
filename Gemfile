@@ -17,7 +17,7 @@ gem 'unicorn', '~> 4.1.1'
 gem 'bengler_test_helper',  :git => "git://github.com/bengler/bengler_test_helper.git"
 gem 'sanitize'
 gem 'curb'
-gem 'pebble_path'
+gem 'pebbles-path', '>=0.0.3'
 gem 'airbrake', '~> 3.1.4', :require => false
 gem 'pebbles-uid'
 gem 'servolux'
