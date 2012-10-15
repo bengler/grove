@@ -7,6 +7,9 @@ class GroveV1 < Sinatra::Base
       posts.map{|p| p.visible_to?(current_identity) ? p : nil if p}
     end
 
+    def external_id?(uid)
+      !!(uid =~ /^[a-zA-Z_-][a-zA-Z0-9_-]*$/)
+    end
   end
 
   post "/posts/:uid" do |uid|
@@ -108,32 +111,37 @@ class GroveV1 < Sinatra::Base
   end
 
   get "/posts/:uid" do |uid|
-    klass, path, oid = Pebblebed::Uid.raw_parse(uid)
-    if uid =~ /\,/
-      # Retrieve a list of posts
-      uids = uid.split(/\s*,\s*/).compact
-      @posts = filter_visible_posts(Post.cached_find_all_by_uid(uids))
-      pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => nil}
-    elsif uid =~ /:/ and (oid == '*' || oid == '' || oid.nil?)
-      # Retrieve a collection by wildcards
-      @posts = Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity)
-      @posts = apply_occurrence_scope(@posts, params['occurrence'])
-      direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
-      @posts = @posts.order("posts.created_at #{direction}")
-      @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
-      pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => @pagination}
-    else
-      # Retrieve a single specific post
-      if uid =~ /[\*\|]/
-        @post = Post.by_uid(uid).with_restrictions(current_identity).first
-      elsif uid =~ /^[a-zA-Z_-][a-zA-Z0-9_-]*$/
-        @post = Post.find_by_external_id(uid)
-      else
-        @post = Post.cached_find_all_by_uid([uid]).first
-      end
+    if external_id?(uid)
+      @post = Post.find_by_external_id(uid)
       halt 404, "No such post" unless @post
       halt 403, "Forbidden" unless @post.visible_to?(current_identity)
       pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
+    else
+      query = Pebbles::Uid.query(uid)
+      if query.list?
+        # Retrieve a list of posts
+        uids = uid.split(/\s*,\s*/).compact
+        @posts = filter_visible_posts(Post.cached_find_all_by_uid(query.cache_keys))
+        pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => nil}
+      elsif query.collection?
+        # Retrieve a collection by wildcards
+        @posts = Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity)
+        @posts = apply_occurrence_scope(@posts, params['occurrence'])
+        direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
+        @posts = @posts.order("posts.created_at #{direction}")
+        @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
+        pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => @pagination}
+      else
+        # Retrieve a single specific post
+        if uid =~ /[\*\|]/
+          @post = Post.by_uid(uid).with_restrictions(current_identity).first
+        else
+          @post = Post.cached_find_all_by_uid(query.cache_keys).first
+        end
+        halt 404, "No such post" unless @post
+        halt 403, "Forbidden" unless @post.visible_to?(current_identity)
+        pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
+      end
     end
   end
 

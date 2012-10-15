@@ -19,6 +19,7 @@ gem 'sanitize'
 gem 'curb'
 gem 'pebble_path'
 gem 'airbrake', '~> 3.1.4', :require => false
+gem 'pebbles-uid'
 gem 'servolux'
 gem 'main'
 
