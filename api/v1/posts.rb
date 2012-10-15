@@ -120,7 +120,6 @@ class GroveV1 < Sinatra::Base
       query = Pebbles::Uid.query(uid)
       if query.list?
         # Retrieve a list of posts
-        uids = uid.split(/\s*,\s*/).compact
         @posts = filter_visible_posts(Post.cached_find_all_by_uid(query.cache_keys))
         pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => nil}
       elsif query.collection?
