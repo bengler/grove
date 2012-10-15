@@ -7,7 +7,7 @@ class GroupLocation < ActiveRecord::Base
 
   # Given the gorup_id and path, makes sure every path in the subtree gets a group_location entry
   def self.allow_subtree(group_id, path)
-    raise ArgumentError, "Must be a valid path without wildcards" unless Pebblebed::Uid.valid_path?(path)
+    raise ArgumentError, "Must be a valid path without wildcards" unless Pebbles::Uid.valid_path?(path)
     Location.declare!(path) # Must make sure the root path exists in the database
     Location.by_path("#{path}.*").each do |location|
       allow_location(group_id, location)
@@ -16,7 +16,7 @@ class GroupLocation < ActiveRecord::Base
 
   # Given the group_id and path, removes any group_location entries for the entire subtree
   def self.deny_subtree(group_id, path)
-    raise ArgumentError, "Must be a valid path without wildcards" unless Pebblebed::Uid.valid_path?(path)
+    raise ArgumentError, "Must be a valid path without wildcards" unless Pebbles::Uid.valid_path?(path)
     location_ids = Location.by_path("#{path}.*").map(&:id)
     GroupLocation.delete_all(["group_id = ? and location_id in (?)", group_id, location_ids])
   end
