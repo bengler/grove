@@ -110,6 +110,15 @@ class GroveV1 < Sinatra::Base
     scope
   end
 
+  # @apidoc
+  # Get a post by Uid
+  #
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/
+  # @http GET
+  # @example /api/grove/v1/posts/1
+  # @required [String] uid the post unique identifier
+  # @returns [JSON]
   get "/posts/:uid" do |uid|
     if external_id?(uid)
       @post = Post.find_by_external_id(uid)
