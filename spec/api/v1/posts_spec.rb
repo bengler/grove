@@ -19,12 +19,39 @@ describe "API v1 posts" do
     {:method => :put, :endpoint => '/posts/post:a.b.c$1/tags/:tags'}
   ]
 
+  let(:guest) { DeepStruct.wrap({}) }
+  let(:alice) { DeepStruct.wrap(:identity => {:id => 1, :god => false}) }
+  let(:odin) { DeepStruct.wrap(:identity => {:id => 1337, :god => true}) }
+
+  let(:checkpoint) { stub(:get => identity) }
+
   before :each do
-    Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(stub(:get => the_identity))
+    Pebblebed::Connector.any_instance.stub(:checkpoint).and_return checkpoint
+  end
+
+  context "with no current user" do
+    let(:identity) { guest }
+
+    describe "has no access to user endpoints" do
+      user_endpoints.each do |forbidden|
+        it "fails to #{forbidden[:method]} #{forbidden[:endpoint]}" do
+          self.send(forbidden[:method], forbidden[:endpoint])
+          last_response.status.should eq(403)
+        end
+      end
+    end
+
+    it "cannot read restricted documents" do
+      Post.create!(:uid => "post:a.b.c", :created_by => 3, :document => {'text' => 'xyzzy'}, :restricted => true)
+      get "/posts/post:a.b.c"
+      result = JSON.parse(last_response.body)['posts']
+      result.size.should eq 0
+    end
+
   end
 
   context "with a logged in user" do
-    let(:the_identity) { DeepStruct.wrap(:identity => {:id=>1337, :god => false}) }
+    let(:identity) { alice }
 
     describe "POST /posts/:uid" do
 
@@ -52,19 +79,19 @@ describe "API v1 posts" do
       end
 
       it "can't update a document created by another user" do
-        p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'})
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :document => {:title => 'Hello spaceboy'})
         post "/posts/#{p.uid}", :post => {:document => '{"title":"Hello nobody"}'}
         last_response.status.should eq 403
       end
 
       it "can't update a deleted document" do
-        p = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => 1337, :deleted => true)
+        p = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => 1, :deleted => true)
         post "/posts/#{p.uid}", :post => {:document => {'text' => '2'}}
         last_response.status.should eq 404
       end
 
       it "can't update a deleted external document" do
-        p = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => 1337, :deleted => true, :external_id => 'foo_123')
+        p = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => 1, :deleted => true, :external_id => 'foo_123')
         post "/posts/#{p.uid}", :post => {:document => {'text' => '2'}, :external_id => 'foo_123'}
         last_response.status.should eq 404
       end
@@ -318,8 +345,8 @@ describe "API v1 posts" do
 
       it "can only read restricted posts created by current user" do
         posts = []
-        posts << Post.create!(:uid => "post:a.b.c", :created_by => 1337, :document => {'text' => 'xyzzy'}, :restricted => true)
-        posts << Post.create!(:uid => "post:a.b.d", :created_by => 1, :document => {'text' => 'zippo'}, :restricted => true)
+        posts << Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'xyzzy'}, :restricted => true)
+        posts << Post.create!(:uid => "post:a.b.d", :created_by => 2, :document => {'text' => 'zippo'}, :restricted => true)
         get "/posts/#{[posts.map(&:uid)].join(',')}"
         result = JSON.parse(last_response.body)['posts']
         result.size.should eq 2
@@ -330,27 +357,26 @@ describe "API v1 posts" do
       describe "checking editable status in response" do
 
         it "returns true if identity is creator" do
-          p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :document => {:title => 'Hello spaceboy'})
+          p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'})
           get "/posts/#{p.uid}"
           result = JSON.parse(last_response.body)['post']
           result['may_edit'].should be_true
         end
 
         it "returns false unless identity is creator" do
-          p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'})
+          p = Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {:title => 'Hello spaceboy'})
           get "/posts/#{p.uid}"
           result = JSON.parse(last_response.body)['post']
           result['may_edit'].should be_false
         end
 
       end
-
     end
 
     describe "DELETE /posts/:uid" do
 
       it "deletes a document and removes it from cache" do
-        post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 1337)
+        post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 1)
         get "/posts/#{post.uid}"
         last_response.status.should be 200
         delete "/posts/#{post.uid}"
@@ -360,7 +386,7 @@ describe "API v1 posts" do
       end
 
       it "deletes a document by external id" do
-        post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 1337, :external_id => "foo_1")
+        post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 1, :external_id => "foo_1")
         get "/posts/#{post.uid}"
         last_response.status.should be 200
         delete "/posts/post:a.b.c?external_id=foo_1"
@@ -379,7 +405,7 @@ describe "API v1 posts" do
     describe "POST /posts/:uid/undelete" do
 
       it "cannot undelete a document" do
-        post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 1337, :deleted => true)
+        post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 1, :deleted => true)
         post "/posts/#{post.uid}/undelete"
         last_response.status.should be 403
       end
@@ -425,7 +451,7 @@ describe "API v1 posts" do
 
     describe "POST /posts/:uid/tags/:tags" do
       it "adds tags" do
-        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337)
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1)
 
         post "/posts/#{p.uid}/tags/paris,france"
 
@@ -434,7 +460,7 @@ describe "API v1 posts" do
       end
 
       it "adds more tags" do
-        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :tags => ['paris'])
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :tags => ['paris'])
 
         post "/posts/#{p.uid}/tags/wine,france"
 
@@ -443,7 +469,7 @@ describe "API v1 posts" do
       end
 
       it "doesn't add duplicates" do
-        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :tags => ['paris'])
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :tags => ['paris'])
 
         post "/posts/#{p.uid}/tags/wine,france,paris"
 
@@ -454,7 +480,7 @@ describe "API v1 posts" do
 
     describe "PUT /posts/:uid/tags/:tags" do
       it "updates the tags" do
-        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :tags => ["paris", "france"])
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :tags => ["paris", "france"])
 
         put "/posts/#{p.uid}/tags/promenades,vins"
 
@@ -465,7 +491,7 @@ describe "API v1 posts" do
 
     describe "DELETE /posts/:uid/tags/:tags" do
       it "deletes tags" do
-        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :tags => ["paris", "france", "wine"])
+        p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :tags => ["paris", "france", "wine"])
 
         delete "/posts/#{p.uid}/tags/france,wine"
 
@@ -477,7 +503,7 @@ describe "API v1 posts" do
     describe "PUT /posts/:uid/touch" do
       it "touches the post" do
         created_at = Time.new(2010, 3, 14, 15, 9, 26)
-        p = Post.create!(:uid => "post:a.b.c", :created_at => created_at, :updated_at => created_at, :created_by => 1337)
+        p = Post.create!(:uid => "post:a.b.c", :created_at => created_at, :updated_at => created_at, :created_by => 1)
 
         put "/posts/#{p.uid}/touch"
         result = JSON.parse(last_response.body)['post']
@@ -567,7 +593,7 @@ describe "API v1 posts" do
   end
 
   context "with a logged in god" do
-    let(:the_identity) { DeepStruct.wrap("identity" => {"id" => 1337, "god" => true}) }
+    let(:identity) { odin }
 
     it "can undelete a document" do
       post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 10)
@@ -596,26 +622,5 @@ describe "API v1 posts" do
       result = JSON.parse(last_response.body)['post']
       result['created_by'].should eq 1
     end
-  end
-
-  context "with no current user" do
-    let(:the_identity) { DeepStruct.wrap({}) }
-
-    describe "has no access to user endpoints" do
-      user_endpoints.each do |forbidden|
-        it "fails to #{forbidden[:method]} #{forbidden[:endpoint]}" do
-          self.send(forbidden[:method], forbidden[:endpoint])
-          last_response.status.should eq(403)
-        end
-      end
-    end
-
-    it "cannot read restricted documents" do
-      Post.create!(:uid => "post:a.b.c", :created_by => 3, :document => {'text' => 'xyzzy'}, :restricted => true)
-      get "/posts/post:a.b.c"
-      result = JSON.parse(last_response.body)['posts']
-      result.size.should eq 0
-    end
-
   end
 end
