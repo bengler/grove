@@ -8,17 +8,6 @@ describe "API v1 posts" do
     GroveV1
   end
 
-  user_endpoints = [
-    {:method => :post, :endpoint => '/posts/post:a.b.c'},
-    {:method => :post, :endpoint => '/posts/post:a.b.c$1/paths/a.b.d'},
-    {:method => :delete, :endpoint => '/posts/post:a.b.c$1/paths/a.b.d'},
-    {:method => :post, :endpoint => '/posts/post:a.b.c$1/occurrences/due'},
-    {:method => :delete, :endpoint => '/posts/post:a.b.c$1/occurrences/due'},
-    {:method => :put, :endpoint => '/posts/post:a.b.c$1/occurrences/due'},
-    {:method => :put, :endpoint => '/posts/post:a.b.c$1/touch'},
-    {:method => :put, :endpoint => '/posts/post:a.b.c$1/tags/:tags'}
-  ]
-
   let(:guest) { DeepStruct.wrap({}) }
   let(:alice) { DeepStruct.wrap(:identity => {:id => 1, :god => false}) }
   let(:odin) { DeepStruct.wrap(:identity => {:id => 1337, :god => true}) }
@@ -31,15 +20,6 @@ describe "API v1 posts" do
 
   context "with no current user" do
     let(:identity) { guest }
-
-    describe "has no access to user endpoints" do
-      user_endpoints.each do |forbidden|
-        it "fails to #{forbidden[:method]} #{forbidden[:endpoint]}" do
-          self.send(forbidden[:method], forbidden[:endpoint])
-          last_response.status.should eq(403)
-        end
-      end
-    end
 
     it "cannot read restricted documents" do
       Post.create!(:uid => "post:a.b.c", :created_by => 3, :document => {'text' => 'xyzzy'}, :restricted => true)
