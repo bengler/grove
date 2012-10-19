@@ -61,16 +61,4 @@ describe "API v1 posts" do
 
   end
 
-
-  context "with no current user" do
-    let(:the_identity) { DeepStruct.wrap({}) }
-
-    it "can't get or set readmarks" do
-      get "/readmarks/*"
-      last_response.status.should eq 403
-      put "/readmarks/a.b.c/post:a.b.c$10"
-      last_response.status.should eq 403
-    end
-  end
-
 end

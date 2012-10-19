@@ -16,7 +16,9 @@ describe "API v1" do
     {:method => :delete, :endpoint => '/posts/post:a.b.c$1/occurrences/due'},
     {:method => :put, :endpoint => '/posts/post:a.b.c$1/occurrences/due'},
     {:method => :put, :endpoint => '/posts/post:a.b.c$1/touch'},
-    {:method => :put, :endpoint => '/posts/post:a.b.c$1/tags/:tags'}
+    {:method => :put, :endpoint => '/posts/post:a.b.c$1/tags/:tags'},
+    {:method => :get, :endpoint => '/readmarks/*'},
+    {:method => :put, :endpoint => '/readmarks/a.b.c/post:a.b.c$10'}
   ]
 
   let(:guest) { DeepStruct.wrap({}) }
