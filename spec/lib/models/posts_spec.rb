@@ -207,13 +207,13 @@ describe Post do
   context "access control" do
 
     let(:nobody) { DeepStruct.wrap({}) }
-    let(:john_q_public) { DeepStruct.wrap({:id => 101, :god => false}) }
-    let(:alice) { DeepStruct.wrap({:id => 42, :god => false}) }
+    let(:john_q_public) { DeepStruct.wrap({:id => 1, :god => false}) }
+    let(:alice) { DeepStruct.wrap({:id => 2, :god => false}) }
     let(:zeus) { DeepStruct.wrap({:id => 1337, :god => true}) }
 
     context "public documents" do
       before(:each) do
-        default_attributes.merge!(:restricted => false, :created_by => 42)
+        default_attributes.merge!(:restricted => false, :created_by => 2)
       end
 
       specify "are visible" do
@@ -241,7 +241,7 @@ describe Post do
     context "restricted documents" do
 
       before(:each) do
-        default_attributes.merge!(:restricted => true, :created_by => 42)
+        default_attributes.merge!(:restricted => true, :created_by => 2)
       end
 
       specify "are inaccessible without an identity" do
