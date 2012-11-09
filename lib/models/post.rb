@@ -20,7 +20,7 @@ class Post < ActiveRecord::Base
   # TODO: Remove '.' from allowed characters in external_id when parlor 
   # has been updated
   validates_format_of :external_id,
-    :with => /^[a-zA-Z_-][a-zA-Z0-9_\-\.]*$/,
+    :with => /^[a-zA-Z_-][a-zA-Z0-9_\-\.].*/,
     :if => lambda { |record| !record.external_id.nil? },
     :message => "must start with a non-digit character"
   before_validation :assign_realm, :set_default_klass
