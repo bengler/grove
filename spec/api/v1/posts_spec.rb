@@ -187,6 +187,29 @@ describe "API v1 posts" do
         result.size.should eq 1
       end
 
+
+      it "retrieves a tagged document using tsqueries" do
+        Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'})
+        Post.create!(:uid => "post:a.b.c", :tags => ["paris", "texas"], :document => {'text' => '2'})
+        Post.create!(:uid => "post:a.b.c", :tags => ["lyon", "france"], :document => {'text' => '3'})
+
+        get "/posts/post:*", :tags => "paris & !texas"
+        result = JSON.parse(last_response.body)['posts']
+        result.size.should eq 1
+
+        get "/posts/post:*", :tags => "!paris"
+        result = JSON.parse(last_response.body)['posts']
+        result.size.should eq 1
+
+        get "/posts/post:*", :tags => "!nothing"
+        result = JSON.parse(last_response.body)['posts']
+        result.size.should eq 3
+
+        get "/posts/post:*", :tags => "'"
+        last_response.status.should == 400
+      end
+
+
       it "retrieves a list of documents" do
         10.times do |i|
           Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})

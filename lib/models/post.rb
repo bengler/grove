@@ -67,7 +67,14 @@ class Post < ActiveRecord::Base
     scope = scope.where(:realm => filters['realm']) if filters['realm']
     scope = scope.where(:klass => filters['klass'].split(',').map(&:strip)) if filters['klass']
     scope = scope.where(:external_id => filters['external_id'].split(',').map(&:strip)) if filters['external_id']
-    scope = scope.with_tags(filters['tags']) if filters['tags']
+    if filters['tags']
+      # Use a common tags scope if filter is an array or comma separated list
+      if filters['tags'].is_a?(Array) || (filters['tags'] =~ /\,/)
+        scope = scope.with_tags(filters['tags'])
+      else
+        scope = scope.with_tags_query(filters['tags'])
+      end
+    end
     scope = scope.where(:created_by => filters['created_by']) if filters['created_by']
     scope
   }

@@ -12,6 +12,10 @@ class GroveV1 < Sinatra::Base
     end
   end
 
+  error TsVectorTags::InvalidTsQueryError do
+    [400, "Invalid tags filter"]
+  end
+
   post "/posts/:uid" do |uid|
     save_post(uid)
   end
