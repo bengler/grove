@@ -7,9 +7,6 @@ class GroveV1 < Sinatra::Base
       posts.map{|p| p.visible_to?(current_identity) ? p : nil if p}
     end
 
-    def external_id?(uid)
-      !!(uid =~ /^[a-zA-Z_-][a-zA-Z0-9_-]*$/)
-    end
   end
 
   error TsVectorTags::InvalidTsQueryError do
@@ -124,8 +121,8 @@ class GroveV1 < Sinatra::Base
   # @required [String] uid the post unique identifier
   # @returns [JSON]
   get "/posts/:uid" do |uid|
-    if external_id?(uid)
-      @post = Post.find_by_external_id(uid)
+    if params[:external_id]
+      @post = Post.find_by_external_id(params[:external_id])
       halt 404, "No such post" unless @post
       halt 403, "Forbidden" unless @post.visible_to?(current_identity)
       pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5

@@ -264,7 +264,7 @@ describe "API v1 posts" do
       it "can retrieve a document by external_id" do
         external_id = "pippi_232323"
         p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'}, :external_id => external_id)
-        get "/posts/#{external_id}"
+        get "/posts/*", :external_id => external_id
         last_response.status.should == 200
         result = JSON.parse(last_response.body)['post']
         result['uid'].should eq "post:a.b.c$#{p.id}"
@@ -277,15 +277,6 @@ describe "API v1 posts" do
         get "/posts/*:*", :created_by => 1
         JSON.parse(last_response.body)['posts'].first['post']['document'].should eq('text' => '1')
         get "/posts/*:*", :created_by => 2
-        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq('text' => '2')
-      end
-
-      it "filters by external_id" do
-        Post.create!(:uid => "post:a.b.c", :external_id => 'abc', :document => {'text' => '1'})
-        Post.create!(:uid => "post:a.b.c", :external_id => 'pqr', :document => {'text' => '2'})
-        get "/posts/*:*", :external_id => 'abc'
-        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq('text' => '1')
-        get "/posts/*:*", :external_id => 'pqr'
         JSON.parse(last_response.body)['posts'].first['post']['document'].should eq('text' => '2')
       end
 
