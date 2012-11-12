@@ -146,9 +146,18 @@ The key "pagination" is returned with the result set containing the limit and of
 When using wildcards, additional parameters can be supplied to constrain the results. These are:
 
 - `external_id`: Require that the document has a certain external_id
-- `tags`: An comma separated list of tags to require
+- `tags`: An comma separated list of tags to require or a *tag query*
 - `created_by`: An integer specifying a user that should be listed as the creator of the desired document
 - `occurrence`: A hash limiting the selection to postings that have a specific occurrence type in a given time window
+
+A tag query is a boolean expression with tags. Here are some valid examples to get you started:
+
+    foo & !(bar | baz)
+    paris & !texas
+    texas | france
+    !france
+
+Valid operators: `&`, `|` and `!`, use parantheses to group expressions.
 
 When limiting for occurrences the following parameters are valid:
 
