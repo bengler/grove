@@ -119,7 +119,7 @@ A number of specific posts may be retrieved by specifying a comma separated list
 
 A specific posting may be retrieved by specifying an external_id as uid to this endpoint. E.g.
 
-    GET /posts/myapp_2323
+    GET /posts/*:*?external_id=foo
 
 The result is returned as an array in the namespace `posts` in the same order as the posts are specified in the request. If a document could not be found, the result array gets a null entry.
 
