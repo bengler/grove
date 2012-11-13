@@ -211,12 +211,8 @@ class Post < ActiveRecord::Base
     end
   end
 
-  def remove_occurrences!(event, at = nil)
-    if at.nil?
-      OccurrenceEntry.where(:post_id => id, :label => event).destroy_all
-    else
-      OccurrenceEntry.where(:post_id => id, :label => event, :at => Array(at)).destroy_all
-    end
+  def remove_occurrences!(event)
+    OccurrenceEntry.where(:post_id => id, :label => event).destroy_all
   end
 
   def replace_occurrences!(event, at = [])
