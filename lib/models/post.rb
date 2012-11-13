@@ -291,6 +291,8 @@ class Post < ActiveRecord::Base
   end
 
   def update_external_id_according_to_deleted_status
+    # A deleted post should not lock its external_id but we
+    # archive it to post.document in order to make forensics easier.
     if self.deleted_changed?
       if self.deleted && self.external_id != nil
         self.document['external_id'] = self.external_id
