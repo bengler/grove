@@ -30,6 +30,7 @@ class Post < ActiveRecord::Base
   before_save :sanitize
   before_save :attach_canonical_path
   before_save :update_readmarks_according_to_deleted_status
+  before_save :update_external_id_according_to_deleted_status
   after_update :invalidate_cache
   before_destroy :invalidate_cache
 
@@ -285,4 +286,14 @@ class Post < ActiveRecord::Base
       end
     end
   end
+
+  def update_external_id_according_to_deleted_status
+    if self.deleted_changed?
+      if self.deleted && self.external_id != nil
+        self.document['external_id'] = self.external_id
+        self.external_id = nil
+      end
+    end
+  end
+
 end

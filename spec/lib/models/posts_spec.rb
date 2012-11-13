@@ -367,6 +367,37 @@ describe Post do
     end
   end
 
+  describe "delete" do
+
+    context "when a post is deleted" do
+      it "will free up its external_id" do
+        post = Post.create!(default_attributes.merge(:external_id => "s1"))
+        post.deleted = true
+        post.save!
+        post.external_id.should be_nil
+      end
+
+      it "will archive its external_id" do
+        external_id = "s1"
+        post = Post.create!(default_attributes.merge(:external_id => external_id))
+        post.deleted = true
+        post.save!
+        post.document['external_id'].should eq external_id
+      end
+    end
+
+    context "when a post is undeleted" do
+      it "will not be reassigned the old external_id" do
+        post = Post.create!(default_attributes.merge(:external_id => "s1"))
+        post.deleted = true
+        post.save!
+        post.deleted = false
+        post.save!
+        post.external_id.should be_nil
+      end
+    end
+  end
+
   # TODO: This should be configurable
   it "sanitizes some fields if the content is json" do
     Post.create!(:uid => "post:x.y.z", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
