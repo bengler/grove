@@ -215,7 +215,7 @@ class GroveV1 < Sinatra::Base
     post = Post.find_by_uid(uid)
     halt 404, "No such post" unless post
 
-    post.remove_occurrences!(event, params[:at])
+    post.remove_occurrences!(event)
 
     response.status = 204
   end

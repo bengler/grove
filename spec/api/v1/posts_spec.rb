@@ -545,25 +545,7 @@ describe "API v1 posts" do
       end
 
       describe "DELETE /posts/:uid/occurrences/:event" do
-        it "deletes the specified occurrence" do
-          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline, hard_deadline]})
-
-          delete "/posts/#{p.uid}/occurrences/due", :at => soft_deadline
-          p.reload
-
-          p.occurrences['due'].should eq([hard_deadline])
-        end
-
-        it "deletes all the specified occurrences" do
-          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline, hard_deadline, now]})
-
-          delete "/posts/#{p.uid}/occurrences/due", :at => [soft_deadline, hard_deadline]
-          p.reload
-
-          p.occurrences['due'].should eq([now])
-        end
-
-        it "deletes all the occurrences for the event" do
+        it "deletes all the occurrences of that type for the event" do
           p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline, hard_deadline]})
 
           delete "/posts/#{p.uid}/occurrences/due"
