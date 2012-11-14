@@ -295,6 +295,7 @@ class Post < ActiveRecord::Base
     # archive it to post.document in order to make forensics easier.
     if self.deleted_changed?
       if self.deleted && self.external_id != nil
+        self.document ||= {} # TODO: never have posts with nil document
         self.document['external_id'] = self.external_id
         self.external_id = nil
       end
