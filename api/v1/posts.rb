@@ -13,9 +13,61 @@ class GroveV1 < Sinatra::Base
     [400, "Invalid tags filter"]
   end
 
+  # @apidoc
+  # Create or update a post.
+  #
+  # @note If you specify only some of the post attributes, they will be replaced without touching
+  #   the other attributes. E.g. specify only 'document' to update attributes without touching
+  #   occurrences, tags og paths.
+
+  # @description When creating new posts, specify uid without the oid part, (e.g. 'post.event:acme.calendar'),
+  #   if you specify the full uid with oid (e.g. 'post.event:acme.calendar$3242') this is considered
+  #   an update of the specified document.
+  #
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/:uid
+  # @http POST
+  # @example /api/grove/v1/posts/post:acme.invoices
+  # @required [String] uid The uid of the post (omitting oid)
+  # @required [JSON] post The post to create (see readme for details)
+  # @optional [JSON] post[document] The attributes of the post
+  # @optional [JSON] post[tags] Array of tags for the post
+  # @optional [JSON] post[external_id] The external_id of the document
+  # @optional [JSON] post[paths] Array of synonymous paths for the post
+  # @optional [JSON] post[occurrences] Hash of arrays of timestamps for this post.
+  #   E.g. {"start_time" => ['2012-11-14T10:54:22+01:00']}
+  # @status 204 Success
+  # @status 404 No such post
+  # @status 409 The external_id is in use on a post with a different path
+  # @status 403 Forbidden. This is not your post, and you are not god.
+
   post "/posts/:uid" do |uid|
     save_post(uid)
   end
+
+  # @apidoc
+  # Update a post.
+  #
+  # @note If you specify only some of the post attributes, they will be replaced without touching
+  #   the other attributes. E.g. specify only 'document' to update attributes without touching
+  #   occurrences, tags og paths.
+  #
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/:uid
+  # @http PUT
+  # @example /api/grove/v1/posts/post:acme.invoices
+  # @optional [String] uid The uid of the post (omitting oid)
+  # @optional [String] external_id The external_id of the post to update
+  # @required [JSON] post The post to create (see readme for details)
+  # @optional [JSON] post[document] The attributes of the post
+  # @optional [JSON] post[external_id] The external_id of the document
+  # @optional [JSON] post[tags] Array of tags for the post
+  # @optional [JSON] post[paths] Array of synonymous paths for the post
+  # @optional [JSON] post[occurrences] Hash of arrays of timestamps for this post.
+  # @status 204 Success
+  # @status 404 No such post
+  # @status 409 The external_id is in use on a post with a different path
+  # @status 403 Forbidden. This is not your post, and you are not god.
 
   put "/posts/:uid" do |uid|
     save_post(uid, :only_updates=>true)
@@ -64,6 +116,22 @@ class GroveV1 < Sinatra::Base
     pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
   end
 
+
+  # @apidoc
+  # Delete a post.
+  #
+  # @note Only the original creator or a god user may delete posts.
+  #   An uid or an external_id must be specified
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/:uid
+  # @http DELETE
+  # @example /api/grove/v1/posts/post:acme.invoices$123
+  # @optional [String] uid The uid of the post
+  # @optional [String] external_id The external_id of the post
+  # @status 204 Success
+  # @status 404 No such post
+  # @status 403 This is not your post and you are not god!
+
   delete "/posts/:uid" do |uid|
     require_identity
 
@@ -84,6 +152,20 @@ class GroveV1 < Sinatra::Base
     @post.save!
     response.status = 204
   end
+
+  # @apidoc
+  # Undelete a post.
+  #
+  # @note Only gods may undelete posts. Posts lose their external_id when deleted.
+  #   Undeleted posts will have their old external_ids stashed in the document under
+  #   the key `external_id`.
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/:uid/undelete
+  # @http POST
+  # @example /api/grove/v1/posts/post:acme.invoices$123/undelete
+  # @required [String] uid The uid of the post
+  # @status 200 Ok
+  # @status 403 Only gods may undelete
 
   post "/posts/:uid/undelete" do |uid|
     halt 403, "Only gods may undelete" unless current_identity.god
@@ -112,14 +194,32 @@ class GroveV1 < Sinatra::Base
   end
 
   # @apidoc
-  # Get a post by Uid
+  # Perform a posts query getting either a single post, or a collection of posts
+  # according to your criteria.
   #
   # @category Grove/Posts
-  # @path /api/grove/v1/posts/
+  # @path /api/grove/v1/posts/:uid
   # @http GET
-  # @example /api/grove/v1/posts/1
-  # @required [String] uid the post unique identifier
-  # @returns [JSON]
+  # @example /api/grove/v1/posts/post:acme.invoices$123
+  # @optional [String] uid The uid of a specific post, a comma separated list of uids or a wildcard
+  #   uid query (e.g. "*:acme.invoices.*")
+  # @optional [Integer] external_id The external_id of the post you want
+  # @optional [String] tags Constrain query by tags. Either a comma separated list of required tags or a
+  #   boolean expression like "paris & !texas" or "closed & (failed | pending)"
+  # @optional [Integer] created_by Only documents created by this checkpoint identity will be returned
+  # @optional [String] occurrence[label] Require that the post have an occurrence with this label
+  # @optional [String] occurrence[from] The occurrences must be later than this time. Time stamp (ISO 8601).
+  # @optional [String] occurrence[to] The occurrences must be earlier than this time. Time stamp (ISO 8601)
+  # @optional [String] occurrence[order] 'asc' or 'desc'. The posts will be ordered by their occurrences in
+  #   the specified order.
+  # @optional [Integer] limit The maximum amount of posts to return
+  # @optional [Integer] offset The index of the first result to return (for pagination)
+  # @optional [String] direction By defaut the posts are returned in descending order according to
+  #   the creation date. By specifying direction as 'ASC' they get sorted the other way.
+  # @status 200 JSON
+  # @status 404 No such post
+  # @status 403 Forbidden (the post is restricted, and you are not invited!)
+
   get "/posts/:uid" do |uid|
     if params[:external_id]
       @post = Post.find_by_external_id(params[:external_id])
@@ -154,9 +254,37 @@ class GroveV1 < Sinatra::Base
     end
   end
 
+  # @apidoc
+  # Counts the maximum posts that would be returned by a call to GET /api/grove/v1/posts/:uid
+  #
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/:uid/count
+  # @http GET
+  # @example /api/grove/v1/posts/post:acme.invoices.*$*/count
+  # @optional [String] uid A wildcard uid query (e.g. "*:acme.invoices.*")
+  # @optional [String] tags Constrain query by tags. Either a comma separated list of required tags or a
+  #   boolean expression like "paris & !texas" or "closed & (failed | pending)"
+  # @optional [Integer] created_by Only documents created by this checkpoint identity will be returned
+  # @optional [Integer] limit The maximum amount of posts to return
+  # @optional [Integer] offset The index of the first result to return (for pagination)
+  # @status 200 JSON
+  # @status 404 No such post
+  # @status 403 Forbidden (the post is restricted, and you are not invited!)
+
   get "/posts/:uid/count" do |uid|
     {:uid => uid, :count => Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity).count}.to_json
   end
+
+  # @apidoc
+  # Touch a post (updating the updated_at field)
+  #
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/:uid/touch
+  # @http PUT
+  # @example /api/grove/v1/posts/post:acme.invoices$123
+  # @status 200 JSON
+  # @status 404 No such post
+  # @status 403 Forbidden (This is not your post, and you are not god!)
 
   put "/posts/:uid/touch" do |uid|
     require_identity
@@ -172,6 +300,19 @@ class GroveV1 < Sinatra::Base
     pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
   end
 
+  # @apidoc
+  # Add a synonymous path to the document
+  #
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/:uid/paths/:path
+  # @http POST
+  # @required [String] uid The uid of the post
+  # @required [String] path The path to add
+  # @example /api/grove/v1/posts/post:acme.invoices$123/paths/acme.reposession
+  # @status 200 JSON
+  # @status 404 No such post
+  # @status 403 Forbidden (This is not your post, and you are not god!)
+
   post "/posts/:uid/paths/:path" do |uid, path|
     require_identity
 
@@ -182,6 +323,19 @@ class GroveV1 < Sinatra::Base
 
     pg :post, :locals => {:mypost => safe_post(post)}
   end
+
+  # @apidoc
+  # Remove a synonymous path to the document
+  #
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/:uid/paths/:path
+  # @http DELETE
+  # @required [String] uid The uid of the post
+  # @required [String] path The path to remove
+  # @example /api/grove/v1/posts/post:acme.invoices$123/paths/acme.reposession
+  # @status 200 JSON
+  # @status 404 No such post
+  # @status 403 Forbidden (This is not your post, and you are not god!)
 
   delete "/posts/:uid/paths/:path" do |uid, path|
     require_identity
@@ -198,6 +352,20 @@ class GroveV1 < Sinatra::Base
     response.status = 204
   end
 
+  # @apidoc
+  # Add an occurrence to the post
+  #
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/:uid/occurrences/:event
+  # @http POST
+  # @required [String] uid The uid of the post
+  # @required [String] event The kind of occurrence to add (e.g. 'start_time')
+  # @required [String] at Time stamp (ISO 8601) to add
+  # @example /api/grove/v1/posts/post:acme.invoices$123/occurrences/start_time?at=2012-11-14T10:54:22+01:00
+  # @status 200 JSON
+  # @status 404 No such post
+  # @status 403 Forbidden (This is not your post, and you are not god!)
+
   post "/posts/:uid/occurrences/:event" do |uid, event|
     require_identity
 
@@ -208,6 +376,20 @@ class GroveV1 < Sinatra::Base
 
     pg :post, :locals => {:mypost => safe_post(post)}
   end
+
+  # @apidoc
+  # Delete one group of occurrences.
+  #
+  # @note Will delete every occurrence of the specified kind.
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/:uid/occurrences/:event
+  # @http DELETE
+  # @required [String] uid The uid of the post
+  # @required [String] event The kind of occurrences to delete (e.g. 'start_time')
+  # @example /api/grove/v1/posts/post:acme.invoices$123/occurrences/start_time
+  # @status 200 JSON
+  # @status 404 No such post
+  # @status 403 Forbidden (This is not your post, and you are not god!)
 
   delete "/posts/:uid/occurrences/:event" do |uid, event|
     require_identity
@@ -220,6 +402,20 @@ class GroveV1 < Sinatra::Base
     response.status = 204
   end
 
+  # @apidoc
+  # Replace occurrences in one group with a single occurrence.
+  #
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/:uid/occurrences/:event
+  # @http PUT
+  # @required [String] uid The uid of the post
+  # @required [String] event The kind of occurrence to replace (e.g. 'start_time')
+  # @required [String] at Time stamp (ISO 8601) to replace any existing occurrences with.
+  # @example /api/grove/v1/posts/post:acme.invoices$123/occurrences/start_time?at=2012-11-14T10:54:22+01:00
+  # @status 200 JSON
+  # @status 404 No such post
+  # @status 403 Forbidden (This is not your post, and you are not god!)
+
   put "/posts/:uid/occurrences/:event" do |uid, event|
     require_identity
 
@@ -230,6 +426,19 @@ class GroveV1 < Sinatra::Base
 
     pg :post, :locals => {:mypost => safe_post(post)}
   end
+
+  # @apidoc
+  # Add tags to a post
+  #
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/:uid/tags/:tags
+  # @http POST
+  # @required [String] uid The uid of the post
+  # @required [String] tags A comma separated list of tags to add
+  # @example /api/grove/v1/posts/post:acme.invoices$123/tags/paris,texas
+  # @status 200 JSON
+  # @status 404 No such post
+  # @status 403 Forbidden (This is not your post, and you are not god!)
 
   post "/posts/:uid/tags/:tags" do |uid, tags|
     require_identity
@@ -245,6 +454,19 @@ class GroveV1 < Sinatra::Base
     pg :post, :locals => {:mypost => safe_post(@post)}
   end
 
+  # @apidoc
+  # Replace tags for a post
+  #
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/:uid/tags/:tags
+  # @http PUT
+  # @required [String] uid The uid of the post
+  # @required [String] tags A comma separated list of tags to set
+  # @example /api/grove/v1/posts/post:acme.invoices$123/tags/paris,texas
+  # @status 200 JSON
+  # @status 404 No such post
+  # @status 403 Forbidden (This is not your post, and you are not god!)
+
   put "/posts/:uid/tags/:tags" do |uid, tags|
     require_identity
 
@@ -258,6 +480,19 @@ class GroveV1 < Sinatra::Base
 
     pg :post, :locals => {:mypost => safe_post(@post)}
   end
+
+  # @apidoc
+  # Remove tags for a post
+  #
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/:uid/tags/:tags
+  # @http DELETE
+  # @required [String] uid The uid of the post
+  # @required [String] tags A comma separated list of tags to remove
+  # @example /api/grove/v1/posts/post:acme.invoices$123/tags/paris,texas
+  # @status 200 JSON
+  # @status 404 No such post
+  # @status 403 Forbidden (This is not your post, and you are not god!)
 
   delete "/posts/:uid/tags/:tags" do |uid, tags|
     require_identity
