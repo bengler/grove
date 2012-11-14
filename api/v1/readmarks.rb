@@ -1,5 +1,6 @@
 class GroveV1 < Sinatra::Base
 
+
   # This api is extremely deprecated. Do not use!!
 
   put "/readmarks/:path/:uid" do |path, uid|
@@ -16,7 +17,7 @@ class GroveV1 < Sinatra::Base
     if Pebbles::Uid::Labels.new(path).wildcard?
       pg :readmarks, :locals => { :readmarks => Readmark.where("owner = ?", current_identity.id).by_path(path) }
     else
-      # This is a fully constrained path - return exactly one readmark
+      # This is a fully constrained path - return exactly one readmark.
       readmark = Readmark.where("owner = ?", current_identity.id).by_path(path).first
       halt 404, "No readmark for this path" unless readmark
       pg :readmark, :locals => { :readmark => readmark }
