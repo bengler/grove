@@ -214,8 +214,8 @@ class GroveV1 < Sinatra::Base
   #   the specified order.
   # @optional [Integer] limit The maximum amount of posts to return.
   # @optional [Integer] offset The index of the first result to return (for pagination).
-  # @optional [String] direction By default the posts are returned in descending order according to
-  #   the creation date. By specifying direction as 'ASC' they get sorted the other way.
+  # @optional [String] sort_by Name of field to sort by. Defaults to 'created_at'.
+  # @optional [String] direction Direction of sort. Defaults to 'desc'.
   # @status 200 JSON.
   # @status 404 No such post.
   # @status 403 Forbidden (the post is restricted, and you are not invited!)
@@ -234,10 +234,15 @@ class GroveV1 < Sinatra::Base
         pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => nil}
       elsif query.collection?
 	# Retrieve a collection by wildcards.
+        sort_field = 'created_at'
+        if params['sort_by']
+          sort_field = params['sort_by'].downcase
+          halt 400, "Unknown field #{sort_field}" unless Post.instance_methods.include? sort_field.to_sym
+        end
         @posts = Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity)
         @posts = apply_occurrence_scope(@posts, params['occurrence'])
         direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
-        @posts = @posts.order("posts.created_at #{direction}")
+        @posts = @posts.order("posts.#{sort_field} #{direction}")
         @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
         pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => @pagination}
       else
