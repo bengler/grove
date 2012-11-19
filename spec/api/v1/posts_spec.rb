@@ -271,6 +271,28 @@ describe "API v1 posts" do
         result['external_id'].should eq external_id
       end
 
+      it "sorts the result by a specified attribute" do
+        time = Time.new(2014, 12, 24)
+        post = {
+          :uid => "post:a.b.c",
+          :created_by => 1,
+          :document => {'text' => '1'},
+          :updated_at => time - 2
+        }
+        Post.create!(post)
+        post[:document] = {'text' => '2'}
+        post[:updated_at] = time
+        Post.create!(post)
+        get "/posts/*:*", :sort_by => :updated_at, :direction => 'ASC'
+        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq('text' => '1')
+      end
+
+      it "fails when attempting to sort by a non-existing attribute" do
+        Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => '1'})
+        get "/posts/*:*", :sort_by => :xyzzy
+        last_response.status.should == 400
+      end
+
       it "filters by creator" do
         Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => '1'})
         Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => '2'})
