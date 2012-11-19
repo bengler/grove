@@ -19,7 +19,7 @@ class GroveV1 < Sinatra::Base
   # @note If you specify only some of the post attributes they will be replaced without touching
   #   the other attributes. E.g. specify only 'document' to update attributes without touching
   #   occurrences, tags or paths.
-
+  #
   # @description When creating new posts specify uid without the oid part, (e.g. 'post.event:acme.calendar'),
   #   if you specify the full uid with oid (e.g. 'post.event:acme.calendar$3242') this is considered
   #   an update of the specified document.
@@ -194,13 +194,13 @@ class GroveV1 < Sinatra::Base
   end
 
   # @apidoc
-  # Perform a posts query getting either a single post or a collection of posts
+  # Query posts retrieving either a specific post or a collection of posts
   # according to your criteria.
   #
   # @category Grove/Posts
   # @path /api/grove/v1/posts/:uid
   # @http GET
-  # @example /api/grove/v1/posts/post:acme.invoices$123
+  # @example /api/grove/v1/posts/post:acme.*?tags=unpaid
   # @optional [String] uid The uid of a specific post, a comma separated list of uids or a wildcard.
   #   uid query (e.g. "*:acme.invoices.*")
   # @optional [Integer] external_id The external_id of the post you want.
