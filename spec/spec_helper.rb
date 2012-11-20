@@ -28,9 +28,10 @@ set :environment, :test
 RSpec.configure do |c|
   c.around(:each) do |example|
     clear_cookies if respond_to?(:clear_cookies)
-    $memcached = Mockcached.new
+    $memcached = MemcacheMock.new
+    Pebblebed.memcached = $memcached
     ActiveRecord::Base.connection.transaction do
-      example.run 
+      example.run
       raise ActiveRecord::Rollback
     end
   end

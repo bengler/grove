@@ -22,6 +22,7 @@ gem 'airbrake', '~> 3.1.4', :require => false
 gem 'pebbles-uid'
 gem 'servolux'
 gem 'main'
+gem "memcache_mock", :git => "git://github.com/fguillen/MemcacheMock.git"
 
 # Because of a bug in rack-protection (https://github.com/rkh/rack-protection/commit/a91810fa) that affects
 # cors-requests we'll need to get rack-protection from github

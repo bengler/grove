@@ -6,7 +6,7 @@ Bundler.require
 
 require 'config/logging'
 
-$memcached = Dalli::Client.new
+$memcached = Dalli::Client.new unless ENV['RACK_ENV'] == 'test'
 
 Dir.glob('./lib/**/*.rb').each{ |lib| require lib }
 
@@ -19,7 +19,6 @@ unless ENV['RACK_ENV'] == 'test'
 end
 
 ActiveRecord::Base.establish_connection($config[environment])
-$memcached = Dalli::Client.new unless ENV['RACK_ENV'] == 'test'
 
 Pebblebed.config do
   service :checkpoint

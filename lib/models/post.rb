@@ -160,7 +160,7 @@ class Post < ActiveRecord::Base
   # Accepts an array of `Pebbles::Uid.cache_key(uid)`s
   def self.cached_find_all_by_uid(cache_keys)
     result =  Hash[
-      $memcached.get_multi(*cache_keys.map {|key| CacheKey.wrap(key) }).map do |key, value|
+      $memcached.get_multi(cache_keys.map {|key| CacheKey.wrap(key) }).map do |key, value|
         post = Post.instantiate(Yajl::Parser.parse(value))
         post.readonly!
         [CacheKey.unwrap(key), post]

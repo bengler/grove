@@ -15,6 +15,7 @@ describe "API v1 posts" do
   let(:checkpoint) { stub(:get => identity) }
 
   before :each do
+    app.any_instance.stub(:current_session).and_return "validsessionyesyesyes"
     Pebblebed::Connector.any_instance.stub(:checkpoint).and_return checkpoint
   end
 
