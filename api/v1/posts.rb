@@ -237,7 +237,7 @@ class GroveV1 < Sinatra::Base
         sort_field = 'created_at'
         if params['sort_by']
           sort_field = params['sort_by'].downcase
-          halt 400, "Unknown field #{sort_field}" unless Post.instance_methods.include? sort_field.to_sym
+          halt 400, "Unknown field #{sort_field}" unless %w(created_at updated_at document_updated_at external_document_updated_at external_document).include? sort_field
         end
         @posts = Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity)
         @posts = apply_occurrence_scope(@posts, params['occurrence'])
