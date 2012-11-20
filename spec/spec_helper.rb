@@ -1,5 +1,4 @@
 require 'simplecov'
-require './spec/mockcached'
 
 SimpleCov.add_filter 'spec'
 SimpleCov.add_filter 'config'
