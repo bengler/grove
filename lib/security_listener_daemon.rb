@@ -10,20 +10,21 @@ class SecurityListenerDaemon < Servolux::Server
   def before_starting
     @listener = Pebblebed::Security::Listener.new(:app_name => NAME)
     @listener.on_subtree_declared do |event|
-      logger.info "Allowing group #{event[:group_id]} privileged access to #{event[:location]}"
-      GroupLocation.allow_subtree(event[:group_id], event[:location])
+      p event
+      logger.info "Allowing group #{event[:access_group_id]} privileged access to #{event[:location]}"
+      GroupLocation.allow_subtree(event[:access_group_id], event[:location])
     end
     @listener.on_subtree_removed do |event|
-      logger.info "Denying group #{event[:group_id]} privileged access to #{event[:location]}"
-      GroupLocation.deny_subtree(event[:group_id], event[:location])
+      logger.info "Denying group #{event[:access_group_id]} privileged access to #{event[:location]}"
+      GroupLocation.deny_subtree(event[:access_group_id], event[:location])
     end
     @listener.on_membership_declared do |event|
-      logger.info "Group #{event[:group_id]} added member #{event[:identity_id]}"
-      GroupMembership.declare!(event[:group_id], event[:identity_id])
+      logger.info "Group #{event[:access_group_id]} added member #{event[:identity_id]}"
+      GroupMembership.declare!(event[:access_group_id], event[:identity_id])
     end
     @listener.on_membership_removed do |event|
-      logger.info "Group #{event[:group_id]} removed member #{event[:identity_id]}"
-      GroupMembership.remove!(event[:group_id], event[:identity_id])
+      logger.info "Group #{event[:access_group_id]} removed member #{event[:identity_id]}"
+      GroupMembership.remove!(event[:access_group_id], event[:identity_id])
     end
   end
 
