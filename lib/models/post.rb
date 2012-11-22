@@ -265,8 +265,9 @@ class Post < ActiveRecord::Base
   def revert_unmodified_values
     # When updating a Post that has an external_document, make sure only the actual *changed* (overridden)
     # fields are kept in the `document` hash.
-    return if document.nil? or external_document.nil?
+    return true if document.nil? or external_document.nil?
     document.reject! { |key, value| external_document[key] == value }
+    true
   end
 
   def update_conflicted
