@@ -251,10 +251,11 @@ class GroveV1 < Sinatra::Base
         #if uid =~ /[\*\|]/
           @post = Post.by_uid(uid).with_restrictions(current_identity).first
         #else
-        #  @post = filter_visible_posts(Post.cached_find_all_by_uid(query.cache_keys)).first
+        #  @post = Post.cached_find_all_by_uid(query.cache_keys).first
         #end
         halt 404, "No such post" unless @post
-        halt 403, "Forbidden" unless @post.visible_to?(current_identity)
+        # TODO: Teach .visible_to? about PSM so we can go back to using cached results
+        #halt 403, "Forbidden" unless @post.visible_to?(current_identity)
         pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
       end
     end
