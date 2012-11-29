@@ -125,23 +125,6 @@ describe Post do
       end
     end
 
-    describe "tags" do
-      it "can add tags" do
-        post = Post.create!(:uid => "post.card:x.y.z", :tags => ["paris", "france"], :document => {'text' => '1'})
-        post.tags << "texas"
-        post.save
-        post.reload
-        post.tags.should include("texas")
-      end
-      it "can remove tags" do
-        post = Post.create!(:uid => "post.card:x.y.z", :tags => ["paris", "texas", "france"], :document => {'text' => '1'})
-        post.tags.delete "texas"
-        post.save
-        post.reload
-        post.tags.should_not include("texas")
-      end
-    end
-
     describe "wildcard matches" do
       before(:each) do
         Post.create!(:uid => "post:area51.secret.research", :document => {:text => "1"})
