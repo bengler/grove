@@ -248,11 +248,13 @@ class GroveV1 < Sinatra::Base
         pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => @pagination}
       else
 	# Retrieve a single specific post.
-        #if uid =~ /[\*\|]/
+        if uid =~ /[\*\|]/ || uid =~ /^.*\:dna/
           @post = Post.by_uid(uid).with_restrictions(current_identity).first
-        #else
-        #  @post = Post.cached_find_all_by_uid(query.cache_keys).first
-        #end
+        else
+          @post = Post.cached_find_all_by_uid(query.cache_keys).first
+          # To be removed when visible_to? is PSM compliant and replaced with the line further down there.
+          halt 403, "Forbidden" if @post && !@post.visible_to?(current_identity)
+        end
         halt 404, "No such post" unless @post
         # TODO: Teach .visible_to? about PSM so we can go back to using cached results
         #halt 403, "Forbidden" unless @post.visible_to?(current_identity)
