@@ -225,14 +225,14 @@ class GroveV1 < Sinatra::Base
       @post = Post.find_by_external_id(params[:external_id])
       halt 404, "No such post" unless @post
       halt 403, "Forbidden" unless @post.visible_to?(current_identity)
-      pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
+      pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
     else
       query = Pebbles::Uid.query(uid)
       if query.list?
 	# Retrieve a list of posts.
         # TODO: filter_visible_posts need to know about PSM
         @posts = filter_visible_posts(Post.cached_find_all_by_uid(query.cache_keys))
-        pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => nil}
+        pg :posts, :locals => {:posts => @posts, :pagination => nil}
       elsif query.collection?
 	# Retrieve a collection by wildcards.
         sort_field = 'created_at'
@@ -245,7 +245,7 @@ class GroveV1 < Sinatra::Base
         direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
         @posts = @posts.order("posts.#{sort_field} #{direction}")
         @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
-        pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => @pagination}
+        pg :posts, :locals => {:posts => @posts, :pagination => @pagination}
       else
 	# Retrieve a single specific post.
         if uid =~ /[\*\|]/ || uid =~ /^.*\:dna/
@@ -258,7 +258,7 @@ class GroveV1 < Sinatra::Base
         halt 404, "No such post" unless @post
         # TODO: Teach .visible_to? about PSM so we can go back to using cached results
         #halt 403, "Forbidden" unless @post.visible_to?(current_identity)
-        pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
+        pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
       end
     end
   end
@@ -306,7 +306,7 @@ class GroveV1 < Sinatra::Base
     end
 
     @post.touch
-    pg :post, :locals => {:mypost => safe_post(@post)} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
+    pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
   end
 
   # @apidoc
@@ -330,7 +330,7 @@ class GroveV1 < Sinatra::Base
 
     post.add_path!(path) unless post.paths.include?(path)
 
-    pg :post, :locals => {:mypost => safe_post(post)}
+    pg :post, :locals => {:mypost => post}
   end
 
   # @apidoc
@@ -383,7 +383,7 @@ class GroveV1 < Sinatra::Base
 
     post.add_occurrences!(event, params[:at])
 
-    pg :post, :locals => {:mypost => safe_post(post)}
+    pg :post, :locals => {:mypost => post}
   end
 
   # @apidoc
@@ -433,7 +433,7 @@ class GroveV1 < Sinatra::Base
 
     post.replace_occurrences!(event, params[:at])
 
-    pg :post, :locals => {:mypost => safe_post(post)}
+    pg :post, :locals => {:mypost => post}
   end
 
   # @apidoc
@@ -460,7 +460,7 @@ class GroveV1 < Sinatra::Base
       @post.save!
     end
 
-    pg :post, :locals => {:mypost => safe_post(@post)}
+    pg :post, :locals => {:mypost => @post}
   end
 
   # @apidoc
@@ -487,7 +487,7 @@ class GroveV1 < Sinatra::Base
       @post.save!
     end
 
-    pg :post, :locals => {:mypost => safe_post(@post)}
+    pg :post, :locals => {:mypost => @post}
   end
 
   # @apidoc
@@ -514,7 +514,7 @@ class GroveV1 < Sinatra::Base
       @post.save!
     end
 
-    pg :post, :locals => {:mypost => safe_post(@post)}
+    pg :post, :locals => {:mypost => @post}
   end
 
 
@@ -528,18 +528,6 @@ class GroveV1 < Sinatra::Base
     scope = scope.where('created_by = ?', current_identity.id)
     @posts, @pagination = limit_offset_collection(scope, :limit => params['limit'], :offset => params['offset'])
     response.status = 200
-    pg :posts, :locals => {:posts => safe_posts(@posts), :pagination => @pagination}
-  end
-
-  ### TODO: HACK ALERT for DittForslag: Avoid leaking e-mail addresses.
-  private
-  def safe_posts(posts)
-    posts.map {|p| safe_post(p)}
-  end
-  def safe_post(post)
-    unless current_identity.respond_to?(:god) && current_identity.god
-      post.document.delete 'email' if post && !post.document.nil?
-    end
-    post
+    pg :posts, :locals => {:posts => @posts, :pagination => @pagination}
   end
 end
