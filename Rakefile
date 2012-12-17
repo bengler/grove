@@ -36,7 +36,7 @@ namespace :river do
   task :put_existing, [:realm, :klass] => :environment do |t, args|
     require 'logger'
 
-    LOGGER = Logger.new(STDOUT)
+    LOGGER ||= Logger.new(STDOUT)
 
     river = Pebblebed::River.new
     scope = Post.where(:restricted => false)
