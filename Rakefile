@@ -32,16 +32,19 @@ namespace :bagera do
 end
 
 namespace :river do
-  desc "put all posts into the river with event 'exists'"
-  task :put_existing => :environment do
+  desc "put all posts into the river with event 'exists'. e.g. bx rake river:put_existing[area51,post.event]"
+  task :put_existing, [:realm, :klass] => :environment do |t, args|
     require 'logger'
 
-    LOGGER ||= Logger.new(STDOUT)
+    LOGGER = Logger.new(STDOUT)
 
     river = Pebblebed::River.new
-    posts = Post.where(:restricted => false)
-    LOGGER.info "Touching all #{posts.count} unrestricted events"
-    posts.find_each do |post|
+    scope = Post.where(:restricted => false)
+    scope = scope.where(:realm => args[:realm]) if args[:realm]
+    scope = scope.where(:klass => args[:klass]) if args[:klass]
+    LOGGER.info "Touching all #{scope.count} unrestricted posts for realm #{args[:realm] or '*'} and class #{args[:klass] or '*'}"
+
+    scope.find_each do |post|
       begin
         river.publish(:event => 'exists', :uid => post.uid, :attributes => post.attributes_for_export)
       rescue RuntimeError => e
@@ -51,7 +54,6 @@ namespace :river do
         LOGGER.info "Published #{post.uid} to river with 'exists' event."
       end
     end
-
   end
 end
 
