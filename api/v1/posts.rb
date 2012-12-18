@@ -357,8 +357,7 @@ class GroveV1 < Sinatra::Base
     rescue Exception => e
       halt 500, e.message
     end
-
-    response.status = 204
+    pg :post, :locals => {:mypost => post}
   end
 
   # @apidoc
