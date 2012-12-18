@@ -5,12 +5,13 @@ describe "API v1 posts" do
   include Rack::Test::Methods
 
   def app
+    GroveV1.set :disable_callbacks => true
     GroveV1
   end
 
   let(:guest) { DeepStruct.wrap({}) }
-  let(:alice) { DeepStruct.wrap(:identity => {:id => 1, :god => false}) }
-  let(:odin) { DeepStruct.wrap(:identity => {:id => 1337, :god => true}) }
+  let(:alice) { DeepStruct.wrap(:identity => {:id => 1, :god => false, :realm => 'a'}) }
+  let(:odin) { DeepStruct.wrap(:identity => {:id => 1337, :god => true, :realm => 'a'}) }
 
   let(:checkpoint) { stub(:get => identity) }
 
@@ -445,7 +446,7 @@ describe "API v1 posts" do
 
     describe "POST /posts/:uid/paths/:path" do
       it "adds a path" do
-        p = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 10)
+        p = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 1)
 
         post "/posts/#{p.uid}/paths/a.b.d"
 
@@ -455,7 +456,7 @@ describe "API v1 posts" do
       end
 
       it "doesn't try to add a path twice" do
-        p = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 10)
+        p = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 1)
 
         post "/posts/#{p.uid}/paths/a.b.d"
         post "/posts/#{p.uid}/paths/a.b.d"
@@ -535,7 +536,7 @@ describe "API v1 posts" do
 
       describe "POST /posts/:uid/occurrences/:event" do
         it "creates an occurrence" do
-          p = Post.create!(:uid => "post:a.b.c")
+          p = Post.create!(:uid => "post:a.b.c", :created_by => 1)
           post "/posts/#{p.uid}/occurrences/due", :at => soft_deadline
 
           p.reload
@@ -543,7 +544,7 @@ describe "API v1 posts" do
         end
 
         it "creates multiple occurrences" do
-          p = Post.create!(:uid => "post:a.b.c")
+          p = Post.create!(:uid => "post:a.b.c", :created_by => 1)
           post "/posts/#{p.uid}/occurrences/due", :at => [soft_deadline, hard_deadline]
 
           p.reload
@@ -551,7 +552,7 @@ describe "API v1 posts" do
         end
 
         it "adds an occurrence to an existing one" do
-          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline]})
+          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline]}, :created_by => 1)
           post "/posts/#{p.uid}/occurrences/due", :at => hard_deadline
 
           p.reload
@@ -559,7 +560,7 @@ describe "API v1 posts" do
         end
 
         it "doesn't add a duplicate occurrence" do
-          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline]})
+          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline]}, :created_by => 1)
           post "/posts/#{p.uid}/occurrences/due", :at => soft_deadline
 
           p.reload
@@ -569,7 +570,8 @@ describe "API v1 posts" do
 
       describe "DELETE /posts/:uid/occurrences/:event" do
         it "deletes all the occurrences of that type for the event" do
-          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline, hard_deadline]})
+          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline, hard_deadline]},
+            :created_by => 1)
 
           delete "/posts/#{p.uid}/occurrences/due"
           p.reload
@@ -580,7 +582,8 @@ describe "API v1 posts" do
 
       describe "PUT /posts/:uid/occurrences/:event" do
         it "replaces events" do
-          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline, hard_deadline]})
+          p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [soft_deadline, hard_deadline]},
+            :created_by => 1)
 
           put "/posts/#{p.uid}/occurrences/due", :at => now
           p.reload

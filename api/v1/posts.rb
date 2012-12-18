@@ -95,22 +95,18 @@ class GroveV1 < Sinatra::Base
     halt 404, "Post is deleted" if @post.deleted?
     response.status = 201 if @post.new_record?
 
-    unless @post.may_be_managed_by?(current_identity)
-      halt 403, "Post is owned by a different user (#{@post.created_by})"
-    end
+    check_allowed @post.new_record? ? 'create' : 'update', @post do
+      (['external_document', 'document', 'paths', 'occurrences', 'tags', 'external_id', 'restricted'] & attributes.keys).each do |field|
+        @post.send(:"#{field}=", attributes[field])
+      end
 
-    (['external_document', 'document', 'paths', 'occurrences', 'tags', 'external_id', 'restricted'] & attributes.keys).each do |field|
-      @post.send(:"#{field}=", attributes[field])
-    end
-
-    begin
-      @post.intercept_and_save!(params[:session])
-    rescue UnauthorizedChangeError => e
-      halt 403, e.message
-    rescue Post::CanonicalPathConflict => e
-      halt 403, e.message
-    rescue Exception => e
-      halt 500, e.message
+      begin
+        @post.save!
+      rescue Post::CanonicalPathConflict => e
+        halt 403, e.message
+      rescue Exception => e
+        halt 500, e.message
+      end
     end
 
     pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
@@ -143,14 +139,11 @@ class GroveV1 < Sinatra::Base
       halt 404, "No post with uid #{uid}" unless @post
     end
 
-
-    unless @post.may_be_managed_by?(current_identity)
-      halt 403, "Post is owned by a different user (#{@post.created_by})"
+    check_allowed :delete, @post do
+      @post.deleted = true
+      @post.save!
+      response.status = 204
     end
-
-    @post.deleted = true
-    @post.save!
-    response.status = 204
   end
 
   # @apidoc
@@ -301,11 +294,9 @@ class GroveV1 < Sinatra::Base
     @post = Post.find_by_uid(uid)
     halt 404, "No such post" unless @post
 
-    unless @post.may_be_managed_by?(current_identity)
-      halt 403, "Post is owned by a different user (#{@post.created_by})"
+    check_allowed :update, @post do
+      @post.touch
     end
-
-    @post.touch
     pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
   end
 
@@ -328,7 +319,9 @@ class GroveV1 < Sinatra::Base
     post = Post.find_by_uid(uid)
     halt 404, "No such post" unless post
 
-    post.add_path!(path) unless post.paths.include?(path)
+    check_allowed :update, post do
+      post.add_path!(path) unless post.paths.include?(path)
+    end
 
     pg :post, :locals => {:mypost => post}
   end
@@ -352,10 +345,12 @@ class GroveV1 < Sinatra::Base
     post = Post.find_by_uid(uid)
     halt 404, "No such post" unless post
 
-    begin
-      post.remove_path!(path)
-    rescue Exception => e
-      halt 500, e.message
+    check_allowed :update, post do
+      begin
+        post.remove_path!(path)
+      rescue Exception => e
+        halt 500, e.message
+      end
     end
     pg :post, :locals => {:mypost => post}
   end
@@ -380,7 +375,9 @@ class GroveV1 < Sinatra::Base
     post = Post.find_by_uid(uid)
     halt 404, "No such post" unless post
 
-    post.add_occurrences!(event, params[:at])
+    check_allowed :update, post do
+      post.add_occurrences!(event, params[:at])
+    end
 
     pg :post, :locals => {:mypost => post}
   end
@@ -405,7 +402,9 @@ class GroveV1 < Sinatra::Base
     post = Post.find_by_uid(uid)
     halt 404, "No such post" unless post
 
-    post.remove_occurrences!(event)
+    check_allowed :update, post do
+      post.remove_occurrences!(event)
+    end
 
     response.status = 204
   end
@@ -430,7 +429,9 @@ class GroveV1 < Sinatra::Base
     post = Post.find_by_uid(uid)
     halt 404, "No such post" unless post
 
-    post.replace_occurrences!(event, params[:at])
+    check_allowed :update, post do
+      post.replace_occurrences!(event, params[:at])
+    end
 
     pg :post, :locals => {:mypost => post}
   end
@@ -454,9 +455,11 @@ class GroveV1 < Sinatra::Base
     @post = Post.find_by_uid(uid)
     halt 404, "No such post" unless @post
 
-    @post.with_lock do
-      @post.tags += params[:tags].split(',')
-      @post.save!
+    check_allowed :update, @post do
+      @post.with_lock do
+        @post.tags += params[:tags].split(',')
+        @post.save!
+      end
     end
 
     pg :post, :locals => {:mypost => @post}
@@ -481,9 +484,11 @@ class GroveV1 < Sinatra::Base
     @post = Post.find_by_uid(uid)
     halt 404, "No such post" unless @post
 
-    @post.with_lock do
-      @post.tags = params[:tags]
-      @post.save!
+    check_allowed :update, @post do
+      @post.with_lock do
+        @post.tags = params[:tags]
+        @post.save!
+      end
     end
 
     pg :post, :locals => {:mypost => @post}
@@ -508,25 +513,13 @@ class GroveV1 < Sinatra::Base
     @post = Post.find_by_uid(uid)
     halt 404, "No such post" unless @post
 
-    @post.with_lock do
-      @post.tags -= params[:tags].split(',')
-      @post.save!
+    check_allowed :update, @post do
+      @post.with_lock do
+        @post.tags -= params[:tags].split(',')
+        @post.save!
+      end
     end
 
     pg :post, :locals => {:mypost => @post}
-  end
-
-
-  # Get current identity's posts for a given path.
-  # TODO: DEPRECATE! This can be done using the general GET method. Can we remove this?
-  get '/posts' do
-    require_identity
-    path = params[:path]
-    halt 500, "Please specify path parameter" unless path
-    scope = Post.by_uid "post:#{path}"
-    scope = scope.where('created_by = ?', current_identity.id)
-    @posts, @pagination = limit_offset_collection(scope, :limit => params['limit'], :offset => params['offset'])
-    response.status = 200
-    pg :posts, :locals => {:posts => @posts, :pagination => @pagination}
   end
 end

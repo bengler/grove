@@ -110,7 +110,7 @@ class Post < ActiveRecord::Base
 
   def editable_by?(identity)
     return false if nobody?(identity)
-    return identity.god || identity.id == created_by
+    return (identity.god && identity.realm == self.realm) || identity.id == created_by
   end
 
   def may_be_managed_by?(identity)
@@ -176,21 +176,6 @@ class Post < ActiveRecord::Base
       result[key] = post
     end
     cache_keys.map {|key| result[key]}
-  end
-
-  # TODO: When we have multiple versions of the api, we will need to
-  # add validations to the Interceptor::Validator objects so that they have
-  # a version, depending on the version of the api that is being used.
-  # This is because the templates that are used in the interception/callback
-  # are version-specific.
-  def intercept_and_save!(session)
-    intercept(session)
-    self.save!
-  end
-
-  def intercept(session = nil)
-    action = new_record? ? 'create' : 'update'
-    Interceptor.process(self, {:session => session, :action => action})
   end
 
   def add_path!(path)
