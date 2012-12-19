@@ -19,22 +19,23 @@ class GroveV1 < Sinatra::Base
 
     # Yields the block if the user is allowed to perform the action to the post
     def check_allowed(action, post, &block)
-      return yield if post.may_be_managed_by?(current_identity)
       if settings.respond_to?(:disable_callbacks) && settings.disable_callbacks
+        return yield if post.may_be_managed_by?(current_identity)
         halt 403, "You are not allowed to #{action} #{post.uid}"
-      end
-      # Call checkpoint to invoke registered callbacks
-      result = pebbles.checkpoint.get("/callbacks/allowed/#{action}/#{post.uid}")
-      p result
-      # Allowed might be true, false or "default". If we are here, the user is not allowed by default.
-      allowed = result['allowed']
-      if allowed == true
-        yield
       else
-        if allowed == false
+        # Call checkpoint to invoke registered callbacks
+        result = pebbles.checkpoint.get("/callbacks/allowed/#{action}/#{post.uid}")
+        # Allowed might be true, false or "default"
+        case result['allowed']
+        when false # categorically denied
           halt 403, "Not allowed to #{action} #{post.uid}. Reason: #{result['reason']}. Denied by: #{result['url']}"
-        else
+        when true # categorically accepted
+          yield
+        when 'default' # checkpoint wants us to apply own judgement
+          return yield if post.may_be_managed_by?(current_identity)
           halt 403, "You are not allowed to #{action} #{post.uid}"
+        else
+          halt 500, "Malformed callback response from checkpoint: #{result.unwrap.to_json}"
         end
       end
     end
