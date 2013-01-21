@@ -207,9 +207,9 @@ describe Post do
   context "access control" do
 
     let(:nobody) { DeepStruct.wrap({}) }
-    let(:john_q_public) { DeepStruct.wrap({:id => 1, :god => false}) }
-    let(:alice) { DeepStruct.wrap({:id => 2, :god => false}) }
-    let(:zeus) { DeepStruct.wrap({:id => 1337, :god => true}) }
+    let(:john_q_public) { DeepStruct.wrap({:id => 1, :god => false, :realm => 'area51'}) }
+    let(:alice) { DeepStruct.wrap({:id => 2, :god => false, :realm => 'area51'}) }
+    let(:zeus) { DeepStruct.wrap({:id => 1337, :god => true, :realm => 'area51'}) }
 
     context "public documents" do
       before(:each) do

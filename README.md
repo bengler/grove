@@ -52,7 +52,7 @@ Additionally Grove has a concept of external_documents. If the content of the so
 
 - An event is synchronized from facebook to Grove. The fields are written to the `external_document`, `document` is blank
 - An editor determines that the title of the event is unhelpful ("Big Launch!!!") and creates a local edit writing {"title": "Launch of the new Wagner Niebelung Ring Lego Kits!!!"}
-- The document now contains the key `title` while the rest of the content is in `external_document`. 
+- The document now contains the key `title` while the rest of the content is in `external_document`.
 - A client requesting the document will see the merged content of external_document and document
 - An updated event is synchronized from facebook. The updated document is written to `external_document`. The body and title of the source document has been updated from the source.
 - A client requesting the document sees the updated body, while the title is overridden by the content of document.
@@ -66,3 +66,7 @@ Typical uids will look like this:
 
 - post.event:apdm.bagera.events.facebook$121
 - post.comment:apdm.blogs.firda.fotball.postings.121$453211
+
+# Custom policies
+
+Grove supports checkpoint callbacks. You may override Groves internal rules on who gets to create, update and delete what by implementing callbacks. See Checkpoints readme for details on how to do this.
