@@ -124,8 +124,6 @@ class GroveV1 < Sinatra::Base
         @post.save!
       rescue Post::CanonicalPathConflict => e
         halt 403, e.message
-      rescue Exception => e
-        halt 500, e.message
       end
     end
 
