@@ -83,8 +83,13 @@ class GroveV1 < Sinatra::Base
       raise unless e.message =~ /violates.*index_posts_on_realm_and_external_id/
       # Sleep a random amount of time to avoid congestion
       sleep(rand/2)
-      # Try again, this time we would actually fail if the race continues
-      save_post(uid, opts)
+      # Try again once
+      begin
+        save_post(uid, opts)
+      rescue ActiveRecord::RecordNotUnique
+        # We failed again. This must be a write storm.
+        halt 409, "Unable to resolve data-race. Multiple agents seems to be creating a document with this external_id at this time."
+      end
     end
   end
 
