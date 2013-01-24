@@ -145,6 +145,20 @@ describe "API v1 posts" do
         updated['document']['quick'].should eq 'coyote' # Keeps the moderated version
         updated['document']['lazy'].should eq 'dog'
       end
+
+      it "protects against double postings" do
+        post "/posts/post:a.b.c", :post => { :document => {
+          :quick => "coyote",
+          :lazy => "dog"
+        }}
+        last_response.status.should eq 201
+        post "/posts/post:a.b.c", :post => { :document => {
+          :quick => "coyote",
+          :lazy => "dog"
+        }}
+        last_response.status.should eq 200
+        Post.count.should eq 1
+      end
     end
 
     describe "PUT /posts/:uid" do

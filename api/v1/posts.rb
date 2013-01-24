@@ -103,9 +103,22 @@ class GroveV1 < Sinatra::Base
     # external_id must be unique across a single realm. If there is a post with the
     # provided external_id it is updated with the provided content.
     begin
-      @post = Post.find_by_external_id_and_uid(attributes[:external_id], uid)
+      @post = Post.find_by_external_id_and_uid(attributes[:external_id], uid) if attributes[:external_id]
     rescue Post::CanonicalPathConflict => e
       halt 409, "A post with external_id '#{attributes[:external_id]}' already exists with another canonical path (#{e.message})."
+    end
+
+    # If this request is not tagged with an external_id and no oid is provided and you are not a god
+    # we protect against double posting.
+    if attributes[:external_id].nil? && !current_identity.god? && !(uid =~ /\$.+$/)
+      Post.where(:created_by => current_identity.id).
+        where("posts.created_at > now() - interval '2 minutes'").by_uid(uid).order('posts.created_at desc').
+        each do |post|
+        if post.document == attributes['document']
+          @post = post # Found a match, proceed as if updating this document
+          break
+        end
+      end
     end
 
     @post ||= Post.unscoped.find_by_uid(uid)
