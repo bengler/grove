@@ -12,6 +12,7 @@ require 'config/environment'
 require 'api/v1'
 
 require 'rack/test'
+require 'pebblebed/rspec_helper'
 require 'config/logging'
 require 'timecop'
 

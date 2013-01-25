@@ -3,28 +3,18 @@ require 'spec_helper'
 
 describe "API v1 posts" do
   include Rack::Test::Methods
+  include Pebblebed::RSpecHelper
 
   def app
     GroveV1.set :disable_callbacks => true
     GroveV1
   end
 
-  let(:guest) { DeepStruct.wrap({}) }
-  let(:alice) { DeepStruct.wrap(:identity => {:id => 1, :god => false, :realm => 'a'}) }
-  let(:odin) { DeepStruct.wrap(:identity => {:id => 1337, :god => true, :realm => 'a'}) }
-
-  let(:checkpoint) { stub(:get => identity) }
-
-  before :each do
-    app.any_instance.stub(:current_session).and_return "validsessionyesyesyes"
-    Pebblebed::Connector.any_instance.stub(:checkpoint).and_return checkpoint
-  end
-
-  context "with no current user" do
-    let(:identity) { guest }
+  context "with no current identity" do
+    before(:each) { guest! }
 
     it "cannot read restricted documents" do
-      Post.create!(:uid => "post:a.b.c", :created_by => 3, :document => {'text' => 'xyzzy'}, :restricted => true)
+      Post.create!(:uid => "post:a.b.c", :created_by => another_identity.id, :document => {'text' => 'xyzzy'}, :restricted => true)
       get "/posts/post:a.b.c"
       result = JSON.parse(last_response.body)['posts']
       result.size.should eq 0
@@ -32,8 +22,8 @@ describe "API v1 posts" do
 
   end
 
-  context "with a logged in user" do
-    let(:identity) { alice }
+  context "with a logged in identity" do
+    before(:each) { user!(:realm => 'a') }
 
     describe "POST /posts/:uid" do
 
@@ -60,8 +50,8 @@ describe "API v1 posts" do
         Post.find_by_uid(uid).document['title'].should eq "Hello universe"
       end
 
-      it "can't update a document created by another user" do
-        p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :document => {:title => 'Hello spaceboy'})
+      it "can't update a document created by another identity" do
+        p = Post.create!(:uid => "post:a.b.c", :created_by => another_identity.id, :document => {:title => 'Hello spaceboy'})
         post "/posts/#{p.uid}", :post => {:document => '{"title":"Hello nobody"}'}
         last_response.status.should eq 403
       end
@@ -375,7 +365,7 @@ describe "API v1 posts" do
         result['pagination']['offset'].should eq 15
       end
 
-      it "can only read restricted posts created by current user" do
+      it "can only read restricted posts created by current identity" do
         posts = []
         posts << Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'xyzzy'}, :restricted => true)
         posts << Post.create!(:uid => "post:a.b.d", :created_by => 2, :document => {'text' => 'zippo'}, :restricted => true)
@@ -609,13 +599,14 @@ describe "API v1 posts" do
   end
 
   context "with a logged in god" do
-    let(:identity) { odin }
+    before(:each) { god!(:realm => 'a') }
 
     it "can undelete a document" do
-      post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 10)
+      post = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => another_identity.id)
       get "/posts/#{post.uid}"
       last_response.status.should eq 200
       delete "/posts/#{post.uid}"
+      last_response.status.should eq 204
       get "/posts/#{post.uid}"
       last_response.status.should eq 404
       post "/posts/#{post.uid}/undelete"
@@ -625,14 +616,14 @@ describe "API v1 posts" do
     end
 
     it "can read restricted documents" do
-      Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'xyzzy'}, :restricted => true)
+      Post.create!(:uid => "post:a.b.c", :created_by => another_identity, :document => {'text' => 'xyzzy'}, :restricted => true)
       get "/posts/post:a.b.c"
       result = JSON.parse(last_response.body)['posts']
       result.size.should eq 1
     end
 
-    it "can update a document created by another user without modifying created_by field" do
-      p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => "Hello spaceboy"})
+    it "can update a document created by another identity without modifying created_by field" do
+      p = Post.create!(:uid => "post:a.b.c", :created_by => another_identity, :document => {'text' => "Hello spaceboy"})
       post "/posts/#{p.uid}", :post => {:document => {'text' => "hello nobody"}}
       last_response.status.should eq 200
       result = JSON.parse(last_response.body)['post']
