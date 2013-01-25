@@ -1,19 +1,16 @@
 require 'spec_helper'
+require 'pebblebed/rspec_helper'
 
 describe "API v1 posts" do
   include Rack::Test::Methods
+  include Pebblebed::RSpecHelper
 
   def app
     GroveV1
   end
 
-  before :each do
-    app.any_instance.stub(:current_session).and_return "validsessionyesyesyes"
-    Pebblebed::Connector.any_instance.stub(:checkpoint).and_return(stub(:get => the_identity))
-  end
-
   context "with a logged in user" do
-    let(:the_identity) { DeepStruct.wrap(:identity => {:id=>1, :god => false}) }
+    before(:each) { user! }
 
     it "can set a readmark" do
       put "/readmarks/a.b.c/post:a.b.c$10"

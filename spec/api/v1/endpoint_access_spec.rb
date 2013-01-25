@@ -1,8 +1,10 @@
 # encoding: utf-8
 require 'spec_helper'
+require 'pebblebed/rspec_helper'
 
 describe "API v1" do
   include Rack::Test::Methods
+  include Pebblebed::RSpecHelper
 
   def app
     GroveV1
@@ -21,15 +23,8 @@ describe "API v1" do
     {:method => :put, :endpoint => '/readmarks/a.b.c/post:a.b.c$10'}
   ]
 
-  let(:guest) { DeepStruct.wrap({}) }
-
-  let(:checkpoint) { stub(:get => guest) }
-
-  before :each do
-    Pebblebed::Connector.any_instance.stub(:checkpoint).and_return checkpoint
-  end
-
   context "with no current user" do
+    before(:each) { guest! }
     describe "has no access to user endpoints" do
       endpoints.each do |forbidden|
         it "fails to #{forbidden[:method]} #{forbidden[:endpoint]}" do
