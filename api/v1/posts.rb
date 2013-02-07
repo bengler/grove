@@ -86,7 +86,8 @@ class GroveV1 < Sinatra::Base
       # Try again once
       begin
         save_post(uid, opts)
-      rescue ActiveRecord::RecordNotUnique
+      rescue ActiveRecord::RecordNotUnique => e
+        LOGGER.exception(e) if LOGGER.respond_to(:exception)
         # We failed again. This must be a write storm.
         halt 409, "Unable to resolve data-race. Multiple agents seems to be creating a document with this external_id at this time."
       end
