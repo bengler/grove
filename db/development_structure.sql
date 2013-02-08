@@ -406,6 +406,13 @@ CREATE UNIQUE INDEX index_locations_posts_on_location_id_and_post_id ON location
 
 
 --
+-- Name: index_locations_posts_on_post_id; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+--
+
+CREATE INDEX index_locations_posts_on_post_id ON locations_posts USING btree (post_id);
+
+
+--
 -- Name: index_occurrence_entries_on_at; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
 --
 
