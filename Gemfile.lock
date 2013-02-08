@@ -95,7 +95,7 @@ GEM
       tilt
     pg (0.13.2)
     queryparams (0.0.3)
-    rack (1.5.1)
+    rack (1.5.2)
     rack-test (0.6.1)
       rack (>= 1.0)
     raindrops (0.8.1)
