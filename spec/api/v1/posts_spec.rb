@@ -62,6 +62,13 @@ describe "API v1 posts" do
         last_response.status.should eq 404
       end
 
+      it "can't update timestamps" do
+        p = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => 1)
+        post "/posts/#{p.uid}", :post => {:document => {'text' => '2'}, :created_at => Time.new(0)}
+        last_response.status.should eq 200
+        Time.parse(JSON.parse(last_response.body)['post']['created_at']).to_s.should eq p.created_at.to_s
+      end
+
       it "can't update a deleted external document" do
         p = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => 1, :deleted => true, :external_id => 'foo_123')
         post "/posts/#{p.uid}", :post => {:document => {'text' => '2'}, :external_id => 'foo_123'}
@@ -629,5 +636,14 @@ describe "API v1 posts" do
       result = JSON.parse(last_response.body)['post']
       result['created_by'].should eq 1
     end
+
+    it "can update timestamps" do
+      p = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => 1)
+      new_time = Time.now-60000
+      post "/posts/#{p.uid}", :post => {:document => {'text' => '2'}, :created_at => new_time}
+      last_response.status.should eq 200
+      Time.parse(JSON.parse(last_response.body)['post']['created_at']).to_s.should eq new_time.to_s
+    end
+
   end
 end
