@@ -130,7 +130,12 @@ class GroveV1 < Sinatra::Base
     response.status = 201 if @post.new_record?
 
     check_allowed @post.new_record? ? 'create' : 'update', @post do
-      (['external_document', 'document', 'paths', 'occurrences', 'tags', 'external_id', 'restricted'] & attributes.keys).each do |field|
+      allowed_attributes = ['external_document', 'document', 'paths', 'occurrences', 'tags', 'external_id', 'restricted']
+      # Gods have some extra fields they may update
+      if current_identity.god?
+        allowed_attributes += ['created_at']
+      end
+      (allowed_attributes & attributes.keys).each do |field|
         @post.send(:"#{field}=", attributes[field])
       end
 
