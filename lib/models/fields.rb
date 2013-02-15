@@ -16,13 +16,15 @@ class Field < ActiveRecord::Base
     end
     self.text_value = value.to_s
     begin
-      self.integer_value = Integer(value)
-    rescue ArgumentError
+      value = Integer(value)
+      value = nil if value < -2147483648 || value > 2147483647
+      self.integer_value = value
+    rescue ArgumentError, TypeError
       self.integer_value = nil
     end
     begin
-      self.time_value = Time.parse(value.to_s)
-    rescue ArgumentError
+      self.time_value = Time.iso8601(value.to_s)
+    rescue ArgumentError, TypeError
       self.time_value = nil
     end
     if value.is_a?(Numeric)
