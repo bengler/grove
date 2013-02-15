@@ -1,5 +1,4 @@
 # encoding: utf-8
-require_relative './post/document_validator'
 require_relative '../cache_key'
 
 class Post < ActiveRecord::Base
@@ -12,10 +11,11 @@ class Post < ActiveRecord::Base
     :after_add => :increment_unread_counts,
     :after_remove => :decrement_unread_counts
 
+  has_many :fields
+
   validates_presence_of :realm
 
   validate :canonical_path_must_be_valid
-  validates_with DocumentValidator
   validates_format_of :klass, :with => /^post(\.|$)/
   # TODO: Remove '.' from allowed characters in external_id when parlor 
   # has been updated
@@ -36,7 +36,6 @@ class Post < ActiveRecord::Base
 
   default_scope where("not deleted")
 
-  serialize :document
   serialize :external_document
 
   scope :by_path, lambda { |path|
@@ -122,9 +121,8 @@ class Post < ActiveRecord::Base
     self.external_document_updated_at = Time.now
   end
 
-  def document=(document)
-    write_attribute("document", document)
-    self.document_updated_at = Time.now
+  def document_updated_at
+    fields.order('updated_at desc').first.try(:updated_at) || self.created_at || Time.now
   end
 
   def merged_document
@@ -170,7 +168,8 @@ class Post < ActiveRecord::Base
     (cache_keys-result.keys).each do |key|
       post = Post.find_by_uid(key)
       if post
-        $memcached.set(post.cache_key, post.attributes.to_json) if post
+        attributes = post.attributes.merge(:document => post.document)
+        $memcached.set(post.cache_key, attributes.to_json) if post
         post = Post.instantiate(Yajl::Parser.parse(post.attributes.to_json))
       end
       result[key] = post

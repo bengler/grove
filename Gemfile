@@ -23,6 +23,7 @@ gem 'pebbles-uid'
 gem 'servolux'
 gem 'main'
 gem "memcache_mock"
+gem 'ar-tsvectors', :require => 'activerecord_tsvectors'
 
 # Because of a bug in rack-protection (https://github.com/rkh/rack-protection/commit/a91810fa) that affects
 # cors-requests we'll need to get rack-protection from github

@@ -134,15 +134,15 @@ describe Post do
       end
 
       specify "finds on klass" do
-        Post.by_uid("post:*").map(&:document).map{|document| document[:text]}.sort.should eq ['1', '2', '3', '4']
+        Post.by_uid("post:*").map(&:document).map{|document| document['text']}.sort.should eq ['1', '2', '3', '4']
       end
 
       specify "finds on partial path" do
-        Post.by_uid("post:area51.*").map(&:document).map{|document| document[:text]}.sort.should eq ['1', '2', '3']
+        Post.by_uid("post:area51.*").map(&:document).map{|document| document['text']}.sort.should eq ['1', '2', '3']
       end
 
       specify "finds on fully specified path" do
-        Post.by_uid("post:area51.secret.research").map(&:document).map{|document| document[:text]}.sort.should eq ['1', '2']
+        Post.by_uid("post:area51.secret.research").map(&:document).map{|document| document['text']}.sort.should eq ['1', '2']
       end
     end
 
@@ -157,6 +157,7 @@ describe Post do
         Post.cached_find_all_by_uid([article.uid])
 
         post = JSON.parse($memcached.get(article.cache_key))
+
         post['document']['text'].should eq '1'
       end
 

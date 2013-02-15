@@ -29,6 +29,46 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: fields; Type: TABLE; Schema: public; Owner: grove; Tablespace: 
+--
+
+CREATE TABLE fields (
+    id integer NOT NULL,
+    post_id integer,
+    key text,
+    native_type integer,
+    text_value text,
+    integer_value integer,
+    time_value timestamp without time zone,
+    created_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.fields OWNER TO grove;
+
+--
+-- Name: fields_id_seq; Type: SEQUENCE; Schema: public; Owner: grove
+--
+
+CREATE SEQUENCE fields_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.fields_id_seq OWNER TO grove;
+
+--
+-- Name: fields_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: grove
+--
+
+ALTER SEQUENCE fields_id_seq OWNED BY fields.id;
+
+
+--
 -- Name: group_locations; Type: TABLE; Schema: public; Owner: grove; Tablespace: 
 --
 
@@ -291,6 +331,13 @@ ALTER TABLE public.schema_migrations OWNER TO grove;
 -- Name: id; Type: DEFAULT; Schema: public; Owner: grove
 --
 
+ALTER TABLE ONLY fields ALTER COLUMN id SET DEFAULT nextval('fields_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: grove
+--
+
 ALTER TABLE ONLY group_locations ALTER COLUMN id SET DEFAULT nextval('group_locations_id_seq'::regclass);
 
 
@@ -327,6 +374,14 @@ ALTER TABLE ONLY posts ALTER COLUMN id SET DEFAULT nextval('posts_id_seq'::regcl
 --
 
 ALTER TABLE ONLY readmarks ALTER COLUMN id SET DEFAULT nextval('readmarks_id_seq'::regclass);
+
+
+--
+-- Name: fields_pkey; Type: CONSTRAINT; Schema: public; Owner: grove; Tablespace: 
+--
+
+ALTER TABLE ONLY fields
+    ADD CONSTRAINT fields_pkey PRIMARY KEY (id);
 
 
 --
@@ -375,6 +430,20 @@ ALTER TABLE ONLY posts
 
 ALTER TABLE ONLY readmarks
     ADD CONSTRAINT readmarks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: index_fields_on_post_id_and_key; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+--
+
+CREATE UNIQUE INDEX index_fields_on_post_id_and_key ON fields USING btree (post_id, key);
+
+
+--
+-- Name: index_fields_on_text; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+--
+
+CREATE INDEX index_fields_on_text ON fields USING gin (to_tsvector('simple'::regconfig, text_value));
 
 
 --

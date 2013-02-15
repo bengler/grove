@@ -48,6 +48,8 @@ GEM
     approvals (0.0.6)
       nokogiri
       thor
+    ar-tsvectors (0.0.1)
+      activerecord (>= 3.0)
     arel (3.0.2)
     arrayfields (4.7.4)
     backports (2.5.3)
@@ -150,6 +152,7 @@ DEPENDENCIES
   activerecord
   airbrake (~> 3.1.4)
   approvals
+  ar-tsvectors
   bengler_test_helper!
   curb
   dalli
