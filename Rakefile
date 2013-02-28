@@ -59,7 +59,6 @@ end
 
 
 namespace :db do
-
   desc "bootstrap db user, recreate, run migrations"
   task :bootstrap do
     name = "grove"
@@ -69,9 +68,7 @@ namespace :db do
     Rake::Task['db:test:prepare'].invoke
   end
 
-  task :migrate => :environment do
-    Rake::Task["db:structure:dump"].invoke
-  end
+  task :migrate => :environment
 
   desc "nuke db, recreate, run migrations"
   task :nuke do

@@ -1,5 +1,7 @@
 # Grove
 
+[![Build Status](https://semaphoreapp.com/api/v1/projects/35b20ab7aed8961031350862490b0bc555b9d6dc/28279/badge.png)](https://semaphoreapp.com/projects/1580/branches/28279)
+
 A place to store structured documents like comments, blog posts, events etc. and organize these documents for easy retrieval later.
 
 # Data model

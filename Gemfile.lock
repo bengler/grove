@@ -1,6 +1,6 @@
 GIT
   remote: git://github.com/bengler/bengler_test_helper.git
-  revision: e9258320a096beeaa6b1bdae33252f290886f9bd
+  revision: fefbe789aa2ad05e040971b5e6e4fc201205bef4
   specs:
     bengler_test_helper (0.0.2)
 
@@ -28,7 +28,7 @@ GIT
       rack
 
 GEM
-  remote: http://rubygems.org/
+  remote: https://rubygems.org/
   specs:
     activemodel (3.2.3)
       activesupport (= 3.2.3)

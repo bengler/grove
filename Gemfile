@@ -1,4 +1,4 @@
-source 'http://rubygems.org'
+source 'https://rubygems.org'
 
 gem 'sinatra'
 gem 'sinatra-contrib'
@@ -13,12 +13,10 @@ gem 'pebbles-cors', :git => 'git@github.com:bengler/pebbles-cors.git'
 gem 'dalli'
 gem 'ts_vector_tags'
 gem 'rake'
-gem 'unicorn', '~> 4.1.1'
-gem 'bengler_test_helper',  :git => "git://github.com/bengler/bengler_test_helper.git"
+gem 'bengler_test_helper', :git => "git://github.com/bengler/bengler_test_helper.git", :require => false
 gem 'sanitize'
 gem 'curb'
 gem 'pebbles-path', '>=0.0.3'
-gem 'airbrake', '~> 3.1.4', :require => false
 gem 'pebbles-uid'
 gem 'servolux'
 gem 'main'
@@ -41,4 +39,9 @@ group :development, :test do
   gem 'webmock'
   gem 'thor', '~> 0.14.6'
   gem 'approvals'
+end
+
+group :production do
+  gem 'airbrake', '~> 3.1.4', :require => false
+  gem 'unicorn', '~> 4.1.1'
 end
