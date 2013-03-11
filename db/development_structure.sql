@@ -114,8 +114,8 @@ CREATE TABLE locations (
     label_7 text,
     label_8 text,
     label_9 text,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone
+    created_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
 );
 
 
@@ -163,8 +163,8 @@ CREATE TABLE occurrence_entries (
     label text,
     post_id integer,
     at timestamp without time zone,
-    created_at timestamp without time zone,
-    updated_at timestamp without time zone
+    created_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
 );
 
 

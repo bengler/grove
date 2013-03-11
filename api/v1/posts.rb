@@ -257,7 +257,11 @@ class GroveV1 < Sinatra::Base
       halt 403, "Forbidden" unless @post.visible_to?(current_identity)
       pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
     else
-      query = Pebbles::Uid.query(uid)
+      begin
+        query = Pebbles::Uid.query(uid)
+      rescue ArgumentError => e
+        halt 400, e.message
+      end
       if query.list?
 	# Retrieve a list of posts.
         # TODO: filter_visible_posts need to know about PSM
