@@ -13,7 +13,6 @@ gem 'pebbles-cors', :git => 'git@github.com:bengler/pebbles-cors.git'
 gem 'dalli'
 gem 'ts_vector_tags'
 gem 'rake'
-gem 'bengler_test_helper', :git => "git://github.com/bengler/bengler_test_helper.git", :require => false
 gem 'sanitize'
 gem 'curb'
 gem 'pebbles-path', '>=0.0.3'
@@ -28,6 +27,7 @@ gem "memcache_mock"
 gem 'rack-protection', :git => 'git://github.com/rkh/rack-protection.git'
 
 group :development, :test do
+  gem 'bengler_test_helper', :git => "git://github.com/bengler/bengler_test_helper.git", :require => false
   gem 'rspec', '~> 2.8'
   # a monkeypatch in rack 1.3.4 causes :WFKV_ to be declared twice
   # so to silence the warning, adding this line until we upgrade to
