@@ -34,8 +34,8 @@ describe "API v1 posts" do
       end
 
       it "creates a tagged document" do
-        post "/posts/post:a.b.c", :post => {:document => {'text' => "taggable"}, :tags => "paris, texas∞"}
-        Post.first.tags.should eq ['paris', 'texas']
+        post "/posts/post:a.b.c", :post => {:document => {'text' => "taggable"}, :tags => "paris, texas∞, lamar_county"}
+        Post.first.tags.sort.should eq ['paris', 'texas', 'lamar_county'].sort
       end
 
       it "sets the restricted flag" do
@@ -184,7 +184,7 @@ describe "API v1 posts" do
 
       it "retrieves a tagged document" do
         Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'})
-        Post.create!(:uid => "post:a.b.c", :tags => ["paris", "texas"], :document => {'text' => '2'})
+        Post.create!(:uid => "post:a.b.c", :tags => ["paris", "texas", "lamar_county"], :document => {'text' => '2'})
         Post.create!(:uid => "post:a.b.c", :tags => ["lyon", "france"], :document => {'text' => '3'})
         get "/posts/post:*", :tags => "texas"
         result = JSON.parse(last_response.body)['posts']
@@ -198,15 +198,31 @@ describe "API v1 posts" do
         get "/posts/post:*", :tags => "texas, paris"
         result = JSON.parse(last_response.body)['posts']
         result.size.should eq 1
+
+        get "/posts/post:*", :tags => "lamar_county"
+        result = JSON.parse(last_response.body)['posts']
+        result.size.should eq 1
+
+        get "/posts/post:*", :tags => "lamar"
+        result = JSON.parse(last_response.body)['posts']
+        result.size.should eq 0
+
+        get "/posts/post:*", :tags => "county"
+        result = JSON.parse(last_response.body)['posts']
+        result.size.should eq 0
       end
 
 
       it "retrieves a tagged document using tsqueries" do
         Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'})
-        Post.create!(:uid => "post:a.b.c", :tags => ["paris", "texas"], :document => {'text' => '2'})
+        Post.create!(:uid => "post:a.b.c", :tags => ["paris", "texas", "lamar_county"], :document => {'text' => '2'})
         Post.create!(:uid => "post:a.b.c", :tags => ["lyon", "france"], :document => {'text' => '3'})
 
         get "/posts/post:*", :tags => "paris & !texas"
+        result = JSON.parse(last_response.body)['posts']
+        result.size.should eq 1
+
+        get "/posts/post:*", :tags => "paris & lamar_county"
         result = JSON.parse(last_response.body)['posts']
         result.size.should eq 1
 
