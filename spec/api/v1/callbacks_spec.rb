@@ -37,7 +37,7 @@ describe "Security callbacks" do
 
   context "when callbacks dictate action should be denied" do
     let(:identity) { alice }
-    let(:callback_response) { {:allowed => false, :url => "http://example.org", :reason => "You are not worthy"} }
+    let(:callback_response) { {'allowed' => false, 'url' => "http://example.org", 'reason' => "You are not worthy"} }
 
     it "can't create a document" do
       post "/posts/post:a.b.c", :post => {:document => {content: "hello world"}}
@@ -49,7 +49,7 @@ describe "Security callbacks" do
 
   context "when callbacks dictate action should be allowed" do
     let(:identity) { alice }
-    let(:callback_response) { {:allowed => true} }
+    let(:callback_response) { {'allowed' => true} }
 
     it "can update another persons document" do
       p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :document => {'title' => 'Hello spaceboy'})
@@ -61,7 +61,7 @@ describe "Security callbacks" do
 
   context "when callbacks dictate action should be allowed" do
     let(:identity) { alice }
-    let(:callback_response) { {:allowed => true} }
+    let(:callback_response) { {'allowed' => true} }
 
     it "can update another persons document" do
       p = Post.create!(:uid => "post:a.b.c", :created_by => 1337, :document => {'title' => 'Hello spaceboy'})
@@ -73,7 +73,7 @@ describe "Security callbacks" do
 
   context "when callbacks dictate we use own judgement" do
     let(:identity) { alice }
-    let(:callback_response) { {:allowed => 'default'} }
+    let(:callback_response) { {'allowed' => 'default'} }
 
     it "can update own document" do
       p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'title' => 'Hello spaceboy'})
