@@ -12,6 +12,9 @@ class GroveV1 < Sinatra::Base
   register Sinatra::Pebblebed
 
   before do
+    LOGGER.info "Processing #{request.url}"
+    LOGGER.info "Params: #{params.inspect}"
+
     cache_control :private, :no_cache, :no_store, :must_revalidate
   end
 
