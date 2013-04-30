@@ -23,4 +23,13 @@ describe Post::GeoAccessor do
     json['lon'].should be_nil
     json['geo']['lon'].should eq 10.0
   end
+
+  it "wraps the attributes in a compound field in the attributes_for_export hash" do
+    p = Post.new(:uid => "post:test")
+    p.geo.lon = 10.0
+    p.geo.lat = 12.5
+    attrs = p.attributes_for_export
+    attrs['geo']['lon'].should eq 10.0
+    attrs['lon'].should be_nil
+  end
 end

@@ -95,7 +95,11 @@ class Post < ActiveRecord::Base
   }
 
   def attributes_for_export
-    attributes.update('document' => merged_document).merge('paths' => paths.to_a, 'uid' => uid)
+    result = attributes.update('document' => merged_document).merge('paths' => paths.to_a, 'uid' => uid)
+    result['geo'] = { 'lon' => self.lon, 'lat' => self.lat} if self.lon || self.lat
+    result.delete('lon')
+    result.delete('lat')
+    result
   end
 
   def visible_to?(identity)
