@@ -416,6 +416,30 @@ describe "API v1 posts" do
         end
 
       end
+
+      describe "accessing geo positions" do
+        it "returns the geo points in a special compound field" do
+          p = Post.create!(:uid => "post:test", :lon => 10.0, :lat => 20.1)
+          get "/posts/#{p.uid}"
+          result = JSON.parse(last_response.body)['post']
+          result['lon'].should be_nil
+          result['geo']['lon'].should eq 10.0
+        end
+
+        it "updates geo points as specified" do
+          p = Post.create!(:uid => "post:test", :lon => 10.0, :lat => 20.1, :created_by => 1)
+          post "/posts/#{p.uid}", :post => { :geo => { :lon => 20.0, :lat => 50.0 } }
+          last_response.status.should eq 200
+          p.reload
+          p.geo.lon.should eq 20.0
+        end
+
+        it "can be created with a geo point" do
+          post "/posts/post:test", :post => { :geo => { :lon => 20, :lat => 50 } }
+          last_response.status.should eq 201
+          Post.first.lon.should eq 20
+        end
+      end
     end
 
     describe "DELETE /posts/:uid" do
