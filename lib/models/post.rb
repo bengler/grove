@@ -29,6 +29,7 @@ class Post < ActiveRecord::Base
   before_save :update_conflicted
   before_save :sanitize
   before_save :attach_canonical_path
+  before_destroy :attach_canonical_path
   before_save :update_readmarks_according_to_deleted_status
   before_save :update_external_id_according_to_deleted_status
   after_update :invalidate_cache
