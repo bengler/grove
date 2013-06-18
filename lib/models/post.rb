@@ -78,19 +78,26 @@ class Post < ActiveRecord::Base
       end
     end
     scope = scope.where(:created_by => filters['created_by']) if filters['created_by']
+    scope = scope.where(:published => filters['unpublished'] != 'include')
     scope
   }
 
-  scope :with_restrictions, lambda { |identity|
+  scope :with_restrictions, lambda { |identity, include_unpublished=false|
     scope = relation
     if !identity || !identity.respond_to?(:id)
-      scope = scope.where(:restricted => false)
+      scope = scope.where(:restricted => false, :published => true)
     elsif !identity.god
       scope = scope.
         joins(:locations).
         joins("left outer join group_locations on group_locations.location_id = locations.id").
-        joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{identity.id}").
-        where(['not restricted or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
+        joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{identity.id}")
+      if include_unpublished
+        scope = scope.
+            where(['(published and not restricted) or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
+      else
+        scope = scope.
+            where(['not restricted or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
+      end        
     end
     scope
   }
@@ -100,9 +107,9 @@ class Post < ActiveRecord::Base
   end
 
   def visible_to?(identity)
-    return true unless restricted
+    return true if !restricted and published
     return false if nobody?(identity)
-    return identity.god || identity.id == created_by
+    identity.god || identity.id == created_by
   end
 
   def nobody?(identity)

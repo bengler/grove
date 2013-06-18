@@ -20,6 +20,20 @@ describe "API v1 posts" do
       result.size.should eq 0
     end
 
+    it "cannot read unpublished documents" do
+      Post.create!(:uid => "post:a.b.c", :created_by => another_identity.id, :document => {'text' => 'xyzzy'}, :restricted => false, :published => false)
+      get "/posts/post:a.b.c"
+      result = JSON.parse(last_response.body)['posts']
+      result.size.should eq 0
+    end
+
+    it "can read published documents" do
+      post = Post.create!(:uid => "post:a.b.c", :created_by => another_identity.id, :document => {'text' => 'xyzzy'}, :restricted => false, :published => true)
+      get "/posts/post:a.b.c"
+      result = JSON.parse(last_response.body)['posts']
+      result.first['post']['uid'].should eq post.uid
+    end
+
   end
 
   context "with a logged in identity" do
@@ -41,6 +55,11 @@ describe "API v1 posts" do
       it "sets the restricted flag" do
         post "/posts/post:a.b.c", :post => {:document => {:title => "restricted document"}, :restricted => true}
         Post.first.restricted.should eq true
+      end
+
+      it "sets the published flag" do
+        post "/posts/post:a.b.c", :post => {:document => {:title => "restricted document"}, :published => true}
+        Post.first.published.should eq true
       end
 
       it "updates a document" do
@@ -172,7 +191,7 @@ describe "API v1 posts" do
     end
 
     describe "GET /posts/:uid" do
-      describe "uid queries with an oid" do
+      describe "single uid queries" do
         it "can retrieve a document" do
           p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'})
           get "/posts/#{p.uid}"
@@ -182,6 +201,44 @@ describe "API v1 posts" do
           result['document']['title'].should eq "Hello spaceboy"
         end
 
+        it "can retrieve a restricted document created by the current user" do
+          p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'}, :restricted => true)
+          get "/posts/#{p.uid}"
+          result = JSON.parse(last_response.body)['post']
+          result['uid'].should eq "post:a.b.c$#{p.id}"
+          result['created_by'].should eq 1
+          result['document']['title'].should eq "Hello spaceboy"
+        end
+
+        it "can not retrieve a unpublished document created by the current user" do
+          p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'}, :restricted => false, :published => false)
+          get "/posts/#{p.uid}"
+          last_response.status.should eq 403
+        end
+
+        it "can not retrieve a restricted document created by another user" do
+          p = Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {:title => 'Hello spaceboy'}, :restricted => true)
+          get "/posts/#{p.uid}"
+          last_response.status.should eq 403
+        end
+
+        context "with ?unpublished=true" do
+          it "can not retrieve a unpublished document created by the current user" do
+            p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'}, :restricted => false, :published => false)
+            get "/posts/#{p.uid}", :unpublished => 'include'
+
+            result = JSON.parse(last_response.body)['post']
+            result['uid'].should eq p.uid
+            result['created_by'].should eq 1
+          end
+
+          it "can not retrieve a restricted document created by another user" do
+            p = Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {:title => 'Hello spaceboy'}, :restricted => true)
+            get "/posts/#{p.uid}", :unpublished => 'include'
+            last_response.status.should eq 403
+          end
+        end
+        
         describe "checking editable status in response" do
           it "returns true if identity is creator" do
             p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'})
@@ -211,6 +268,7 @@ describe "API v1 posts" do
           result.first['post']['document'].should eq posts.first.document
           result.last['post'].should eq nil
         end
+
         it "can only read restricted posts created by current identity" do
           posts = []
           posts << Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'xyzzy'}, :restricted => true)
@@ -222,6 +280,43 @@ describe "API v1 posts" do
           result[1]["post"].should be_nil
         end
 
+        it "will not return unpublished posts created by current identity" do
+          posts = []
+          posts << Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'xyzzy'}, :published => false)
+          posts << Post.create!(:uid => "post:a.b.d", :created_by => 2, :document => {'text' => 'zippo'}, :published => false)
+          get "/posts/#{[posts.map(&:uid)].join(',')}"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 2
+          result[0]["post"].should be_nil
+          result[1]["post"].should be_nil
+        end
+
+        context "with unpublished=include" do
+  
+          it "will return unpublished posts created by current identity" do
+            posts = [
+              Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'xyzzy'}, :published => false),
+              Post.create!(:uid => "post:a.b.d", :created_by => 1, :document => {'text' => 'zippo'}, :published => false)
+            ]
+            get "/posts/#{[posts.map(&:uid)].join(',')}", :unpublished => 'include'
+            result = JSON.parse(last_response.body)['posts']
+            result.size.should eq 2
+            result[0]["post"]["uid"].should eq posts[0].uid
+            result[1]["post"]["uid"].should eq posts[1].uid
+          end
+
+          it "will return 'null' in place for unpublished posts created by other identities" do
+            posts = [
+                Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => 'xyzzy'}, :published => false),
+                Post.create!(:uid => "post:a.b.d", :created_by => 1, :document => {'text' => 'zippo'}, :published => false)
+            ]
+            get "/posts/#{[posts.map(&:uid)].join(',')}", :unpublished => 'include'
+            result = JSON.parse(last_response.body)['posts']
+            result.size.should eq 2
+            result[0]["post"].should be_nil
+            result[1]["post"]["uid"].should eq posts[1].uid
+          end
+        end
       end
 
       describe "collection queries" do
@@ -329,7 +424,6 @@ describe "API v1 posts" do
           result['external_id'].should eq external_id
         end
 
-
         it "sorts the result by a specified attribute" do
           time = Time.new(2014, 12, 24)
           post = {
@@ -373,7 +467,7 @@ describe "API v1 posts" do
           JSON.parse(last_response.body)['posts'].size.should eq 2
           get "/posts/*:*", :klass => "post.comment, post.blog"
           JSON.parse(last_response.body)['posts'].size.should eq 3
-        end
+      end
 
         it "filters by occurrence" do
           time = Time.now
@@ -416,6 +510,46 @@ describe "API v1 posts" do
           result['pagination']['last_page'].should be_true
           result['pagination']['limit'].should eq 10
           result['pagination']['offset'].should eq 15
+        end
+
+        it "can only read restricted posts created by current identity" do
+          posts = []
+          posts << Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'xyzzy'}, :restricted => true)
+          posts << Post.create!(:uid => "post:a.b.d", :created_by => 2, :document => {'text' => 'zippo'}, :restricted => true)
+          get "/posts/#{[posts.map(&:uid)].join(',')}"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 2
+          result[0]["post"]["uid"].should eq posts[0].uid
+          result[1]["post"].should be_nil
+        end
+
+        it "will not retrieve unpublished posts created by other identities" do
+          Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => 'zippo'}, :published => false)
+          get "/posts/post:a.b.c$*"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 0
+        end
+
+        it "will not retrieve unpublished posts created by current identity" do
+          Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'zippo'}, :published => false)
+          get "/posts/post:a.b.c$*"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 0
+        end
+
+        context "with ?unpublished=include" do
+          it "will not retrieve unpublished posts created by other identities" do
+            Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => 'zippo'}, :published => false)
+            get "/posts/post:a.b.c$*", :unpublished => 'include'
+            result = JSON.parse(last_response.body)['posts']
+            result.size.should eq 0
+          end
+          it "will retrieve unpublished posts created by current identity" do
+            Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'zippo'}, :published => false)
+            get "/posts/post:a.b.c$*", :unpublished => 'include'
+            result = JSON.parse(last_response.body)['posts']
+            result.size.should eq 1
+          end
         end
       end
     end
@@ -470,6 +604,39 @@ describe "API v1 posts" do
         end
         get "/posts/post:a.b.*$*/count"
         JSON.parse(last_response.body)['count'].should eq 20
+      end
+      it "counts only published posts" do
+        3.times do |i|
+          Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s}, :published => true)
+        end
+        3.times do |i|
+          Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s}, :published => false)
+        end
+        get "/posts/post:a.b.*$*/count"
+        JSON.parse(last_response.body)['count'].should eq 3
+      end
+      context "with ?unpublished=true" do
+        before(:each) { user!(:realm => 'a') }
+        it "counts current identitiy's unpublished posts" do
+          3.times do |i|
+            Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => "xyzzy #{i}"}, :published => false)
+          end
+          3.times do |i|
+            Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => "zippo #{i}"}, :published => false)
+          end
+          get "/posts/post:a.b.c$*/count", :unpublished => 'include' 
+          JSON.parse(last_response.body)['count'].should eq 6
+        end
+        it "does not count other identities's unpublished posts" do
+          3.times do |i|
+            Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => "xyzzy #{i}"}, :published => false)
+          end
+          3.times do |i|
+            Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => "zippo #{i}"}, :published => false)
+          end
+          get "/posts/post:a.b.c$*/count", :unpublished => 'include' 
+          JSON.parse(last_response.body)['count'].should eq 3
+        end
       end
     end
 
@@ -643,6 +810,13 @@ describe "API v1 posts" do
     it "can read restricted documents" do
       Post.create!(:uid => "post:a.b.c", :created_by => another_identity, :document => {'text' => 'xyzzy'}, :restricted => true)
       get "/posts/post:a.b.c"
+      result = JSON.parse(last_response.body)['posts']
+      result.size.should eq 1
+    end
+
+    it "can read unpublished documents created by other identities" do
+      Post.create!(:uid => "post:a.b.c", :created_by => another_identity, :document => {'text' => 'xyzzy'}, :restricted => true, :published => false)
+      get "/posts/post:a.b.c", :unpublished => 'include'
       result = JSON.parse(last_response.body)['posts']
       result.size.should eq 1
     end

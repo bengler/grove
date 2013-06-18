@@ -7,6 +7,14 @@ class GroveV1 < Sinatra::Base
       posts.map{|p| p.visible_to?(current_identity) ? p : nil if p}
     end
 
+    def filter_published(posts)
+      posts.map {|p| p.try(:published) ? p : nil }
+    end
+
+    def include_unpublished?
+      params['unpublished'] == 'include'
+    end
+
   end
 
   error TsVectorTags::InvalidTsQueryError do
@@ -266,6 +274,7 @@ class GroveV1 < Sinatra::Base
 	# Retrieve a list of posts.
         # TODO: filter_visible_posts need to know about PSM
         @posts = filter_visible_posts(Post.cached_find_all_by_uid(query.cache_keys))
+        @posts = filter_published(@posts) unless include_unpublished?
         pg :posts, :locals => {:posts => @posts, :pagination => nil}
       elsif query.collection?
 	# Retrieve a collection by wildcards.
@@ -274,7 +283,7 @@ class GroveV1 < Sinatra::Base
           sort_field = params['sort_by'].downcase
           halt 400, "Unknown field #{sort_field}" unless %w(created_at updated_at document_updated_at external_document_updated_at external_document).include? sort_field
         end
-        @posts = Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity)
+        @posts = Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity, include_unpublished?)
         @posts = apply_occurrence_scope(@posts, params['occurrence'])
         direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
         @posts = @posts.order("posts.#{sort_field} #{direction}")
@@ -283,13 +292,14 @@ class GroveV1 < Sinatra::Base
       else
 	# Retrieve a single specific post.
         if uid =~ /[\*\|]/ || uid =~ /^.*\:dna/
-          @post = Post.by_uid(uid).with_restrictions(current_identity).first
+          @post = Post.by_uid(uid).with_restrictions(current_identity, include_unpublished?).first
         else
           @post = Post.cached_find_all_by_uid(query.cache_keys).first
           # To be removed when visible_to? is PSM compliant and replaced with the line further down there.
           halt 403, "Forbidden" if @post && !@post.visible_to?(current_identity)
         end
         halt 404, "No such post" unless @post
+        halt 403, "Forbidden" if !@post.published && !include_unpublished?
         # TODO: Teach .visible_to? about PSM so we can go back to using cached results
         #halt 403, "Forbidden" unless @post.visible_to?(current_identity)
         pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
@@ -315,7 +325,7 @@ class GroveV1 < Sinatra::Base
   # @status 403 Forbidden (the post is restricted, and you are not invited!)
 
   get "/posts/:uid/count" do |uid|
-    {:uid => uid, :count => Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity).count}.to_json
+    {:uid => uid, :count => Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity, include_unpublished?).count}.to_json
   end
 
   # @apidoc
