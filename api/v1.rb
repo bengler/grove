@@ -33,7 +33,8 @@ class GroveV1 < Sinatra::Base
         halt 403, "You are not allowed to #{action} #{post.uid}"
       else
         # Call checkpoint to invoke registered callbacks
-        result = pebbles.checkpoint.get("/callbacks/allowed/#{action}/#{post.uid}")
+        result = pebbles.checkpoint.get("/callbacks/allowed/#{action}/#{post.uid}",
+          pg(:post, :locals => {:mypost => post}))
         # Allowed might be true, false or "default"
         case result['allowed']
         when false # categorically denied
