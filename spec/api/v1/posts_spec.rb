@@ -62,6 +62,11 @@ describe "API v1 posts" do
         Post.first.published.should eq true
       end
 
+      it "sets the published flag" do
+        post "/posts/post:a.b.c", :post => {:document => {:title => "restricted document"}, :published => false}
+        Post.first.published.should eq false
+      end
+
       it "updates a document" do
         post "/posts/post:a.b.c", :post => {:document => {:title => 'Hello spaceboy'}}
         uid = JSON.parse(last_response.body)['post']['uid']
