@@ -25,7 +25,10 @@ class RiverNotifications < ActiveRecord::Observer
   end
 
   def publish(post, event)
-    self.class.river.publish(:event => event, :uid => post.uid, :attributes => post.attributes_for_export)
+    post.paths.each do |path|
+      uid = "#{post.klass}:#{path}$#{post.id}"
+      self.class.river.publish(:event => event, :uid => uid, :attributes => post.attributes_for_export)
+    end
   end
 
 end
