@@ -283,7 +283,10 @@ class GroveV1 < Sinatra::Base
           sort_field = params['sort_by'].downcase
           halt 400, "Unknown field #{sort_field}" unless %w(created_at updated_at document_updated_at external_document_updated_at external_document).include? sort_field
         end
-        @posts = Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity, include_unpublished?)
+        @posts = Post.by_uid(uid)
+            .filtered_by(params)
+            .with_restrictions(current_identity)
+            .with_unpublished_option_for(params[:unpublished], current_identity)
         @posts = apply_occurrence_scope(@posts, params['occurrence'])
         direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
         @posts = @posts.order("posts.#{sort_field} #{direction}")
@@ -292,7 +295,7 @@ class GroveV1 < Sinatra::Base
       else
 	# Retrieve a single specific post.
         if uid =~ /[\*\|]/ || uid =~ /^.*\:dna/
-          @post = Post.by_uid(uid).with_restrictions(current_identity, include_unpublished?).first
+          @post = Post.by_uid(uid).with_restrictions(current_identity).first
         else
           @post = Post.cached_find_all_by_uid(query.cache_keys).first
           # To be removed when visible_to? is PSM compliant and replaced with the line further down there.
@@ -325,7 +328,11 @@ class GroveV1 < Sinatra::Base
   # @status 403 Forbidden (the post is restricted, and you are not invited!)
 
   get "/posts/:uid/count" do |uid|
-    {:uid => uid, :count => Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity, include_unpublished?).count}.to_json
+    count = Post.by_uid(uid)
+      .filtered_by(params)
+      .with_restrictions(current_identity)
+      .with_unpublished_option_for(params[:unpublished], current_identity).count
+    {:uid => uid, :count => count}.to_json
   end
 
   # @apidoc

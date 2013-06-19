@@ -227,8 +227,8 @@ describe "API v1 posts" do
           last_response.status.should eq 403
         end
 
-        context "with ?unpublished=true" do
-          it "can not retrieve a unpublished document created by the current user" do
+        context "with ?unpublished=include" do
+          it "can retrieve an unpublished document created by the current user" do
             p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'}, :restricted => false, :published => false)
             get "/posts/#{p.uid}", :unpublished => 'include'
 
@@ -237,8 +237,8 @@ describe "API v1 posts" do
             result['created_by'].should eq 1
           end
 
-          it "can not retrieve a restricted document created by another user" do
-            p = Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {:title => 'Hello spaceboy'}, :restricted => true)
+          it "can not retrieve an unpublished document created by another user" do
+            p = Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {:title => 'Hello spaceboy'}, :published => false)
             get "/posts/#{p.uid}", :unpublished => 'include'
             last_response.status.should eq 403
           end
@@ -545,15 +545,23 @@ describe "API v1 posts" do
         context "with ?unpublished=include" do
           it "will not retrieve unpublished posts created by other identities" do
             Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => 'zippo'}, :published => false)
-            get "/posts/post:a.b.c$*", :unpublished => 'include'
+            get "/posts/post:a.b.c", :unpublished => 'include'
             result = JSON.parse(last_response.body)['posts']
             result.size.should eq 0
           end
           it "will retrieve unpublished posts created by current identity" do
             Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'zippo'}, :published => false)
-            get "/posts/post:a.b.c$*", :unpublished => 'include'
+            get "/posts/post:a.b.c", :unpublished => 'include'
             result = JSON.parse(last_response.body)['posts']
             result.size.should eq 1
+          end
+          it "will retrieve other published posts too" do
+            Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'foo'}, :published => false)
+            Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => 'bar'}, :published => true)
+            Post.create!(:uid => "post:a.b.c", :created_by => 3, :document => {'text' => 'baz'}, :published => true)
+            get "/posts/post:a.b.c", :unpublished => 'include'
+            result = JSON.parse(last_response.body)['posts']
+            result.size.should eq 3
           end
         end
       end
@@ -620,7 +628,7 @@ describe "API v1 posts" do
         get "/posts/post:a.b.*$*/count"
         JSON.parse(last_response.body)['count'].should eq 3
       end
-      context "with ?unpublished=true" do
+      context "with ?unpublished=include" do
         before(:each) { user!(:realm => 'a') }
         it "counts current identitiy's unpublished posts" do
           3.times do |i|

@@ -78,26 +78,38 @@ class Post < ActiveRecord::Base
       end
     end
     scope = scope.where(:created_by => filters['created_by']) if filters['created_by']
-    scope = scope.where(:published => filters['unpublished'] != 'include')
     scope
   }
 
-  scope :with_restrictions, lambda { |identity, include_unpublished=false|
+  scope :with_unpublished_option_for, lambda { |option, identity|
+    scope = relation
+
+    # Short circuit common cases
+    next scope.where(:published => true) if option.nil? || !identity || !identity.respond_to?(:id)
+
+    if option == 'include'
+      next scope if identity.god
+      scope = scope.
+        joins(:locations).
+        joins("left outer join group_locations on group_locations.location_id = locations.id").
+        joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{identity.id}").
+        where(['published or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
+      else
+        raise ArgumentError, "Unsupported unpublished option '#{option}'"
+    end
+    scope
+  }
+
+  scope :with_restrictions, lambda { |identity|
     scope = relation
     if !identity || !identity.respond_to?(:id)
-      scope = scope.where(:restricted => false, :published => true)
+      scope = scope.where(:restricted => false)
     elsif !identity.god
       scope = scope.
         joins(:locations).
         joins("left outer join group_locations on group_locations.location_id = locations.id").
-        joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{identity.id}")
-      if include_unpublished
-        scope = scope.
-            where(['(published and not restricted) or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
-      else
-        scope = scope.
-            where(['not restricted or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
-      end        
+        joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{identity.id}").
+        where(['not restricted or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
     end
     scope
   }
