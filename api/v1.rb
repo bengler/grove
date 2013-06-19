@@ -37,7 +37,7 @@ class GroveV1 < Sinatra::Base
         # Run post throught petroglyph template
         post_as_json = JSON.parse(pg(:post, :locals => {:mypost => post}))
         
-        Logger.info("Parsed post to #{post.as_json.inspect}")
+        LOGGER.info("Parsed post to #{post.as_json.inspect}")
 
         # Call checkpoint to invoke registered callbacks
         result = pebbles.checkpoint.get("/callbacks/allowed/#{action}/#{post.uid}", post)
