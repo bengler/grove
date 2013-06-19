@@ -40,7 +40,7 @@ class GroveV1 < Sinatra::Base
         LOGGER.info("Parsed post to #{post.as_json.inspect}")
 
         # Call checkpoint to invoke registered callbacks
-        result = pebbles.checkpoint.get("/callbacks/allowed/#{action}/#{post.uid}", post)
+        result = pebbles.checkpoint.get("/callbacks/allowed/#{action}/#{post.uid}", post_as_json)
         # Allowed might be true, false or "default"
         case result['allowed']
         when false # categorically denied
