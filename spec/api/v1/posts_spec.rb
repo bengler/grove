@@ -517,17 +517,6 @@ describe "API v1 posts" do
           result['pagination']['offset'].should eq 15
         end
 
-        it "can only read restricted posts created by current identity" do
-          posts = []
-          posts << Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'xyzzy'}, :restricted => true)
-          posts << Post.create!(:uid => "post:a.b.d", :created_by => 2, :document => {'text' => 'zippo'}, :restricted => true)
-          get "/posts/#{[posts.map(&:uid)].join(',')}"
-          result = JSON.parse(last_response.body)['posts']
-          result.size.should eq 2
-          result[0]["post"]["uid"].should eq posts[0].uid
-          result[1]["post"].should be_nil
-        end
-
         it "will not retrieve unpublished posts created by other identities" do
           Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => 'zippo'}, :published => false)
           get "/posts/post:a.b.c$*"
