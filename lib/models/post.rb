@@ -77,39 +77,21 @@ class Post < ActiveRecord::Base
         scope = scope.with_tags_query(filters['tags'])
       end
     end
+    scope = scope.where("published or published is null") unless filters['unpublished'] == 'include'
     scope = scope.where(:created_by => filters['created_by']) if filters['created_by']
-    scope
-  }
-
-  scope :with_unpublished_option_for, lambda { |option, identity|
-    scope = relation
-
-    # Short circuit common cases
-    next scope.where("published is null or published") if option.nil? || !identity || !identity.respond_to?(:id)
-
-    if option == 'include'
-      next scope if identity.god
-      scope = scope.
-        joins(:locations).
-        joins("left outer join group_locations on group_locations.location_id = locations.id").
-        joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{identity.id}").
-        where(['published is null or published or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
-      else
-        raise ArgumentError, "Unsupported unpublished option '#{option}'"
-    end
     scope
   }
 
   scope :with_restrictions, lambda { |identity|
     scope = relation
     if !identity || !identity.respond_to?(:id)
-      scope = scope.where(:restricted => false)
+      scope = scope.where("not restricted and (published or published is null)")
     elsif !identity.god
       scope = scope.
         joins(:locations).
         joins("left outer join group_locations on group_locations.location_id = locations.id").
         joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{identity.id}").
-        where(['not restricted or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
+        where(['(not restricted and (published or published is null)) or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
     end
     scope
   }
