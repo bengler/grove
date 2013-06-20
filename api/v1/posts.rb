@@ -7,6 +7,13 @@ class GroveV1 < Sinatra::Base
       posts.map{|p| p.visible_to?(current_identity) ? p : nil if p}
     end
 
+    def filter_published(posts, opts={})
+      posts.map do |p|
+        next nil if p.nil?
+        p if opts[:unpublished] == 'include' || p.published
+      end
+    end
+
   end
 
   error TsVectorTags::InvalidTsQueryError do
@@ -129,16 +136,16 @@ class GroveV1 < Sinatra::Base
     halt 404, "Post is deleted" if @post.deleted?
     response.status = 201 if @post.new_record?
 
-    check_allowed @post.new_record? ? 'create' : 'update', @post do
-      allowed_attributes = ['external_document', 'document', 'paths', 'occurrences', 'tags', 'external_id', 'restricted']
-      # Gods have some extra fields they may update
-      if current_identity.god?
-        allowed_attributes += ['created_at']
-      end
-      (allowed_attributes & attributes.keys).each do |field|
-        @post.send(:"#{field}=", attributes[field])
-      end
+    allowed_attributes = ['external_document', 'document', 'paths', 'occurrences', 'tags', 'external_id', 'restricted', 'published']
+    # Gods have some extra fields they may update
+    if current_identity.god?
+      allowed_attributes += ['created_at']
+    end
+    (allowed_attributes & attributes.keys).each do |field|
+      @post.send(:"#{field}=", attributes[field])
+    end
 
+    check_allowed @post.new_record? ? 'create' : 'update', @post do
       begin
         @post.save!
       rescue Post::CanonicalPathConflict => e
@@ -237,6 +244,7 @@ class GroveV1 < Sinatra::Base
   # @optional [String] tags Constrain query by tags. Either a comma separated list of required tags or a
   #   boolean expression like 'paris & !texas' or 'closed & (failed | pending)'.
   # @optional [Integer] created_by Only documents created by this checkpoint identity will be returned.
+  # @optional [String] unpublished If set to 'include', accessible unpublished posts will be included with the result.
   # @optional [String] occurrence[label] Require that the post have an occurrence with this label.
   # @optional [String] occurrence[from] The occurrences must be later than this time. Time stamp (ISO 8601).
   # @optional [String] occurrence[to] The occurrences must be earlier than this time. Time stamp (ISO 8601).
@@ -266,6 +274,7 @@ class GroveV1 < Sinatra::Base
 	# Retrieve a list of posts.
         # TODO: filter_visible_posts need to know about PSM
         @posts = filter_visible_posts(Post.cached_find_all_by_uid(query.cache_keys))
+        @posts = filter_published(@posts, :unpublished => params['unpublished'])
         pg :posts, :locals => {:posts => @posts, :pagination => nil}
       elsif query.collection?
 	# Retrieve a collection by wildcards.
@@ -274,7 +283,7 @@ class GroveV1 < Sinatra::Base
           sort_field = params['sort_by'].downcase
           halt 400, "Unknown field #{sort_field}" unless %w(created_at updated_at document_updated_at external_document_updated_at external_document).include? sort_field
         end
-        @posts = Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity)
+        @posts = Post.by_uid(uid).with_restrictions(current_identity).filtered_by(params)
         @posts = apply_occurrence_scope(@posts, params['occurrence'])
         direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
         @posts = @posts.order("posts.#{sort_field} #{direction}")
@@ -290,6 +299,7 @@ class GroveV1 < Sinatra::Base
           halt 403, "Forbidden" if @post && !@post.visible_to?(current_identity)
         end
         halt 404, "No such post" unless @post
+        halt 403, "Forbidden" if !@post.published && params[:unpublished] != 'include'
         # TODO: Teach .visible_to? about PSM so we can go back to using cached results
         #halt 403, "Forbidden" unless @post.visible_to?(current_identity)
         pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
@@ -307,6 +317,7 @@ class GroveV1 < Sinatra::Base
   # @optional [String] uid A wildcard uid query (e.g. "*:acme.invoices.*").
   # @optional [String] tags Constrain query by tags. Either a comma separated list of required tags or a
   #   boolean expression like 'paris & !texas' or 'closed & (failed | pending)'.
+  # @optional [String] unpublished If set to 'include', accessible unpublished posts will be counted too.
   # @optional [Integer] created_by Only documents created by this checkpoint identity will be returned.
   # @optional [Integer] limit The maximum amount of posts to return.
   # @optional [Integer] offset The index of the first result to return (for pagination).
@@ -315,7 +326,8 @@ class GroveV1 < Sinatra::Base
   # @status 403 Forbidden (the post is restricted, and you are not invited!)
 
   get "/posts/:uid/count" do |uid|
-    {:uid => uid, :count => Post.by_uid(uid).filtered_by(params).with_restrictions(current_identity).count}.to_json
+    count = Post.by_uid(uid).with_restrictions(current_identity).filtered_by(params).count
+    {:uid => uid, :count => count}.to_json
   end
 
   # @apidoc

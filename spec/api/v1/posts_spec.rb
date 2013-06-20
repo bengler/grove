@@ -20,6 +20,20 @@ describe "API v1 posts" do
       result.size.should eq 0
     end
 
+    it "cannot read unpublished documents" do
+      Post.create!(:uid => "post:a.b.c", :created_by => another_identity.id, :document => {'text' => 'xyzzy'}, :restricted => false, :published => false)
+      get "/posts/post:a.b.c"
+      result = JSON.parse(last_response.body)['posts']
+      result.size.should eq 0
+    end
+
+    it "can read published documents" do
+      post = Post.create!(:uid => "post:a.b.c", :created_by => another_identity.id, :document => {'text' => 'xyzzy'}, :restricted => false, :published => true)
+      get "/posts/post:a.b.c"
+      result = JSON.parse(last_response.body)['posts']
+      result.first['post']['uid'].should eq post.uid
+    end
+
   end
 
   context "with a logged in identity" do
@@ -41,6 +55,16 @@ describe "API v1 posts" do
       it "sets the restricted flag" do
         post "/posts/post:a.b.c", :post => {:document => {:title => "restricted document"}, :restricted => true}
         Post.first.restricted.should eq true
+      end
+
+      it "sets the published flag" do
+        post "/posts/post:a.b.c", :post => {:document => {:title => "restricted document"}, :published => true}
+        Post.first.published.should eq true
+      end
+
+      it "sets the published flag" do
+        post "/posts/post:a.b.c", :post => {:document => {:title => "restricted document"}, :published => false}
+        Post.first.published.should eq false
       end
 
       it "updates a document" do
@@ -172,249 +196,363 @@ describe "API v1 posts" do
     end
 
     describe "GET /posts/:uid" do
-
-      it "can retrieve a document" do
-        p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'})
-        get "/posts/#{p.uid}"
-        result = JSON.parse(last_response.body)['post']
-        result['uid'].should eq "post:a.b.c$#{p.id}"
-        result['created_by'].should eq 1
-        result['document']['title'].should eq "Hello spaceboy"
-      end
-
-      it "retrieves a tagged document" do
-        Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'})
-        Post.create!(:uid => "post:a.b.c", :tags => ["paris", "texas", "lamar_county"], :document => {'text' => '2'})
-        Post.create!(:uid => "post:a.b.c", :tags => ["lyon", "france"], :document => {'text' => '3'})
-        get "/posts/post:*", :tags => "texas"
-        result = JSON.parse(last_response.body)['posts']
-        result.size.should eq 1
-        result.first['post']['document'].should eq('text' => "2")
-
-        get "/posts/post:*", :tags => "paris"
-        result = JSON.parse(last_response.body)['posts']
-        result.size.should eq 2
-
-        get "/posts/post:*", :tags => "texas, paris"
-        result = JSON.parse(last_response.body)['posts']
-        result.size.should eq 1
-
-        get "/posts/post:*", :tags => "lamar_county"
-        result = JSON.parse(last_response.body)['posts']
-        result.size.should eq 1
-
-        get "/posts/post:*", :tags => "lamar"
-        result = JSON.parse(last_response.body)['posts']
-        result.size.should eq 0
-
-        get "/posts/post:*", :tags => "county"
-        result = JSON.parse(last_response.body)['posts']
-        result.size.should eq 0
-      end
-
-
-      it "retrieves a tagged document using tsqueries" do
-        Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'})
-        Post.create!(:uid => "post:a.b.c", :tags => ["paris", "texas", "lamar_county"], :document => {'text' => '2'})
-        Post.create!(:uid => "post:a.b.c", :tags => ["lyon", "france"], :document => {'text' => '3'})
-
-        get "/posts/post:*", :tags => "paris & !texas"
-        result = JSON.parse(last_response.body)['posts']
-        result.size.should eq 1
-
-        get "/posts/post:*", :tags => "paris & lamar_county"
-        result = JSON.parse(last_response.body)['posts']
-        result.size.should eq 1
-
-        get "/posts/post:*", :tags => "!paris"
-        result = JSON.parse(last_response.body)['posts']
-        result.size.should eq 1
-
-        get "/posts/post:*", :tags => "!nothing"
-        result = JSON.parse(last_response.body)['posts']
-        result.size.should eq 3
-
-        get "/posts/post:*", :tags => "'"
-        last_response.status.should == 400
-      end
-
-
-      it "retrieves a list of documents" do
-        10.times do |i|
-          Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})
-        end
-        posts = Post.limit(3).order('created_at desc').all
-        get "/posts/#{[posts.map(&:uid), "post:a.does.not.exist$99999999"].flatten.join(',')}"
-        result = JSON.parse(last_response.body)['posts']
-        result.size.should eq 4
-        result.first['post']['document'].should eq posts.first.document
-        result.last['post'].should eq nil
-      end
-
-      it "retrieves a collection of documents" do
-        10.times do |i|
-          Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})
-        end
-        Post.create!(:uid => "post:a.b.d", :document => {'text' => "a"})
-        get "/posts/post:*"
-        result = JSON.parse(last_response.body)
-        result['posts'].size.should eq 11
-        result['posts'].first['post']['document'].should eq('text' => 'a')
-        result['posts'].last['post']['document'].should eq('text' => '0')
-
-        get "/posts/post:a.b.c#{CGI.escape('|')}d"
-        result = JSON.parse(last_response.body)
-        result['posts'].size.should eq 11
-        result['posts'].first['post']['document'].should eq('text' => 'a')
-        result['posts'].last['post']['document'].should eq('text' => '0')
-
-        get "/posts/post:*", :limit => 2
-        result = JSON.parse(last_response.body)
-        result['posts'].size.should eq 2
-        result['posts'].first['post']['document'].should eq('text' => 'a')
-        result['posts'].last['post']['document'].should eq('text' => '9')
-
-        get "/posts/post:a.b.*"
-        result = JSON.parse(last_response.body)
-        result['posts'].size.should eq 11
-
-        get "/posts/post:a.b.d$*"
-        result = JSON.parse(last_response.body)
-        result['posts'].size.should eq 1
-
-        # this is not a collection, actually, since
-        # realm and oid are both unambiguous
-        post = Post.first
-        get "/posts/post:a.*$#{post.id}"
-        result = JSON.parse(last_response.body)
-        result['post']['document'].should eq post.document
-      end
-
-      it "can retrieve a document by external_id" do
-        external_id = "pippi_232323"
-        p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'}, :external_id => external_id)
-        get "/posts/*", :external_id => external_id
-        last_response.status.should == 200
-        result = JSON.parse(last_response.body)['post']
-        result['uid'].should eq "post:a.b.c$#{p.id}"
-        result['external_id'].should eq external_id
-      end
-
-      it "sorts the result by a specified attribute" do
-        time = Time.new(2014, 12, 24)
-        post = {
-          :uid => "post:a.b.c",
-          :created_by => 1,
-          :document => {'text' => '1'},
-          :updated_at => time - 2
-        }
-        Post.create!(post)
-        post[:document] = {'text' => '2'}
-        post[:updated_at] = time
-        Post.create!(post)
-        get "/posts/*:*", :sort_by => :updated_at, :direction => 'ASC'
-        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq('text' => '1')
-      end
-
-      it "fails when attempting to sort by a non-existing attribute" do
-        Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => '1'})
-        get "/posts/*:*", :sort_by => :xyzzy
-        last_response.status.should == 400
-      end
-
-      it "filters by creator" do
-        Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => '1'})
-        Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => '2'})
-        get "/posts/*:*", :created_by => 1
-        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq('text' => '1')
-        get "/posts/*:*", :created_by => 2
-        JSON.parse(last_response.body)['posts'].first['post']['document'].should eq('text' => '2')
-      end
-
-      it "filters on klass path" do
-        post "/posts/post.blog:a.b", {:post => {:document => {content: "1"}}}
-        post "/posts/post.comment:a.b.c", {:post => {:document => {content: "2"}}}
-        post "/posts/post.comment:a.b.c", {:post => {:document => {content: "3"}}}
-        get "/posts/*:*", :klass => "post.blog"
-        JSON.parse(last_response.body)['posts'].size.should eq 1
-        get "/posts/*:*", :klass => "post.comment"
-        JSON.parse(last_response.body)['posts'].size.should eq 2
-        get "/posts/post.comment:*"
-        JSON.parse(last_response.body)['posts'].size.should eq 2
-        get "/posts/*:*", :klass => "post.comment, post.blog"
-        JSON.parse(last_response.body)['posts'].size.should eq 3
-      end
-
-      it "filters by occurrence" do
-        time = Time.now
-        Post.create!(:uid => "post:a.b.c", :occurrences => {:start_time => [time]})
-        Post.create!(:uid => "post:a.b.c", :occurrences => {:strange_time => [time]})
-        Post.create!(:uid => "post:x.y.z", :occurrences => {:start_time => [time]})
-        get "/posts/*:*", :occurrence => {:label => 'start_time'}
-        JSON.parse(last_response.body)['posts'].size.should eq 2
-        get "/posts/*:*", :occurrence => {:label => 'start_time', :from => time+1}
-        JSON.parse(last_response.body)['posts'].size.should eq 0
-        get "/posts/*:*", :occurrence => {:label => 'start_time', :from => time-1}
-        JSON.parse(last_response.body)['posts'].size.should eq 2
-        get "/posts/*:*", :occurrence => {:label => 'start_time', :to => time-1}
-        JSON.parse(last_response.body)['posts'].size.should eq 0
-        get "/posts/*:*", :occurrence => {:label => 'start_time', :to => time+1}
-        JSON.parse(last_response.body)['posts'].size.should eq 2
-
-        get "/posts/post:x.y.z", :occurrence => {:label => 'start_time'}
-        JSON.parse(last_response.body)['posts'].size.should eq 1
-      end
-
-      it "pages through documents" do
-        20.times do |i|
-          Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})
-        end
-        get "/posts/post:*", :limit => 10, :offset => 2
-        result = JSON.parse(last_response.body)
-        result['posts'].size.should eq 10
-        result['posts'].first['post']['document'].should eq('text' => "17")
-        result['posts'].last['post']['document'].should eq('text' => "8")
-        result['pagination']['last_page'].should be_false
-        result['pagination']['limit'].should eq 10
-        result['pagination']['offset'].should eq 2
-
-        get "/posts/post:*", :limit => 10, :offset => 15
-        result = JSON.parse(last_response.body)
-        result['posts'].size.should eq 5
-        result['posts'].first['post']['document'].should eq('text' => "4")
-        result['posts'].last['post']['document'].should eq('text' => "0")
-        result['pagination']['last_page'].should be_true
-        result['pagination']['limit'].should eq 10
-        result['pagination']['offset'].should eq 15
-      end
-
-      it "can only read restricted posts created by current identity" do
-        posts = []
-        posts << Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'xyzzy'}, :restricted => true)
-        posts << Post.create!(:uid => "post:a.b.d", :created_by => 2, :document => {'text' => 'zippo'}, :restricted => true)
-        get "/posts/#{[posts.map(&:uid)].join(',')}"
-        result = JSON.parse(last_response.body)['posts']
-        result.size.should eq 2
-        result[0]["post"]["uid"].should eq posts[0].uid
-        result[1]["post"].should be_nil
-      end
-
-      describe "checking editable status in response" do
-
-        it "returns true if identity is creator" do
+      describe "single uid queries" do
+        it "can retrieve a document" do
           p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'})
           get "/posts/#{p.uid}"
           result = JSON.parse(last_response.body)['post']
-          result['may_edit'].should be_true
+          result['uid'].should eq "post:a.b.c$#{p.id}"
+          result['created_by'].should eq 1
+          result['document']['title'].should eq "Hello spaceboy"
         end
 
-        it "returns false unless identity is creator" do
-          p = Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {:title => 'Hello spaceboy'})
+        it "can retrieve a restricted document created by the current user" do
+          p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'}, :restricted => true)
           get "/posts/#{p.uid}"
           result = JSON.parse(last_response.body)['post']
-          result['may_edit'].should be_false
+          result['uid'].should eq "post:a.b.c$#{p.id}"
+          result['created_by'].should eq 1
+          result['document']['title'].should eq "Hello spaceboy"
         end
 
+        it "can not retrieve a unpublished document created by the current user" do
+          p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'}, :restricted => false, :published => false)
+          get "/posts/#{p.uid}"
+          last_response.status.should eq 403
+        end
+
+        it "can not retrieve a restricted document created by another user" do
+          p = Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {:title => 'Hello spaceboy'}, :restricted => true)
+          get "/posts/#{p.uid}"
+          last_response.status.should eq 403
+        end
+
+        context "with ?unpublished=include" do
+          it "can retrieve an unpublished document created by the current user" do
+            p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'}, :restricted => false, :published => false)
+            get "/posts/#{p.uid}", :unpublished => 'include'
+
+            result = JSON.parse(last_response.body)['post']
+            result['uid'].should eq p.uid
+            result['created_by'].should eq 1
+          end
+
+          it "can not retrieve an unpublished document created by another user" do
+            p = Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {:title => 'Hello spaceboy'}, :published => false)
+            get "/posts/#{p.uid}", :unpublished => 'include'
+            last_response.status.should eq 403
+          end
+        end
+        
+        describe "checking editable status in response" do
+          it "returns true if identity is creator" do
+            p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'})
+            get "/posts/#{p.uid}"
+            result = JSON.parse(last_response.body)['post']
+            result['may_edit'].should be_true
+          end
+
+          it "returns false unless identity is creator" do
+            p = Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {:title => 'Hello spaceboy'})
+            get "/posts/#{p.uid}"
+            result = JSON.parse(last_response.body)['post']
+            result['may_edit'].should be_false
+          end
+        end
+      end
+
+      describe "list queries" do
+        it "retrieves a list of documents" do
+          10.times do |i|
+            Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})
+          end
+          posts = Post.limit(3).order('created_at desc').all
+          get "/posts/#{[posts.map(&:uid), "post:a.does.not.exist$99999999"].flatten.join(',')}"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 4
+          result.first['post']['document'].should eq posts.first.document
+          result.last['post'].should eq nil
+        end
+
+        it "can only read restricted posts created by current identity" do
+          posts = []
+          posts << Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'xyzzy'}, :restricted => true)
+          posts << Post.create!(:uid => "post:a.b.d", :created_by => 2, :document => {'text' => 'zippo'}, :restricted => true)
+          get "/posts/#{[posts.map(&:uid)].join(',')}"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 2
+          result[0]["post"]["uid"].should eq posts[0].uid
+          result[1]["post"].should be_nil
+        end
+
+        it "will not return unpublished posts created by current identity" do
+          posts = []
+          posts << Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'xyzzy'}, :published => false)
+          posts << Post.create!(:uid => "post:a.b.d", :created_by => 2, :document => {'text' => 'zippo'}, :published => false)
+          get "/posts/#{[posts.map(&:uid)].join(',')}"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 2
+          result[0]["post"].should be_nil
+          result[1]["post"].should be_nil
+        end
+
+        context "with unpublished=include" do
+  
+          it "will return unpublished posts created by current identity" do
+            posts = [
+              Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'xyzzy'}, :published => false),
+              Post.create!(:uid => "post:a.b.d", :created_by => 1, :document => {'text' => 'zippo'}, :published => false)
+            ]
+            get "/posts/#{[posts.map(&:uid)].join(',')}", :unpublished => 'include'
+            result = JSON.parse(last_response.body)['posts']
+            result.size.should eq 2
+            result[0]["post"]["uid"].should eq posts[0].uid
+            result[1]["post"]["uid"].should eq posts[1].uid
+          end
+
+          it "will return 'null' in place for unpublished posts created by other identities" do
+            posts = [
+                Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => 'xyzzy'}, :published => false),
+                Post.create!(:uid => "post:a.b.d", :created_by => 1, :document => {'text' => 'zippo'}, :published => false)
+            ]
+            get "/posts/#{[posts.map(&:uid)].join(',')}", :unpublished => 'include'
+            result = JSON.parse(last_response.body)['posts']
+            result.size.should eq 2
+            result[0]["post"].should be_nil
+            result[1]["post"]["uid"].should eq posts[1].uid
+          end
+        end
+      end
+
+      describe "collection queries" do
+        it "retrieves a collection of documents" do
+          10.times do |i|
+            Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})
+          end
+          Post.create!(:uid => "post:a.b.d", :document => {'text' => "a"})
+          get "/posts/post:*"
+          result = JSON.parse(last_response.body)
+          result['posts'].size.should eq 11
+          result['posts'].first['post']['document'].should eq('text' => 'a')
+          result['posts'].last['post']['document'].should eq('text' => '0')
+
+          get "/posts/post:a.b.c#{CGI.escape('|')}d"
+          result = JSON.parse(last_response.body)
+          result['posts'].size.should eq 11
+          result['posts'].first['post']['document'].should eq('text' => 'a')
+          result['posts'].last['post']['document'].should eq('text' => '0')
+
+          get "/posts/post:*", :limit => 2
+          result = JSON.parse(last_response.body)
+          result['posts'].size.should eq 2
+          result['posts'].first['post']['document'].should eq('text' => 'a')
+          result['posts'].last['post']['document'].should eq('text' => '9')
+
+          get "/posts/post:a.b.*"
+          result = JSON.parse(last_response.body)
+          result['posts'].size.should eq 11
+
+          get "/posts/post:a.b.d$*"
+          result = JSON.parse(last_response.body)
+          result['posts'].size.should eq 1
+
+          # this is not a collection, actually, since
+          # realm and oid are both unambiguous
+          post = Post.first
+          get "/posts/post:a.*$#{post.id}"
+          result = JSON.parse(last_response.body)
+          result['post']['document'].should eq post.document
+        end
+
+        it "retrieves a tagged document" do
+          Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'})
+          Post.create!(:uid => "post:a.b.c", :tags => ["paris", "texas", "lamar_county"], :document => {'text' => '2'})
+          Post.create!(:uid => "post:a.b.c", :tags => ["lyon", "france"], :document => {'text' => '3'})
+          get "/posts/post:*", :tags => "texas"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 1
+          result.first['post']['document'].should eq('text' => "2")
+
+          get "/posts/post:*", :tags => "paris"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 2
+
+          get "/posts/post:*", :tags => "texas, paris"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 1
+
+          get "/posts/post:*", :tags => "lamar_county"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 1
+
+          get "/posts/post:*", :tags => "lamar"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 0
+
+          get "/posts/post:*", :tags => "county"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 0
+        end
+
+        it "retrieves a tagged document using tsqueries" do
+          Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'})
+          Post.create!(:uid => "post:a.b.c", :tags => ["paris", "texas", "lamar_county"], :document => {'text' => '2'})
+          Post.create!(:uid => "post:a.b.c", :tags => ["lyon", "france"], :document => {'text' => '3'})
+
+          get "/posts/post:*", :tags => "paris & !texas"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 1
+
+          get "/posts/post:*", :tags => "paris & lamar_county"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 1
+
+          get "/posts/post:*", :tags => "!paris"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 1
+
+          get "/posts/post:*", :tags => "!nothing"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 3
+
+          get "/posts/post:*", :tags => "'"
+          last_response.status.should == 400
+        end
+
+        it "can retrieve a document by external_id" do
+          external_id = "pippi_232323"
+          p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'}, :external_id => external_id)
+          get "/posts/*", :external_id => external_id
+          last_response.status.should == 200
+          result = JSON.parse(last_response.body)['post']
+          result['uid'].should eq "post:a.b.c$#{p.id}"
+          result['external_id'].should eq external_id
+        end
+
+        it "sorts the result by a specified attribute" do
+          time = Time.new(2014, 12, 24)
+          post = {
+              :uid => "post:a.b.c",
+              :created_by => 1,
+              :document => {'text' => '1'},
+              :updated_at => time - 2
+          }
+          Post.create!(post)
+          post[:document] = {'text' => '2'}
+          post[:updated_at] = time
+          Post.create!(post)
+          get "/posts/*:*", :sort_by => :updated_at, :direction => 'ASC'
+          JSON.parse(last_response.body)['posts'].first['post']['document'].should eq('text' => '1')
+        end
+
+        it "fails when attempting to sort by a non-existing attribute" do
+          Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => '1'})
+          get "/posts/*:*", :sort_by => :xyzzy
+          last_response.status.should == 400
+        end
+
+        it "filters by creator" do
+          Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => '1'})
+          Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => '2'})
+          get "/posts/*:*", :created_by => 1
+          JSON.parse(last_response.body)['posts'].first['post']['document'].should eq('text' => '1')
+          get "/posts/*:*", :created_by => 2
+          JSON.parse(last_response.body)['posts'].first['post']['document'].should eq('text' => '2')
+        end
+
+        it "filters on klass path" do
+          post "/posts/post.blog:a.b", {:post => {:document => {content: "1"}}}
+          post "/posts/post.comment:a.b.c", {:post => {:document => {content: "2"}}}
+          post "/posts/post.comment:a.b.c", {:post => {:document => {content: "3"}}}
+          get "/posts/*:*", :klass => "post.blog"
+          JSON.parse(last_response.body)['posts'].size.should eq 1
+          get "/posts/*:*", :klass => "post.comment"
+          JSON.parse(last_response.body)['posts'].size.should eq 2
+          get "/posts/post.comment:*"
+          JSON.parse(last_response.body)['posts'].size.should eq 2
+          get "/posts/*:*", :klass => "post.comment, post.blog"
+          JSON.parse(last_response.body)['posts'].size.should eq 3
+      end
+
+        it "filters by occurrence" do
+          time = Time.now
+          Post.create!(:uid => "post:a.b.c", :occurrences => {:start_time => [time]})
+          Post.create!(:uid => "post:a.b.c", :occurrences => {:strange_time => [time]})
+          Post.create!(:uid => "post:x.y.z", :occurrences => {:start_time => [time]})
+          get "/posts/*:*", :occurrence => {:label => 'start_time'}
+          JSON.parse(last_response.body)['posts'].size.should eq 2
+          get "/posts/*:*", :occurrence => {:label => 'start_time', :from => time+1}
+          JSON.parse(last_response.body)['posts'].size.should eq 0
+          get "/posts/*:*", :occurrence => {:label => 'start_time', :from => time-1}
+          JSON.parse(last_response.body)['posts'].size.should eq 2
+          get "/posts/*:*", :occurrence => {:label => 'start_time', :to => time-1}
+          JSON.parse(last_response.body)['posts'].size.should eq 0
+          get "/posts/*:*", :occurrence => {:label => 'start_time', :to => time+1}
+          JSON.parse(last_response.body)['posts'].size.should eq 2
+
+          get "/posts/post:x.y.z", :occurrence => {:label => 'start_time'}
+          JSON.parse(last_response.body)['posts'].size.should eq 1
+        end
+
+        it "pages through documents" do
+          20.times do |i|
+            Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})
+          end
+          get "/posts/post:*", :limit => 10, :offset => 2
+          result = JSON.parse(last_response.body)
+          result['posts'].size.should eq 10
+          result['posts'].first['post']['document'].should eq('text' => "17")
+          result['posts'].last['post']['document'].should eq('text' => "8")
+          result['pagination']['last_page'].should be_false
+          result['pagination']['limit'].should eq 10
+          result['pagination']['offset'].should eq 2
+
+          get "/posts/post:*", :limit => 10, :offset => 15
+          result = JSON.parse(last_response.body)
+          result['posts'].size.should eq 5
+          result['posts'].first['post']['document'].should eq('text' => "4")
+          result['posts'].last['post']['document'].should eq('text' => "0")
+          result['pagination']['last_page'].should be_true
+          result['pagination']['limit'].should eq 10
+          result['pagination']['offset'].should eq 15
+        end
+
+        it "will not retrieve unpublished posts created by other identities" do
+          Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => 'zippo'}, :published => false)
+          get "/posts/post:a.b.c$*"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 0
+        end
+
+        it "will not retrieve unpublished posts created by current identity" do
+          Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'zippo'}, :published => false)
+          get "/posts/post:a.b.c$*"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 0
+        end
+
+        context "with ?unpublished=include" do
+          it "will not retrieve unpublished posts created by other identities" do
+            Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => 'zippo'}, :published => false)
+            get "/posts/post:a.b.c", :unpublished => 'include'
+            result = JSON.parse(last_response.body)['posts']
+            result.size.should eq 0
+          end
+          it "will retrieve unpublished posts created by current identity" do
+            Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'zippo'}, :published => false)
+            get "/posts/post:a.b.c", :unpublished => 'include'
+            result = JSON.parse(last_response.body)['posts']
+            result.size.should eq 1
+          end
+          it "will retrieve other published posts too" do
+            Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'foo'}, :published => false)
+            Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => 'bar'}, :published => true)
+            Post.create!(:uid => "post:a.b.c", :created_by => 3, :document => {'text' => 'baz'}, :published => true)
+            get "/posts/post:a.b.c", :unpublished => 'include'
+            result = JSON.parse(last_response.body)['posts']
+            result.size.should eq 3
+          end
+        end
       end
     end
 
@@ -468,6 +606,39 @@ describe "API v1 posts" do
         end
         get "/posts/post:a.b.*$*/count"
         JSON.parse(last_response.body)['count'].should eq 20
+      end
+      it "counts only published posts" do
+        3.times do |i|
+          Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s}, :published => true)
+        end
+        3.times do |i|
+          Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s}, :published => false)
+        end
+        get "/posts/post:a.b.*$*/count"
+        JSON.parse(last_response.body)['count'].should eq 3
+      end
+      context "with ?unpublished=include" do
+        before(:each) { user!(:realm => 'a') }
+        it "counts current identitiy's unpublished posts" do
+          3.times do |i|
+            Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => "xyzzy #{i}"}, :published => false)
+          end
+          3.times do |i|
+            Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => "zippo #{i}"}, :published => false)
+          end
+          get "/posts/post:a.b.c$*/count", :unpublished => 'include' 
+          JSON.parse(last_response.body)['count'].should eq 6
+        end
+        it "does not count other identities's unpublished posts" do
+          3.times do |i|
+            Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => "xyzzy #{i}"}, :published => false)
+          end
+          3.times do |i|
+            Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => "zippo #{i}"}, :published => false)
+          end
+          get "/posts/post:a.b.c$*/count", :unpublished => 'include' 
+          JSON.parse(last_response.body)['count'].should eq 3
+        end
       end
     end
 
@@ -641,6 +812,13 @@ describe "API v1 posts" do
     it "can read restricted documents" do
       Post.create!(:uid => "post:a.b.c", :created_by => another_identity, :document => {'text' => 'xyzzy'}, :restricted => true)
       get "/posts/post:a.b.c"
+      result = JSON.parse(last_response.body)['posts']
+      result.size.should eq 1
+    end
+
+    it "can read unpublished documents created by other identities" do
+      Post.create!(:uid => "post:a.b.c", :created_by => another_identity, :document => {'text' => 'xyzzy'}, :restricted => true, :published => false)
+      get "/posts/post:a.b.c", :unpublished => 'include'
       result = JSON.parse(last_response.body)['posts']
       result.size.should eq 1
     end

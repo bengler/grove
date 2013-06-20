@@ -9,14 +9,14 @@ SET check_function_bodies = false;
 SET client_min_messages = warning;
 
 --
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: -
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: -
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
@@ -29,7 +29,7 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- Name: group_locations; Type: TABLE; Schema: public; Owner: grove; Tablespace: 
+-- Name: group_locations; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE group_locations (
@@ -39,10 +39,8 @@ CREATE TABLE group_locations (
 );
 
 
-ALTER TABLE public.group_locations OWNER TO grove;
-
 --
--- Name: group_locations_id_seq; Type: SEQUENCE; Schema: public; Owner: grove
+-- Name: group_locations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE group_locations_id_seq
@@ -53,17 +51,15 @@ CREATE SEQUENCE group_locations_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.group_locations_id_seq OWNER TO grove;
-
 --
--- Name: group_locations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: grove
+-- Name: group_locations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE group_locations_id_seq OWNED BY group_locations.id;
 
 
 --
--- Name: group_memberships; Type: TABLE; Schema: public; Owner: grove; Tablespace: 
+-- Name: group_memberships; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE group_memberships (
@@ -75,10 +71,8 @@ CREATE TABLE group_memberships (
 );
 
 
-ALTER TABLE public.group_memberships OWNER TO grove;
-
 --
--- Name: group_memberships_id_seq; Type: SEQUENCE; Schema: public; Owner: grove
+-- Name: group_memberships_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE group_memberships_id_seq
@@ -89,17 +83,15 @@ CREATE SEQUENCE group_memberships_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.group_memberships_id_seq OWNER TO grove;
-
 --
--- Name: group_memberships_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: grove
+-- Name: group_memberships_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE group_memberships_id_seq OWNED BY group_memberships.id;
 
 
 --
--- Name: locations; Type: TABLE; Schema: public; Owner: grove; Tablespace: 
+-- Name: locations; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE locations (
@@ -114,15 +106,13 @@ CREATE TABLE locations (
     label_7 text,
     label_8 text,
     label_9 text,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone
 );
 
 
-ALTER TABLE public.locations OWNER TO grove;
-
 --
--- Name: locations_id_seq; Type: SEQUENCE; Schema: public; Owner: grove
+-- Name: locations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE locations_id_seq
@@ -133,17 +123,15 @@ CREATE SEQUENCE locations_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.locations_id_seq OWNER TO grove;
-
 --
--- Name: locations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: grove
+-- Name: locations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE locations_id_seq OWNED BY locations.id;
 
 
 --
--- Name: locations_posts; Type: TABLE; Schema: public; Owner: grove; Tablespace: 
+-- Name: locations_posts; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE locations_posts (
@@ -152,10 +140,8 @@ CREATE TABLE locations_posts (
 );
 
 
-ALTER TABLE public.locations_posts OWNER TO grove;
-
 --
--- Name: occurrence_entries; Type: TABLE; Schema: public; Owner: grove; Tablespace: 
+-- Name: occurrence_entries; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE occurrence_entries (
@@ -163,15 +149,13 @@ CREATE TABLE occurrence_entries (
     label text,
     post_id integer,
     at timestamp without time zone,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
+    created_at timestamp without time zone,
+    updated_at timestamp without time zone
 );
 
 
-ALTER TABLE public.occurrence_entries OWNER TO grove;
-
 --
--- Name: occurrence_entries_id_seq; Type: SEQUENCE; Schema: public; Owner: grove
+-- Name: occurrence_entries_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE occurrence_entries_id_seq
@@ -182,17 +166,15 @@ CREATE SEQUENCE occurrence_entries_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.occurrence_entries_id_seq OWNER TO grove;
-
 --
--- Name: occurrence_entries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: grove
+-- Name: occurrence_entries_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE occurrence_entries_id_seq OWNED BY occurrence_entries.id;
 
 
 --
--- Name: posts; Type: TABLE; Schema: public; Owner: grove; Tablespace: 
+-- Name: posts; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE posts (
@@ -211,14 +193,13 @@ CREATE TABLE posts (
     document_updated_at timestamp without time zone,
     external_document_updated_at timestamp without time zone,
     external_document text,
-    conflicted boolean DEFAULT false NOT NULL
+    conflicted boolean DEFAULT false NOT NULL,
+    published boolean
 );
 
 
-ALTER TABLE public.posts OWNER TO grove;
-
 --
--- Name: posts_id_seq; Type: SEQUENCE; Schema: public; Owner: grove
+-- Name: posts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE posts_id_seq
@@ -229,17 +210,15 @@ CREATE SEQUENCE posts_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.posts_id_seq OWNER TO grove;
-
 --
--- Name: posts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: grove
+-- Name: posts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE posts_id_seq OWNED BY posts.id;
 
 
 --
--- Name: readmarks; Type: TABLE; Schema: public; Owner: grove; Tablespace: 
+-- Name: readmarks; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE readmarks (
@@ -253,10 +232,8 @@ CREATE TABLE readmarks (
 );
 
 
-ALTER TABLE public.readmarks OWNER TO grove;
-
 --
--- Name: readmarks_id_seq; Type: SEQUENCE; Schema: public; Owner: grove
+-- Name: readmarks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE readmarks_id_seq
@@ -267,17 +244,15 @@ CREATE SEQUENCE readmarks_id_seq
     CACHE 1;
 
 
-ALTER TABLE public.readmarks_id_seq OWNER TO grove;
-
 --
--- Name: readmarks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: grove
+-- Name: readmarks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE readmarks_id_seq OWNED BY readmarks.id;
 
 
 --
--- Name: schema_migrations; Type: TABLE; Schema: public; Owner: grove; Tablespace: 
+-- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE schema_migrations (
@@ -285,52 +260,50 @@ CREATE TABLE schema_migrations (
 );
 
 
-ALTER TABLE public.schema_migrations OWNER TO grove;
-
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: grove
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY group_locations ALTER COLUMN id SET DEFAULT nextval('group_locations_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: grove
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY group_memberships ALTER COLUMN id SET DEFAULT nextval('group_memberships_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: grove
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY locations ALTER COLUMN id SET DEFAULT nextval('locations_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: grove
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY occurrence_entries ALTER COLUMN id SET DEFAULT nextval('occurrence_entries_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: grove
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY posts ALTER COLUMN id SET DEFAULT nextval('posts_id_seq'::regclass);
 
 
 --
--- Name: id; Type: DEFAULT; Schema: public; Owner: grove
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY readmarks ALTER COLUMN id SET DEFAULT nextval('readmarks_id_seq'::regclass);
 
 
 --
--- Name: group_locations_pkey; Type: CONSTRAINT; Schema: public; Owner: grove; Tablespace: 
+-- Name: group_locations_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY group_locations
@@ -338,7 +311,7 @@ ALTER TABLE ONLY group_locations
 
 
 --
--- Name: group_memberships_pkey; Type: CONSTRAINT; Schema: public; Owner: grove; Tablespace: 
+-- Name: group_memberships_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY group_memberships
@@ -346,7 +319,7 @@ ALTER TABLE ONLY group_memberships
 
 
 --
--- Name: locations_pkey; Type: CONSTRAINT; Schema: public; Owner: grove; Tablespace: 
+-- Name: locations_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY locations
@@ -354,7 +327,7 @@ ALTER TABLE ONLY locations
 
 
 --
--- Name: occurrence_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: grove; Tablespace: 
+-- Name: occurrence_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY occurrence_entries
@@ -362,7 +335,7 @@ ALTER TABLE ONLY occurrence_entries
 
 
 --
--- Name: posts_pkey; Type: CONSTRAINT; Schema: public; Owner: grove; Tablespace: 
+-- Name: posts_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY posts
@@ -370,7 +343,7 @@ ALTER TABLE ONLY posts
 
 
 --
--- Name: readmarks_pkey; Type: CONSTRAINT; Schema: public; Owner: grove; Tablespace: 
+-- Name: readmarks_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY readmarks
@@ -378,133 +351,147 @@ ALTER TABLE ONLY readmarks
 
 
 --
--- Name: index_group_locations_on_group_id_and_location_id; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_group_locations_on_group_id_and_location_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE UNIQUE INDEX index_group_locations_on_group_id_and_location_id ON group_locations USING btree (group_id, location_id);
 
 
 --
--- Name: index_group_memberships_on_group_id_and_identity_id; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_group_memberships_on_group_id_and_identity_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE UNIQUE INDEX index_group_memberships_on_group_id_and_identity_id ON group_memberships USING btree (group_id, identity_id);
 
 
 --
--- Name: index_locations_on_labels; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_locations_on_labels; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE UNIQUE INDEX index_locations_on_labels ON locations USING btree (label_0, label_1, label_2, label_3, label_4, label_5, label_6, label_7, label_8, label_9);
 
 
 --
--- Name: index_locations_posts_on_location_id_and_post_id; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_locations_posts_on_location_id_and_post_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE UNIQUE INDEX index_locations_posts_on_location_id_and_post_id ON locations_posts USING btree (location_id, post_id);
 
 
 --
--- Name: index_locations_posts_on_post_id; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_locations_posts_on_post_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE INDEX index_locations_posts_on_post_id ON locations_posts USING btree (post_id);
 
 
 --
--- Name: index_occurrence_entries_on_at; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_occurrence_entries_on_at; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE INDEX index_occurrence_entries_on_at ON occurrence_entries USING btree (at);
 
 
 --
--- Name: index_occurrence_entries_on_post_id_and_label; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_occurrence_entries_on_post_id_and_label; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE INDEX index_occurrence_entries_on_post_id_and_label ON occurrence_entries USING btree (post_id, label);
 
 
 --
--- Name: index_posts_on_conflicted; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_posts_on_conflicted; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE INDEX index_posts_on_conflicted ON posts USING btree (conflicted);
 
 
 --
--- Name: index_posts_on_created_at; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_posts_on_created_at; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE INDEX index_posts_on_created_at ON posts USING btree (created_at);
 
 
 --
--- Name: index_posts_on_created_by; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_posts_on_created_by; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE INDEX index_posts_on_created_by ON posts USING btree (created_by);
 
 
 --
--- Name: index_posts_on_deleted; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_posts_on_deleted; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE INDEX index_posts_on_deleted ON posts USING btree (deleted);
 
 
 --
--- Name: index_posts_on_realm; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_posts_on_published; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_posts_on_published ON posts USING btree (published);
+
+
+--
+-- Name: index_posts_on_realm; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE INDEX index_posts_on_realm ON posts USING btree (realm);
 
 
 --
--- Name: index_posts_on_realm_and_external_id; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_posts_on_realm_and_external_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE UNIQUE INDEX index_posts_on_realm_and_external_id ON posts USING btree (realm, external_id);
 
 
 --
--- Name: index_posts_on_restricted; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_posts_on_restricted; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE INDEX index_posts_on_restricted ON posts USING btree (restricted);
 
 
 --
--- Name: index_posts_on_updated_at; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_posts_on_tags_vector; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_posts_on_tags_vector ON posts USING gist (tags_vector);
+
+
+--
+-- Name: index_posts_on_updated_at; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE INDEX index_posts_on_updated_at ON posts USING btree (updated_at);
 
 
 --
--- Name: index_readmarks_on_location_id; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_readmarks_on_location_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE INDEX index_readmarks_on_location_id ON readmarks USING btree (location_id);
 
 
 --
--- Name: index_readmarks_on_owner; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: index_readmarks_on_owner; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE INDEX index_readmarks_on_owner ON readmarks USING btree (owner);
 
 
 --
--- Name: unique_schema_migrations; Type: INDEX; Schema: public; Owner: grove; Tablespace: 
+-- Name: unique_schema_migrations; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE UNIQUE INDEX unique_schema_migrations ON schema_migrations USING btree (version);
 
 
 --
--- Name: group_locations_location_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: grove
+-- Name: group_locations_location_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY group_locations
