@@ -244,6 +244,7 @@ class GroveV1 < Sinatra::Base
   # @optional [String] tags Constrain query by tags. Either a comma separated list of required tags or a
   #   boolean expression like 'paris & !texas' or 'closed & (failed | pending)'.
   # @optional [Integer] created_by Only documents created by this checkpoint identity will be returned.
+  # @optional [String] unpublished If set to 'include', accessible unpublished posts will be included with the result.
   # @optional [String] occurrence[label] Require that the post have an occurrence with this label.
   # @optional [String] occurrence[from] The occurrences must be later than this time. Time stamp (ISO 8601).
   # @optional [String] occurrence[to] The occurrences must be earlier than this time. Time stamp (ISO 8601).
@@ -316,6 +317,7 @@ class GroveV1 < Sinatra::Base
   # @optional [String] uid A wildcard uid query (e.g. "*:acme.invoices.*").
   # @optional [String] tags Constrain query by tags. Either a comma separated list of required tags or a
   #   boolean expression like 'paris & !texas' or 'closed & (failed | pending)'.
+  # @optional [String] unpublished If set to 'include', accessible unpublished posts will be counted too.
   # @optional [Integer] created_by Only documents created by this checkpoint identity will be returned.
   # @optional [Integer] limit The maximum amount of posts to return.
   # @optional [Integer] offset The index of the first result to return (for pagination).
