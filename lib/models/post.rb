@@ -85,7 +85,7 @@ class Post < ActiveRecord::Base
     scope = relation
 
     # Short circuit common cases
-    next scope.where(:published => true) if option.nil? || !identity || !identity.respond_to?(:id)
+    next scope.where("published is null or published") if option.nil? || !identity || !identity.respond_to?(:id)
 
     if option == 'include'
       next scope if identity.god
@@ -93,7 +93,7 @@ class Post < ActiveRecord::Base
         joins(:locations).
         joins("left outer join group_locations on group_locations.location_id = locations.id").
         joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{identity.id}").
-        where(['published or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
+        where(['published is null or published or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
       else
         raise ArgumentError, "Unsupported unpublished option '#{option}'"
     end
@@ -124,6 +124,11 @@ class Post < ActiveRecord::Base
     identity.god || identity.id == created_by
   end
 
+  def published
+    published = read_attribute(:published)
+    published.nil? || published == true
+  end
+  
   def nobody?(identity)
     !identity || !identity.respond_to?(:id)
   end
