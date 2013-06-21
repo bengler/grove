@@ -36,7 +36,9 @@ class GroveV1 < Sinatra::Base
         post_as_json = JSON.parse(pg(:post, :locals => {:mypost => post}))
 
         # Call checkpoint to invoke registered callbacks
-        result = pebbles.checkpoint.get("/callbacks/allowed/#{action}/#{post.uid}", post_as_json)
+        # DISABLED FOR NOW:
+        #result = pebbles.checkpoint.get("/callbacks/allowed/#{action}/#{post.uid}", post_as_json)
+        result = pebbles.checkpoint.get("/callbacks/allowed/#{action}/#{post.uid}", {})
         # Allowed might be true, false or "default"
         case result['allowed']
         when false # categorically denied
