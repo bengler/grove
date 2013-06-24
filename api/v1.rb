@@ -32,13 +32,11 @@ class GroveV1 < Sinatra::Base
         return yield if post.may_be_managed_by?(current_identity)
         halt 403, "You are not allowed to #{action} #{post.uid}"
       else
-        # Run post throught petroglyph template
+        # Format the post exactly as it would be provided by the http-api
+        # (via the petroglyph-view)
         post_as_json = JSON.parse(pg(:post, :locals => {:mypost => post}))
-
         # Call checkpoint to invoke registered callbacks
-        # DISABLED FOR NOW:
-        #result = pebbles.checkpoint.get("/callbacks/allowed/#{action}/#{post.uid}", post_as_json)
-        result = pebbles.checkpoint.get("/callbacks/allowed/#{action}/#{post.uid}", {})
+        result = pebbles.checkpoint.post("/callbacks/allowed/#{action}/#{post.uid}", post_as_json)
         # Allowed might be true, false or "default"
         case result['allowed']
         when false # categorically denied
