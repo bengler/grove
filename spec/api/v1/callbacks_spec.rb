@@ -22,10 +22,15 @@ describe "Security callbacks" do
         case url
         when /^\/identities\/me/
           @context.identity
+        end
+      end
+      def post(url, *args)
+        case url
         when /^\/callbacks\/allowed/
           DeepStruct.wrap(@context.callback_response)
         end
       end
+
     end
     Mockpoint.new(self)
   }
