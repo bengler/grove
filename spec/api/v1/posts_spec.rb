@@ -224,7 +224,7 @@ describe "API v1 posts" do
         it "can not retrieve a restricted document created by another user" do
           p = Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {:title => 'Hello spaceboy'}, :restricted => true)
           get "/posts/#{p.uid}"
-          last_response.status.should eq 403
+          last_response.status.should eq 404
         end
 
         context "with ?unpublished=include" do
@@ -240,7 +240,7 @@ describe "API v1 posts" do
           it "can not retrieve an unpublished document created by another user" do
             p = Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {:title => 'Hello spaceboy'}, :published => false)
             get "/posts/#{p.uid}", :unpublished => 'include'
-            last_response.status.should eq 403
+            last_response.status.should eq 404
           end
         end
         
@@ -591,6 +591,39 @@ describe "API v1 posts" do
         post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 1, :deleted => true)
         post "/posts/#{post.uid}/undelete"
         last_response.status.should be 403
+      end
+    end
+
+    describe "with deleted=include" do
+      let :my_deleted_post do
+        Post.create!(:uid => "post:a.b.c", :deleted => true, :created_by => 1)
+      end
+      let :other_deleted_post do
+        Post.create!(:uid => "post:a.b.c", :deleted => true, :created_by => 666)
+      end
+
+      it "may GET /posts/:uid?deleted=include if the posts are my own" do
+        get "/posts/#{my_deleted_post.uid}", :deleted => 'include'
+        last_response.status.should eq 200
+        get "/posts/#{other_deleted_post.uid}", :deleted => 'include'
+        last_response.status.should eq 404
+      end
+
+      it "may GET /posts/:uid-with-wildcards?delete=include if the posts are my own" do
+        my_deleted_post; other_deleted_post
+        get "/posts/post:a.*", :deleted => 'include'
+        last_response.status.should eq 200
+        result = JSON.parse(last_response.body)
+        result['posts'].count.should eq 1
+        result['posts'].first['post']['uid'].should eq my_deleted_post.uid
+      end
+
+      it "may GET /posts/:uid/count?delete=include, but only my own posts" do
+        my_deleted_post; other_deleted_post
+        get "/posts/post:a.*/count", :deleted => 'include'
+        last_response.status.should eq 200
+        result = JSON.parse(last_response.body)
+        result['count'].should eq 1
       end
     end
 

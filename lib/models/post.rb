@@ -44,6 +44,15 @@ class Post < ActiveRecord::Base
     select("distinct posts.*").joins(:locations).where(:locations => Pebbles::Path.to_conditions(path)) unless path == '*'
   }
 
+  # This scope _must_ be the first in a scope chain following a call to 'unscoped'
+  scope :with_deleted, lambda { |enabled|
+    if enabled
+      relation
+    else
+      relation.where("not deleted")
+    end
+  }
+
   scope :by_uid, lambda { |uid|
     _klass, _path, _oid = Pebbles::Uid.parse(uid)
     scope = by_path(_path)
@@ -85,13 +94,13 @@ class Post < ActiveRecord::Base
   scope :with_restrictions, lambda { |identity|
     scope = relation
     if !identity || !identity.respond_to?(:id)
-      scope = scope.where("not restricted and (published or published is null)")
+      scope = scope.where("not restricted and not deleted and (published or published is null)")
     elsif !identity.god
       scope = scope.
         joins(:locations).
         joins("left outer join group_locations on group_locations.location_id = locations.id").
         joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{identity.id}").
-        where(['(not restricted and (published or published is null)) or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
+        where(['(not restricted and not deleted and (published or published is null)) or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
     end
     scope
   }
@@ -100,8 +109,10 @@ class Post < ActiveRecord::Base
     attributes.update('document' => merged_document).merge('paths' => paths.to_a, 'uid' => uid)
   end
 
+  # TODO: This method does not respect access-groups!? This is not a problem since we currently avoid
+  # going this route.
   def visible_to?(identity)
-    return true if !restricted and published
+    return true if !restricted && !deleted && published
     return false if nobody?(identity)
     identity.god || identity.id == created_by
   end
@@ -110,7 +121,7 @@ class Post < ActiveRecord::Base
     published = read_attribute(:published)
     published.nil? || published == true
   end
-  
+
   def nobody?(identity)
     !identity || !identity.respond_to?(:id)
   end
