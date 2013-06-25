@@ -77,7 +77,7 @@ GEM
     multi_json (1.5.0)
     nokogiri (1.5.6)
     pathbuilder (0.0.2)
-    pebblebed (0.0.42)
+    pebblebed (0.1.0)
       activesupport
       bunny
       curb (>= 0.7.14)
@@ -155,7 +155,7 @@ DEPENDENCIES
   dalli
   main
   memcache_mock
-  pebblebed
+  pebblebed (>= 0.1.0)
   pebbles-cors!
   pebbles-path (>= 0.0.3)
   pebbles-uid
