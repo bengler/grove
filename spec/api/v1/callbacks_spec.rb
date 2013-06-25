@@ -5,6 +5,7 @@ describe "Security callbacks" do
   include Rack::Test::Methods
 
   def app
+    GroveV1.set :disable_callbacks => false
     GroveV1
   end
 
