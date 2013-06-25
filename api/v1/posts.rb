@@ -234,6 +234,10 @@ class GroveV1 < Sinatra::Base
   # Query posts retrieving either a specific post or a collection of posts
   # according to your criteria.
   #
+  # @note Due to optimizations, only very basic visibility processing is properly supported when
+  #   using comma-separated uids in the query. Generally this should only be used for published, not-deleted
+  #   posts with unrestricted visibility.
+  #
   # @category Grove/Posts
   # @path /api/grove/v1/posts/:uid
   # @http GET
@@ -245,6 +249,7 @@ class GroveV1 < Sinatra::Base
   #   boolean expression like 'paris & !texas' or 'closed & (failed | pending)'.
   # @optional [Integer] created_by Only documents created by this checkpoint identity will be returned.
   # @optional [String] unpublished If set to 'include', accessible unpublished posts will be included with the result.
+  # @optional [String] deleted If set to 'include', accessible deleted posts will be included with the result.
   # @optional [String] occurrence[label] Require that the post have an occurrence with this label.
   # @optional [String] occurrence[from] The occurrences must be later than this time. Time stamp (ISO 8601).
   # @optional [String] occurrence[to] The occurrences must be earlier than this time. Time stamp (ISO 8601).
@@ -259,8 +264,9 @@ class GroveV1 < Sinatra::Base
   # @status 403 Forbidden (the post is restricted, and you are not invited!)
 
   get "/posts/:uid" do |uid|
+    return_deleted_posts = params['deleted'] == 'include'
     if params[:external_id]
-      @post = Post.find_by_external_id(params[:external_id])
+      @post = Post.unscoped.with_deleted(return_deleted_posts).find_by_external_id(params[:external_id])
       halt 404, "No such post" unless @post
       halt 403, "Forbidden" unless @post.visible_to?(current_identity)
       pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
@@ -283,7 +289,8 @@ class GroveV1 < Sinatra::Base
           sort_field = params['sort_by'].downcase
           halt 400, "Unknown field #{sort_field}" unless %w(created_at updated_at document_updated_at external_document_updated_at external_document).include? sort_field
         end
-        @posts = Post.by_uid(uid).with_restrictions(current_identity).filtered_by(params)
+        @posts = Post.unscoped.with_deleted(return_deleted_posts).
+          by_uid(uid).with_restrictions(current_identity).filtered_by(params)
         @posts = apply_occurrence_scope(@posts, params['occurrence'])
         direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
         @posts = @posts.order("posts.#{sort_field} #{direction}")
@@ -291,13 +298,9 @@ class GroveV1 < Sinatra::Base
         pg :posts, :locals => {:posts => @posts, :pagination => @pagination}
       else
 	# Retrieve a single specific post.
-        if uid =~ /[\*\|]/ || uid =~ /^.*\:dna/
-          @post = Post.by_uid(uid).with_restrictions(current_identity).first
-        else
-          @post = Post.cached_find_all_by_uid(query.cache_keys).first
-          # To be removed when visible_to? is PSM compliant and replaced with the line further down there.
-          halt 403, "Forbidden" if @post && !@post.visible_to?(current_identity)
-        end
+        @post = Post.unscoped.with_deleted(return_deleted_posts).
+          by_uid(uid).with_restrictions(current_identity)
+        @post = @post.first
         halt 404, "No such post" unless @post
         halt 403, "Forbidden" if !@post.published && params[:unpublished] != 'include'
         # TODO: Teach .visible_to? about PSM so we can go back to using cached results
@@ -318,6 +321,7 @@ class GroveV1 < Sinatra::Base
   # @optional [String] tags Constrain query by tags. Either a comma separated list of required tags or a
   #   boolean expression like 'paris & !texas' or 'closed & (failed | pending)'.
   # @optional [String] unpublished If set to 'include', accessible unpublished posts will be counted too.
+  # @optional [String] deleted If set to 'include', accessible deleted posts will be counted too.
   # @optional [Integer] created_by Only documents created by this checkpoint identity will be returned.
   # @optional [Integer] limit The maximum amount of posts to return.
   # @optional [Integer] offset The index of the first result to return (for pagination).
@@ -326,7 +330,9 @@ class GroveV1 < Sinatra::Base
   # @status 403 Forbidden (the post is restricted, and you are not invited!)
 
   get "/posts/:uid/count" do |uid|
-    count = Post.by_uid(uid).with_restrictions(current_identity).filtered_by(params).count
+    count_deleted_posts = (params['deleted'] == 'include')
+    count = Post.unscoped.with_deleted(count_deleted_posts).
+      by_uid(uid).with_restrictions(current_identity).filtered_by(params).count
     {:uid => uid, :count => count}.to_json
   end
 
