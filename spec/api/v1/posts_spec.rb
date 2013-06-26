@@ -67,6 +67,11 @@ describe "API v1 posts" do
         Post.first.published.should eq false
       end
 
+      it "is unable to create a post on behalf of someone else" do
+        post "/posts/post:a.b.c", :post => {:document => {:title => "spoofed document"}, :created_by => 666}
+        Post.first.created_by.should eq 1
+      end
+
       it "updates a document" do
         post "/posts/post:a.b.c", :post => {:document => {:title => 'Hello spaceboy'}}
         uid = JSON.parse(last_response.body)['post']['uid']
@@ -871,6 +876,12 @@ describe "API v1 posts" do
       last_response.status.should eq 200
       Time.parse(JSON.parse(last_response.body)['post']['created_at']).to_s.should eq new_time.to_s
     end
+
+    it "is able to create a post on behalf of someone else" do
+      post "/posts/post:a.b.c", :post => {:document => {:title => "spoofed document"}, :created_by => 666}
+      Post.first.created_by.should eq 666
+    end
+
 
   end
 end
