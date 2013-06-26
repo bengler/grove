@@ -277,12 +277,12 @@ class GroveV1 < Sinatra::Base
         halt 400, e.message
       end
       if query.list?
-	# Retrieve a list of posts.
+	      # Retrieve a list of posts.
         # TODO: return to using cached results when we have support for it
         # @posts = filter_visible_posts(Post.cached_find_all_by_uid(query.cache_keys))
         # @posts = filter_published(@posts, :unpublished => params['unpublished'])
-        @posts = query.terms.map do |uid|
-          Post.unscoped.by_uid(uid).filtered_by(params).with_restrictions(current_identity).first
+        @posts = query.terms.map do |term|
+          Post.unscoped.by_uid(term).filtered_by(params).with_restrictions(current_identity).first
         end
         pg :posts, :locals => {:posts => @posts, :pagination => nil}
       elsif query.collection?
