@@ -90,7 +90,7 @@ GEM
       yajl-ruby
     pebbles-path (0.0.3)
       pebbles-uid (>= 0.0.6)
-    pebbles-uid (0.0.13)
+    pebbles-uid (0.0.16)
     petroglyph (0.0.3)
       tilt
     pg (0.13.2)
