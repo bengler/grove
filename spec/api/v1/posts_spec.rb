@@ -218,7 +218,7 @@ describe "API v1 posts" do
         it "can not retrieve a unpublished document created by the current user" do
           p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'}, :restricted => false, :published => false)
           get "/posts/#{p.uid}"
-          last_response.status.should eq 403
+          last_response.status.should eq 404
         end
 
         it "can not retrieve a restricted document created by another user" do

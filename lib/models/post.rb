@@ -44,15 +44,6 @@ class Post < ActiveRecord::Base
     select("distinct posts.*").joins(:locations).where(:locations => Pebbles::Path.to_conditions(path)) unless path == '*'
   }
 
-  # This scope _must_ be the first in a scope chain following a call to 'unscoped'
-  scope :with_deleted, lambda { |enabled|
-    if enabled
-      relation
-    else
-      relation.where("not deleted")
-    end
-  }
-
   scope :by_uid, lambda { |uid|
     _klass, _path, _oid = Pebbles::Uid.parse(uid)
     scope = by_path(_path)
@@ -73,8 +64,10 @@ class Post < ActiveRecord::Base
     where("occurrence_entries.at < ?", timestamp.utc)
   }
 
+  # In order to support the "deleted" filter, queries must be performed with default scope disabled.
   scope :filtered_by, lambda { |filters|
     scope = relation
+    scope = scope.where("not deleted") unless filters['deleted'] == 'include'
     scope = scope.where(:realm => filters['realm']) if filters['realm']
     scope = scope.where(:klass => filters['klass'].split(',').map(&:strip)) if filters['klass']
     scope = scope.where(:external_id => filters['external_id'].split(',').map(&:strip)) if filters['external_id']
