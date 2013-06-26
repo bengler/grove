@@ -160,8 +160,9 @@ class GroveV1 < Sinatra::Base
   # @apidoc
   # Delete a post.
   #
-  # @note Only the original creator or a god user may delete posts.
-  #   An uid or an external_id must be specified
+  # @note By default only the original creator or a god user may delete posts. To override this behavior
+  #   you must implement a PSM callback. An uid or an external_id must be specified.
+  #
   # @category Grove/Posts
   # @path /api/grove/v1/posts/:uid
   # @http DELETE
