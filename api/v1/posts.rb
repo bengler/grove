@@ -194,7 +194,7 @@ class GroveV1 < Sinatra::Base
   # @apidoc
   # Undelete a post.
   #
-  # @note Only gods may undelete posts. Posts lose their external_id when deleted.
+  # @note Only gods or members of an accessgroup may undelete posts. Posts lose their external_id when deleted.
   #   Undeleted posts will have their old external_ids stashed in the document under
   #   the key `external_id`.
   # @category Grove/Posts
@@ -203,14 +203,28 @@ class GroveV1 < Sinatra::Base
   # @example /api/grove/v1/posts/post:acme.invoices$123/undelete
   # @required [String] uid The uid of the post.
   # @status 200 Ok.
-  # @status 403 Only gods may undelete.
+  # @status 403 You don't have permission to undelete this post.
 
   post "/posts/:uid/undelete" do |uid|
-    halt 403, "Only gods may undelete" unless current_identity.god
-    @post = Post.unscoped.find_by_uid(uid)
-    @post.deleted = false
-    @post.save!
-    [200, "Ok"]
+    require_identity
+    the_post = Post.unscoped.find_by_uid(uid)
+    if current_identity.god
+      @post = the_post
+    else
+      @post = Post.unscoped.joins(:locations).
+        joins("left outer join group_locations on group_locations.location_id = locations.id").
+        joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{current_identity.id}").
+        where(['group_memberships.identity_id = ?', current_identity.id]).find_by_uid(uid)
+    end
+    if !the_post
+      halt 404, "No such post"
+    elsif @post
+        @post.deleted = false
+        @post.save!
+        response.status = 200
+    else
+      halt 403, "You don't have permission to undelete this post."
+    end
   end
 
   # To request documents with a specific occurrence an occurrence spec can
