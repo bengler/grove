@@ -597,6 +597,14 @@ describe "API v1 posts" do
         post "/posts/#{post.uid}/undelete"
         last_response.status.should be 403
       end
+      it "cannot undelete a document unless member of a access group" do
+        post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 1, :deleted => true)
+        GroupLocation.allow_subtree(1, "a.b")
+        GroupMembership.declare!(1,1)
+        post "/posts/#{post.uid}/undelete"
+        last_response.status.should be 200
+      end
+
     end
 
     describe "with deleted=include" do
