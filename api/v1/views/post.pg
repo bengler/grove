@@ -1,5 +1,5 @@
 node :post => mypost do
-  attributes :uid, :created_by, :created_at, :updated_at, :tags, :external_id, :paths, :restricted, :published, :conflicted
+  attributes :uid, :created_by, :created_at, :updated_at, :deleted, :tags, :external_id, :paths, :restricted, :published, :conflicted
   node :id => mypost.uid
   node :document => mypost.merged_document
   node :may_edit => mypost.editable_by?(current_identity)
