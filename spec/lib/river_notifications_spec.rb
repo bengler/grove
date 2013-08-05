@@ -1,13 +1,18 @@
-require 'pebblebed'
 require 'spec_helper'
 
 describe RiverNotifications do
 
-  #ActiveRecord::Base.add_observer RiverNotifications.instance
+  before(:each) do
+    ActiveRecord::Base.add_observer RiverNotifications.instance
+  end
+
+  after(:each) do
+    ActiveRecord::Base.observers = []
+  end
 
   describe "create" do
 
-    xit "publishes the post without no diff" do
+    it "publishes the post without no diff" do
       Pebblebed::River.any_instance.should_receive(:publish) do |arg|
         arg[:event].should eq :create
         arg[:uid].should_not be nil
@@ -21,10 +26,8 @@ describe RiverNotifications do
 
   describe "update" do
 
-    xit "publishes the post with a diff" do
-      puts "1"
+    it "publishes the post with a diff" do
       p = Post.create!(:canonical_path => 'this.that')
-      puts "2"
       p.published = true
       Pebblebed::River.any_instance.should_receive(:publish) do |arg|
         arg[:event].should eq :update
