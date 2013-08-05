@@ -248,7 +248,26 @@ describe "API v1 posts" do
             last_response.status.should eq 404
           end
         end
-        
+
+        context "with ?unpublished=only" do
+          it "can retrieve an unpublished document created by the current user" do
+            p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'}, :restricted => false, :published => false)
+            p2 = Post.create!(:uid => "post:a.d.e", :created_by => 1, :document => {:title => 'Hello earthgirl'}, :restricted => false, :published => true)
+            get "/posts/post:a.*", :unpublished => 'only'
+
+            result = JSON.parse(last_response.body)['posts']
+            result.length.should eq 1
+            result[0]['post']['uid'].should eq p.uid
+            result[0]['post']['created_by'].should eq 1
+          end
+
+          it "can not retrieve an unpublished document created by another user" do
+            p = Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {:title => 'Hello spaceboy'}, :published => false)
+            get "/posts/#{p.uid}", :unpublished => 'only'
+            last_response.status.should eq 404
+          end
+        end
+
         describe "checking editable status in response" do
           it "returns true if identity is creator" do
             p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'})
