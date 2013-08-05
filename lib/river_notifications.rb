@@ -9,25 +9,31 @@ class RiverNotifications < ActiveRecord::Observer
   end
 
   def after_create(post)
-    publish(post, :create)
+    puz(post, :create)
   end
 
   def after_update(post)
     if post.deleted?
-      publish(post, :delete)
+      puz(post, :delete)
     else
-      publish(post, :update)
+      puz(post, :update)
     end
   end
 
   def after_destroy(post)
-    publish(post, :delete)
+    puz(post, :delete)
   end
 
-  def publish(post, event)
+  def puz(post, event)
     post.paths.each do |path|
-      uid = "#{post.klass}:#{path}$#{post.id}"
-      self.class.river.publish(:event => event, :uid => uid, :attributes => post.attributes_for_export)
+      options = {
+        :uid => "#{post.klass}:#{path}$#{post.id}",
+        :event => event,
+        :attributes => post.attributes_for_export
+      }
+      options[:changed_attributes] = post.changes if event == :update
+      puts "  options: #{options}"
+      self.class.river.publish(options)
     end
   end
 
