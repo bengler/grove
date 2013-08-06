@@ -12,8 +12,8 @@ describe RiverNotifications do
 
   describe "create" do
 
-    it "publishes the post without no diff" do
-      Pebblebed::River.any_instance.should_receive(:publish) do |arg|
+    it "publishes the post with no changed_attributes entry" do
+      RiverNotifications.any_instance.should_receive(:publish!) do |arg|
         arg[:event].should eq :create
         arg[:uid].should_not be nil
         arg[:attributes].should_not be nil
@@ -26,11 +26,11 @@ describe RiverNotifications do
 
   describe "update" do
 
-    it "publishes the post with a diff" do
+    it "publishes the post together with changed_attributes" do
       p = Post.create!(:canonical_path => 'this.that', :document => {:text => 'blipp'})
       p.published = true
       p.document = {:text => 'jumped over the lazy dog'}
-      Pebblebed::River.any_instance.should_receive(:publish) do |arg|
+      RiverNotifications.any_instance.should_receive(:publish!) do |arg|
         arg[:event].should eq :update
         arg[:uid].should_not be nil
         arg[:attributes].should_not be nil
