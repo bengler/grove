@@ -27,13 +27,15 @@ describe RiverNotifications do
   describe "update" do
 
     it "publishes the post with a diff" do
-      p = Post.create!(:canonical_path => 'this.that')
+      p = Post.create!(:canonical_path => 'this.that', :document => {:text => 'blipp'})
       p.published = true
+      p.document = {:text => 'jumped over the lazy dog'}
       Pebblebed::River.any_instance.should_receive(:publish) do |arg|
         arg[:event].should eq :update
         arg[:uid].should_not be nil
         arg[:attributes].should_not be nil
         arg[:changed_attributes][:published].should eq [nil, true]
+        arg[:changed_attributes][:document].should eq [{:text=>"blipp"}, {:text=>"jumped over the lazy dog"}]
       end
       p.save!
     end
