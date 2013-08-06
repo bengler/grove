@@ -263,7 +263,7 @@ class GroveV1 < Sinatra::Base
   # @optional [String] tags Constrain query by tags. Either a comma separated list of required tags or a
   #   boolean expression like 'paris & !texas' or 'closed & (failed | pending)'.
   # @optional [Integer] created_by Only documents created by this checkpoint identity will be returned.
-  # @optional [String] unpublished If set to 'include', accessible unpublished posts will be included with the result.
+  # @optional [String] unpublished If set to 'include', accessible unpublished posts will be included with the result. If set to 'only', only accessible unpublished posts will be included with the result.
   # @optional [String] deleted If set to 'include', accessible deleted posts will be included with the result.
   # @optional [String] occurrence[label] Require that the post have an occurrence with this label.
   # @optional [String] occurrence[from] The occurrences must be later than this time. Time stamp (ISO 8601).
@@ -316,7 +316,7 @@ class GroveV1 < Sinatra::Base
 	# Retrieve a single specific post.
         @post = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params).first
         halt 404, "No such post" unless @post
-        halt 403, "Forbidden" if !@post.published && params[:unpublished] != 'include'
+        halt 403, "Forbidden" if !@post.published && !['include', 'only'].include?(params[:unpublished])
         # TODO: Teach .visible_to? about PSM so we can go back to using cached results
         #halt 403, "Forbidden" unless @post.visible_to?(current_identity)
         pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5

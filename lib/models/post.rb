@@ -79,7 +79,8 @@ class Post < ActiveRecord::Base
         scope = scope.with_tags_query(filters['tags'])
       end
     end
-    scope = scope.where("published or published is null") unless filters['unpublished'] == 'include'
+    scope = scope.where("published or published is null") unless ['include', 'only'].include?(filters['unpublished'])
+    scope = scope.where("published is false") if filters['unpublished'] == 'only'
     scope = scope.where(:created_by => filters['created_by']) if filters['created_by']
     scope
   }
