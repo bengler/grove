@@ -27,9 +27,11 @@ describe RiverNotifications do
   describe "update" do
 
     it "publishes the post together with changed_attributes" do
+      ActiveRecord::Base.observers.disable :all
       p = Post.create!(:canonical_path => 'this.that', :document => {:text => 'blipp'})
       p.published = true
       p.document = {:text => 'jumped over the lazy dog'}
+      ActiveRecord::Base.observers.enable :all
       RiverNotifications.any_instance.should_receive(:publish!) do |arg|
         arg[:event].should eq :update
         arg[:uid].should_not be nil
