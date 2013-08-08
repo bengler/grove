@@ -301,6 +301,12 @@ class GroveV1 < Sinatra::Base
         pg :posts, :locals => {:posts => @posts, :pagination => nil}
       elsif query.collection?
 	# Retrieve a collection by wildcards.
+        # Temporary hack. It' god damn fugly I know!! TODO: remove this as soon as possible!!!!
+        # It's a crisis, which is tried solved otherwise. Alex - please ignore :-)
+        if uid.include?("apdm.stream.ba.calendar.*")
+          uid = uid.gsub("apdm.stream.ba", "apdm.ba")
+          query = Pebbles::Uid.query(uid)
+        end
         sort_field = 'created_at'
         if params['sort_by']
           sort_field = params['sort_by'].downcase
