@@ -36,6 +36,7 @@ class Post < ActiveRecord::Base
   before_destroy :invalidate_cache
 
   default_scope where("not deleted")
+  default_scope :include => :occurrence_entries
 
   serialize :document
   serialize :external_document
