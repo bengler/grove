@@ -37,6 +37,7 @@ class Post < ActiveRecord::Base
 
   default_scope where("not deleted")
   default_scope :include => :occurrence_entries
+  default_scope :include => :locations
 
   serialize :document
   serialize :external_document
