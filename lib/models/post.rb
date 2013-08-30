@@ -35,21 +35,28 @@ class Post < ActiveRecord::Base
   after_update :invalidate_cache
   before_destroy :invalidate_cache
 
-  default_scope where("not deleted")
-  default_scope :include => :occurrence_entries
-  default_scope :include => :locations
+  default_scope where("not posts.deleted")
 
   serialize :document
   serialize :external_document
 
+
+  scope :include_relations, lambda {
+    includes([:occurrence_entries, :locations])
+  }
+
+
   scope :by_path, lambda { |path|
-    select("distinct posts.*").joins(:locations).where(:locations => Pebbles::Path.to_conditions(path)) unless path == '*'
+    select("distinct posts.*").
+    joins("inner join locations_posts as lp on lp.post_id = posts.id").
+    joins("inner join locations as locs on lp.location_id = locs.id").
+    where(:locs => Pebbles::Path.to_conditions(path)) unless path == '*'
   }
 
   scope :by_uid, lambda { |uid|
     _klass, _path, _oid = Pebbles::Uid.parse(uid)
     scope = by_path(_path)
-    scope = scope.where("klass = ?", _klass) unless _klass == '*'
+    scope = scope.where("posts.klass = ?", _klass) unless _klass == '*'
     scope = scope.where("posts.id = ?", _oid.to_i) unless _oid.nil? || _oid == '' || _oid == '*'
     scope
   }
@@ -69,7 +76,7 @@ class Post < ActiveRecord::Base
   # In order to support the "deleted" filter, queries must be performed with default scope disabled.
   scope :filtered_by, lambda { |filters|
     scope = relation
-    scope = scope.where("not deleted") unless filters['deleted'] == 'include'
+    scope = scope.where("not posts.deleted") unless filters['deleted'] == 'include'
     scope = scope.where(:realm => filters['realm']) if filters['realm']
     scope = scope.where(:klass => filters['klass'].split(',').map(&:strip)) if filters['klass']
     scope = scope.where(:external_id => filters['external_id'].split(',').map(&:strip)) if filters['external_id']
@@ -81,8 +88,8 @@ class Post < ActiveRecord::Base
         scope = scope.with_tags_query(filters['tags'])
       end
     end
-    scope = scope.where("published or published is null") unless ['include', 'only'].include?(filters['unpublished'])
-    scope = scope.where("published is false") if filters['unpublished'] == 'only'
+    scope = scope.where("posts.published or posts.published is null") unless ['include', 'only'].include?(filters['unpublished'])
+    scope = scope.where("posts.published is false") if filters['unpublished'] == 'only'
     scope = scope.where(:created_by => filters['created_by']) if filters['created_by']
     scope
   }
@@ -90,13 +97,13 @@ class Post < ActiveRecord::Base
   scope :with_restrictions, lambda { |identity|
     scope = relation
     if !identity || !identity.respond_to?(:id)
-      scope = scope.where("not restricted and not deleted and (published or published is null)")
+      scope = scope.where("not posts.restricted and not posts.deleted and (posts.published or posts.published is null)")
     elsif !identity.god
       scope = scope.
         joins(:locations).
         joins("left outer join group_locations on group_locations.location_id = locations.id").
         joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{identity.id}").
-        where(['(not restricted and not deleted and (published or published is null)) or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
+        where(['(not posts.restricted and not posts.deleted and (posts.published or posts.published is null)) or posts.created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
     end
     scope
   }
