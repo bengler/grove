@@ -111,7 +111,7 @@ class GroveV1 < Sinatra::Base
     # external_id must be unique across a single realm. If there is a post with the
     # provided external_id it is updated with the provided content.
     begin
-      @post = Post.include_relations.find_by_external_id_and_uid(attributes[:external_id], uid) if attributes[:external_id]
+      @post = Post.find_by_external_id_and_uid(attributes[:external_id], uid) if attributes[:external_id]
     rescue Post::CanonicalPathConflict => e
       halt 409, "A post with external_id '#{attributes[:external_id]}' already exists with another canonical path (#{e.message})."
     end
@@ -120,10 +120,8 @@ class GroveV1 < Sinatra::Base
     # we protect against double posting.
     if attributes[:external_id].nil? && !current_identity.god? && !(uid =~ /\$.+$/)
       Post.where(:created_by => current_identity.id).
-        where("posts.created_at > now() - interval '2 minutes'").
-        by_uid(uid).
-        include_relations.
-        order('posts.created_at desc').each do |post|
+        where("posts.created_at > now() - interval '2 minutes'").by_uid(uid).order('posts.created_at desc').
+        each do |post|
         if post.document == attributes['document']
           @post = post # Found a match, proceed as if updating this document
           break
@@ -131,7 +129,7 @@ class GroveV1 < Sinatra::Base
       end
     end
 
-    @post ||= Post.unscoped.include_relations.find_by_uid(uid)
+    @post ||= Post.unscoped.find_by_uid(uid)
     @post ||= Post.new(:uid => uid, :created_by => current_identity.id) unless opts[:only_updates]
     halt 404, "Post not found" unless @post
 
@@ -179,16 +177,16 @@ class GroveV1 < Sinatra::Base
     require_identity
 
     if params[:external_id]
-      post = Post.find_by_external_id(params[:external_id])
-      halt 404, "No post with external_id #{params[:external_id]}" unless post
+      @post = Post.find_by_external_id(params[:external_id])
+      halt 404, "No post with external_id #{params[:external_id]}" unless @post
     else
-      post = Post.find_by_uid(uid)
-      halt 404, "No post with uid #{uid}" unless post
+      @post = Post.find_by_uid(uid)
+      halt 404, "No post with uid #{uid}" unless @post
     end
 
-    check_allowed :delete, post do
-      post.deleted = true
-      post.save!
+    check_allowed :delete, @post do
+      @post.deleted = true
+      @post.save!
       response.status = 204
     end
   end
@@ -209,21 +207,24 @@ class GroveV1 < Sinatra::Base
 
   post "/posts/:uid/undelete" do |uid|
     require_identity
-    post = Post.unscoped.find_by_uid(uid)
-    halt 404, "No such post" unless post
-
-    unless current_identity.god
-      accessible_post = Post.unscoped.joins(:locations).
+    the_post = Post.unscoped.find_by_uid(uid)
+    if current_identity.god
+      @post = the_post
+    else
+      @post = Post.unscoped.joins(:locations).
         joins("left outer join group_locations on group_locations.location_id = locations.id").
         joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{current_identity.id}").
         where(['group_memberships.identity_id = ?', current_identity.id]).find_by_uid(uid)
-
-      halt 403, "You don't have permission to undelete this post." unless accessible_post
-      post = accessible_post
     end
-    post.deleted = false
-    post.save!
-    response.status = 200
+    if !the_post
+      halt 404, "No such post"
+    elsif @post
+        @post.deleted = false
+        @post.save!
+        response.status = 200
+    else
+      halt 403, "You don't have permission to undelete this post."
+    end
   end
 
   # To request documents with a specific occurrence an occurrence spec can
@@ -279,7 +280,7 @@ class GroveV1 < Sinatra::Base
 
   get "/posts/:uid" do |uid|
     if params[:external_id]
-      @post = Post.unscoped.filtered_by(params).include_relations.find_by_external_id(params[:external_id])
+      @post = Post.unscoped.filtered_by(params).find_by_external_id(params[:external_id])
       halt 404, "No such post" unless @post
       halt 403, "Forbidden" unless @post.visible_to?(current_identity)
       pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
@@ -295,11 +296,11 @@ class GroveV1 < Sinatra::Base
         # @posts = filter_visible_posts(Post.cached_find_all_by_uid(query.cache_keys))
         # @posts = filter_published(@posts, :unpublished => params['unpublished'])
         @posts = query.terms.map do |term|
-          Post.unscoped.by_uid(term).filtered_by(params).include_relations.with_restrictions(current_identity).first
+          Post.unscoped.by_uid(term).filtered_by(params).with_restrictions(current_identity).first
         end
         pg :posts, :locals => {:posts => @posts, :pagination => nil}
       elsif query.collection?
-	      # Retrieve a collection by wildcards.
+	# Retrieve a collection by wildcards.
         # Temporary hack. It' god damn fugly I know!! TODO: remove this as soon as possible!!!!
         # It's a crisis, which is tried solved otherwise. Alex - please ignore :-)
         if uid.include?("apdm.stream.ba.calendar.*")
@@ -311,15 +312,15 @@ class GroveV1 < Sinatra::Base
           sort_field = params['sort_by'].downcase
           halt 400, "Unknown field #{sort_field}" unless %w(created_at updated_at document_updated_at external_document_updated_at external_document).include? sort_field
         end
-        @posts = Post.unscoped.by_uid(uid).include_relations.with_restrictions(current_identity).filtered_by(params)
+        @posts = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params)
         @posts = apply_occurrence_scope(@posts, params['occurrence'])
         direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
         @posts = @posts.order("posts.#{sort_field} #{direction}")
         @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
         pg :posts, :locals => {:posts => @posts, :pagination => @pagination}
       else
-	      # Retrieve a single specific post.
-        @post = Post.unscoped.by_uid(uid).include_relations.with_restrictions(current_identity).filtered_by(params).first
+	# Retrieve a single specific post.
+        @post = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params).first
         halt 404, "No such post" unless @post
         halt 403, "Forbidden" if !@post.published && !['include', 'only'].include?(params[:unpublished])
         # TODO: Teach .visible_to? about PSM so we can go back to using cached results
@@ -368,13 +369,13 @@ class GroveV1 < Sinatra::Base
   put "/posts/:uid/touch" do |uid|
     require_identity
 
-    post = Post.include_relations.find_by_uid(uid)
-    halt 404, "No such post" unless post
+    @post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless @post
 
-    check_allowed :update, post do
-      post.touch
+    check_allowed :update, @post do
+      @post.touch
     end
-    pg :post, :locals => {:mypost => post}
+    pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
   end
 
   # @apidoc
@@ -392,11 +393,11 @@ class GroveV1 < Sinatra::Base
 
   post "/posts/:uid/paths/:path" do |uid, path|
     require_identity
-    post = Post.include_relations.find_by_uid(uid)
+
+    post = Post.find_by_uid(uid)
     halt 404, "No such post" unless post
 
     check_allowed :update, post do
-      p post.paths
       post.add_path!(path) unless post.paths.include?(path)
     end
 
@@ -404,7 +405,7 @@ class GroveV1 < Sinatra::Base
   end
 
   # @apidoc
-  # Remove a synonymous path from the document
+  # Remove a synonymous path to the document
   #
   # @category Grove/Posts
   # @path /api/grove/v1/posts/:uid/paths/:path
@@ -419,7 +420,7 @@ class GroveV1 < Sinatra::Base
   delete "/posts/:uid/paths/:path" do |uid, path|
     require_identity
 
-    post = Post.include_relations.find_by_uid(uid)
+    post = Post.find_by_uid(uid)
     halt 404, "No such post" unless post
 
     check_allowed :update, post do
@@ -449,7 +450,7 @@ class GroveV1 < Sinatra::Base
   post "/posts/:uid/occurrences/:event" do |uid, event|
     require_identity
 
-    post = Post.include_relations.find_by_uid(uid)
+    post = Post.find_by_uid(uid)
     halt 404, "No such post" unless post
 
     check_allowed :update, post do
@@ -503,7 +504,7 @@ class GroveV1 < Sinatra::Base
   put "/posts/:uid/occurrences/:event" do |uid, event|
     require_identity
 
-    post = Post.include_relations.find_by_uid(uid)
+    post = Post.find_by_uid(uid)
     halt 404, "No such post" unless post
 
     check_allowed :update, post do
@@ -529,17 +530,17 @@ class GroveV1 < Sinatra::Base
   post "/posts/:uid/tags/:tags" do |uid, tags|
     require_identity
 
-    post = Post.include_relations.find_by_uid(uid)
-    halt 404, "No such post" unless post
+    @post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless @post
 
-    check_allowed :update, post do
-      post.with_lock do
-        post.tags += params[:tags].split(',')
-        post.save!
+    check_allowed :update, @post do
+      @post.with_lock do
+        @post.tags += params[:tags].split(',')
+        @post.save!
       end
     end
 
-    pg :post, :locals => {:mypost => post}
+    pg :post, :locals => {:mypost => @post}
   end
 
   # @apidoc
@@ -558,17 +559,17 @@ class GroveV1 < Sinatra::Base
   put "/posts/:uid/tags/:tags" do |uid, tags|
     require_identity
 
-    post = Post.include_relations.find_by_uid(uid)
-    halt 404, "No such post" unless post
+    @post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless @post
 
-    check_allowed :update, post do
-      post.with_lock do
-        post.tags = params[:tags]
-        post.save!
+    check_allowed :update, @post do
+      @post.with_lock do
+        @post.tags = params[:tags]
+        @post.save!
       end
     end
 
-    pg :post, :locals => {:mypost => post}
+    pg :post, :locals => {:mypost => @post}
   end
 
   # @apidoc
@@ -587,16 +588,16 @@ class GroveV1 < Sinatra::Base
   delete "/posts/:uid/tags/:tags" do |uid, tags|
     require_identity
 
-    post = Post.include_relations.find_by_uid(uid)
-    halt 404, "No such post" unless post
+    @post = Post.find_by_uid(uid)
+    halt 404, "No such post" unless @post
 
-    check_allowed :update, post do
-      post.with_lock do
-        post.tags -= params[:tags].split(',')
-        post.save!
+    check_allowed :update, @post do
+      @post.with_lock do
+        @post.tags -= params[:tags].split(',')
+        @post.save!
       end
     end
 
-    pg :post, :locals => {:mypost => post}
+    pg :post, :locals => {:mypost => @post}
   end
 end
