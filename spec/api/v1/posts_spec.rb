@@ -124,6 +124,7 @@ describe "API v1 posts" do
       it "can post to multiple paths" do
         post "/posts/post:a.b.c", :post => {:document => {}, :paths => ['a.b.secondary']}
 
+        posts = Post.by_path('a.b.c')
         Post.by_path('a.b.c').count.should eq 1
         Post.by_path('a.b.secondary').count.should eq 1
         get "/posts/#{Post.first.uid}"
