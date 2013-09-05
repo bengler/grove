@@ -351,10 +351,31 @@ ALTER TABLE ONLY readmarks
 
 
 --
+-- Name: index_group_locations_on_group_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_group_locations_on_group_id ON group_locations USING btree (group_id);
+
+
+--
 -- Name: index_group_locations_on_group_id_and_location_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE UNIQUE INDEX index_group_locations_on_group_id_and_location_id ON group_locations USING btree (group_id, location_id);
+
+
+--
+-- Name: index_group_locations_on_location_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_group_locations_on_location_id ON group_locations USING btree (location_id);
+
+
+--
+-- Name: index_group_memberships_on_group_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_group_memberships_on_group_id ON group_memberships USING btree (group_id);
 
 
 --
@@ -365,10 +386,24 @@ CREATE UNIQUE INDEX index_group_memberships_on_group_id_and_identity_id ON group
 
 
 --
+-- Name: index_group_memberships_on_identity_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_group_memberships_on_identity_id ON group_memberships USING btree (identity_id);
+
+
+--
 -- Name: index_locations_on_labels; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE UNIQUE INDEX index_locations_on_labels ON locations USING btree (label_0, label_1, label_2, label_3, label_4, label_5, label_6, label_7, label_8, label_9);
+
+
+--
+-- Name: index_locations_posts_on_location_id; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_locations_posts_on_location_id ON locations_posts USING btree (location_id);
 
 
 --
@@ -425,6 +460,13 @@ CREATE INDEX index_posts_on_created_by ON posts USING btree (created_by);
 --
 
 CREATE INDEX index_posts_on_deleted ON posts USING btree (deleted);
+
+
+--
+-- Name: index_posts_on_klass; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX index_posts_on_klass ON posts USING btree (klass);
 
 
 --
