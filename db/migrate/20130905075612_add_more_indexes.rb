@@ -1,4 +1,4 @@
-class AddPostsKlassIndex < ActiveRecord::Migration
+class AddMoreIndexes < ActiveRecord::Migration
   def self.up
     add_index :posts, :klass
     add_index :locations_posts, :location_id
