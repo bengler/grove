@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+
+require './config/environment.rb'
+
+i = 0
+count = Post.unscoped.where('published is null').count
+message = ''
+puts "#{count} posts to update..."
+Post.unscoped.find_each(:conditions => "published is null", :batch_size => 100) do |post|
+  post.update_attribute(:published, true)
+  i += 1
+  if i % 20 == 0
+    print "\b" * message.length
+    message = "#{((i.to_f*100)/count).round(4)}".ljust(6, '0') + "%"
+    print message
+  end
+end
+puts "...done!"
+
+#ActiveRecord::Migration.change_column :posts, :published, :null => false, :default => true
