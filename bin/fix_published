@@ -17,4 +17,5 @@ Post.unscoped.find_each(:conditions => "published is null", :batch_size => 100) 
 end
 puts "...done!"
 
-#ActiveRecord::Migration.change_column :posts, :published, :null => false, :default => true
+# lets to this later, in a migration
+# ActiveRecord::Migration.change_column :posts, :published, :null => false, :default => true
