@@ -265,7 +265,22 @@ describe Post do
       end
     end
 
+    context "published status" do
+
+      it "makes published posts accessible to random people" do
+        default_attributes.merge!(:published => true, :created_by => 2)
+        article.visible_to?(john_q_public).should eq true
+        Post.with_restrictions(john_q_public).size.should eq 1
+      end
+
+      it "makes unpublished stuff inaccessible to random people" do
+        default_attributes.merge!(:published => false, :created_by => 2)
+        article.visible_to?(john_q_public).should eq false
+        Post.with_restrictions(john_q_public).size.should eq 0
+      end
+    end
   end
+
   describe "document store" do
 
     context "without external document" do

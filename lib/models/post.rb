@@ -79,7 +79,7 @@ class Post < ActiveRecord::Base
         scope = scope.with_tags_query(filters['tags'])
       end
     end
-    scope = scope.where("published or published is null") unless ['include', 'only'].include?(filters['unpublished'])
+    scope = scope.where("published") unless ['include', 'only'].include?(filters['unpublished'])
     scope = scope.where("published is false") if filters['unpublished'] == 'only'
     scope = scope.where(:created_by => filters['created_by']) if filters['created_by']
     scope
@@ -88,13 +88,13 @@ class Post < ActiveRecord::Base
   scope :with_restrictions, lambda { |identity|
     scope = relation
     if !identity || !identity.respond_to?(:id)
-      scope = scope.where("not restricted and not deleted and (published or published is null)")
+      scope = scope.where("not restricted and not deleted and published")
     elsif !identity.god
       scope = scope.
         joins(:locations).
         joins("left outer join group_locations on group_locations.location_id = locations.id").
         joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{identity.id}").
-        where(['(not restricted and not deleted and (published or published is null)) or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
+        where(['(not restricted and not deleted and published) or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
     end
     scope
   }
@@ -109,11 +109,6 @@ class Post < ActiveRecord::Base
     return true if !restricted && !deleted && published
     return false if nobody?(identity)
     identity.god || identity.id == created_by
-  end
-
-  def published
-    published = read_attribute(:published)
-    published.nil? || published == true
   end
 
   def nobody?(identity)
