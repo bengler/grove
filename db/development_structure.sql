@@ -194,7 +194,7 @@ CREATE TABLE posts (
     external_document_updated_at timestamp without time zone,
     external_document text,
     conflicted boolean DEFAULT false NOT NULL,
-    published boolean
+    published boolean DEFAULT true NOT NULL
 );
 
 
