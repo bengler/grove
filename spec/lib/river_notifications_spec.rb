@@ -28,7 +28,7 @@ describe RiverNotifications do
 
     it "publishes the post together with changed_attributes" do
       ActiveRecord::Base.observers.disable :all
-      p = Post.create!(:canonical_path => 'this.that', :document => {:text => 'blipp'})
+      p = Post.create!(:canonical_path => 'this.that', :published => false, :document => {:text => 'blipp'})
       p.published = true
       p.document = {:text => 'jumped over the lazy dog'}
       ActiveRecord::Base.observers.enable :all
@@ -36,7 +36,7 @@ describe RiverNotifications do
         arg[:event].should eq :update
         arg[:uid].should_not be nil
         arg[:attributes].should_not be nil
-        arg[:changed_attributes][:published].should eq [nil, true]
+        arg[:changed_attributes][:published].should eq [false, true]
         arg[:changed_attributes][:document].should eq [{:text=>"blipp"}, {:text=>"jumped over the lazy dog"}]
       end
       p.save!
