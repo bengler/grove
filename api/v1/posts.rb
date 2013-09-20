@@ -263,6 +263,7 @@ class GroveV1 < Sinatra::Base
   # @optional [String] tags Constrain query by tags. Either a comma separated list of required tags or a
   #   boolean expression like 'paris & !texas' or 'closed & (failed | pending)'.
   # @optional [Integer] created_by Only documents created by this checkpoint identity will be returned.
+  # @optional [String] created_after Only documents created after this date (yyyy.mm.dd) will be returned.
   # @optional [String] unpublished If set to 'include', accessible unpublished posts will be included with the result. If set to 'only', only accessible unpublished posts will be included with the result.
   # @optional [String] deleted If set to 'include', accessible deleted posts will be included with the result.
   # @optional [String] occurrence[label] Require that the post have an occurrence with this label.
@@ -342,7 +343,8 @@ class GroveV1 < Sinatra::Base
   #   boolean expression like 'paris & !texas' or 'closed & (failed | pending)'.
   # @optional [String] unpublished If set to 'include', accessible unpublished posts will be counted too.
   # @optional [String] deleted If set to 'include', accessible deleted posts will be counted too.
-  # @optional [Integer] created_by Only documents created by this checkpoint identity will be returned.
+  # @optional [Integer] created_by Only documents created by this checkpoint identity will be counted.
+  # @optional [String] created_after Only documents created after this date (yyyy.mm.dd) will be counted.
   # @optional [Integer] limit The maximum amount of posts to return.
   # @optional [Integer] offset The index of the first result to return (for pagination).
   # @status 200 JSON.

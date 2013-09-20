@@ -475,6 +475,16 @@ describe "API v1 posts" do
           last_response.status.should == 400
         end
 
+        it "filters by created_by" do
+          now = Time.now
+          yesterday = now - 3600*24
+          two_days_ago = now - 3600*24*2
+          Post.create!(:uid => "post:a.b.c", :created_at => now)
+          Post.create!(:uid => "post:a.b.c", :created_at => two_days_ago)
+          get "/posts/post:*", :created_after => yesterday.to_s
+          JSON.parse(last_response.body)['posts'].count.should eq 1
+        end
+
         it "filters by creator" do
           Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => '1'})
           Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {'text' => '2'})

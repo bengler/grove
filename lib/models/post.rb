@@ -68,6 +68,7 @@ class Post < ActiveRecord::Base
   scope :filtered_by, lambda { |filters|
     scope = relation
     scope = scope.where("not deleted") unless filters['deleted'] == 'include'
+    scope = scope.where("posts.created_at > ?", Time.parse(filters['created_after'])) if filters['created_after']
     scope = scope.where(:realm => filters['realm']) if filters['realm']
     scope = scope.where(:klass => filters['klass'].split(',').map(&:strip)) if filters['klass']
     scope = scope.where(:external_id => filters['external_id'].split(',').map(&:strip)) if filters['external_id']
