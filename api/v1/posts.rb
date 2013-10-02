@@ -356,7 +356,7 @@ class GroveV1 < Sinatra::Base
   get "/posts/:uid/count" do |uid|
     count_deleted_posts = (params['deleted'] == 'include')
     count = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params).count
-    {:uid => uid, :count => count}.to_json
+    halt 200, {'Content-Type' => 'application/json'}, {:uid => uid, :count => count}.to_json
   end
 
   # @apidoc
