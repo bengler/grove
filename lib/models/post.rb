@@ -49,7 +49,6 @@ class Post < ActiveRecord::Base
     scope = by_path(_path)
     scope = scope.where("klass in (?)", _klass.split('|')) unless _klass == '*'
     scope = scope.where("posts.id = ?", _oid.to_i) unless _oid.nil? || _oid == '' || _oid == '*'
-    puts "scope: #{scope.to_sql}"
     scope
   }
 
