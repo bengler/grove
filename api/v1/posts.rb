@@ -302,7 +302,7 @@ class GroveV1 < Sinatra::Base
         end
         pg :posts, :locals => {:posts => @posts, :pagination => nil}
       elsif query.collection?
-	# Retrieve a collection by wildcards.
+      	# Retrieve a collection by wildcards.
         # Temporary hack. It' god damn fugly I know!! TODO: remove this as soon as possible!!!!
         # It's a crisis, which is tried solved otherwise. Alex - please ignore :-)
         if uid.include?("apdm.stream.ba.calendar.*")
