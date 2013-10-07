@@ -125,7 +125,7 @@ describe Post do
       end
     end
 
-    describe "wildcard matches" do
+    describe "wildcard path matches" do
       before(:each) do
         Post.create!(:uid => "post:area51.secret.research", :document => {:text => "1"})
         Post.create!(:uid => "post:area51.secret.research", :document => {:text => "2"})
@@ -143,6 +143,24 @@ describe Post do
 
       specify "finds on fully specified path" do
         Post.by_uid("post:area51.secret.research").map(&:document).map{|document| document[:text]}.sort.should eq ['1', '2']
+      end
+    end
+
+    describe "wildcard klass matches" do
+      before(:each) do
+        Post.create!(:uid => "post:a.b", :document => {:text => "1"})
+        Post.create!(:uid => "post.card:a.b", :document => {:text => "2"})
+        Post.create!(:uid => "post.box:a.b", :document => {:text => "3"})
+        Post.create!(:uid => "post.man:a.b", :document => {:text => "4"})
+      end
+
+      specify "any klass" do
+        Post.by_uid("*:*").map(&:document).map{|document| document[:text]}.sort.should eq ['1', '2', '3', '4']
+      end
+
+      specify "this or that" do
+        Post.by_uid("post.card|post.man:a.*").map(&:document).map{|document| document[:text]}.sort.should eq ['2', '4']
+        Post.by_uid("post.card|box:a.*").map(&:document).map{|document| document[:text]}.sort.should eq ['2']
       end
     end
 

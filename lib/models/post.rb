@@ -47,8 +47,9 @@ class Post < ActiveRecord::Base
   scope :by_uid, lambda { |uid|
     _klass, _path, _oid = Pebbles::Uid.parse(uid)
     scope = by_path(_path)
-    scope = scope.where("klass = ?", _klass) unless _klass == '*'
+    scope = scope.where("klass in (?)", _klass.split('|')) unless _klass == '*'
     scope = scope.where("posts.id = ?", _oid.to_i) unless _oid.nil? || _oid == '' || _oid == '*'
+    puts "scope: #{scope.to_sql}"
     scope
   }
 

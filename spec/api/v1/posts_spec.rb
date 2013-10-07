@@ -10,6 +10,7 @@ describe "API v1 posts" do
     GroveV1
   end
 
+
   context "with no current identity" do
     before(:each) { guest! }
 
@@ -230,6 +231,14 @@ describe "API v1 posts" do
           p = Post.create!(:uid => "post:a.b.c", :created_by => 2, :document => {:title => 'Hello spaceboy'}, :restricted => true)
           get "/posts/#{p.uid}"
           last_response.status.should eq 404
+        end
+
+        it "respects wildcard klass" do
+          Post.create!(:uid => "post.card:a.b.c", :document => {:title => 'x'})
+          Post.create!(:uid => "post.box:a.b.c", :document => {:title => 'x'})
+          Post.create!(:uid => "post.man:a.b.c", :document => {:title => 'x'})
+          get "/posts/post.card#{CGI.escape('|')}post.box:a.b.c"
+          JSON.parse(last_response.body)['posts'].count.should eq 2
         end
 
         context "with ?unpublished=include" do
