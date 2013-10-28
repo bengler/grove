@@ -14,7 +14,7 @@ class RiverNotifications < ActiveRecord::Observer
 
   def after_update(post)
     if post.deleted?
-      prepare_for_publish(post, :delete)
+      prepare_for_publish(post, :delete, :soft_deleted => true)
     else
       prepare_for_publish(post, :update)
     end
@@ -24,20 +24,21 @@ class RiverNotifications < ActiveRecord::Observer
     prepare_for_publish(post, :delete)
   end
 
-  def prepare_for_publish(post, event)
+  def prepare_for_publish(post, event, options = {})
     post.paths.each do |path|
-      options = {
+      params = {
         :uid => "#{post.klass}:#{path}$#{post.id}",
         :event => event,
         :attributes => post.attributes_for_export
       }
-      options[:changed_attributes] = post.changes if event == :update
-      publish!(options)
+      params[:changed_attributes] = post.changes if event == :update
+      params[:soft_deleted] = true if options[:soft_deleted]
+      publish!(params)
     end
   end
 
-  def publish!(options)
-    self.class.river.publish(options)
+  def publish!(params)
+    self.class.river.publish(params)
   end
 
 end

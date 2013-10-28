@@ -44,4 +44,20 @@ describe RiverNotifications do
 
   end
 
+  describe "delete" do
+
+    it "creates a delete event with the soft delete flag set" do
+      ActiveRecord::Base.observers.disable :all
+      p = Post.create!(:canonical_path => 'this.that', :document => {:text => 'blipp'})
+      ActiveRecord::Base.observers.enable :all
+      RiverNotifications.any_instance.should_receive(:publish!) do |arg|
+        arg[:event].should eq :delete
+        arg[:soft_deleted].should be true
+      end
+      p.deleted = true
+      p.save!
+    end
+
+  end
+
 end
