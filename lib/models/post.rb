@@ -64,7 +64,7 @@ class Post < ActiveRecord::Base
     where("occurrence_entries.at < ?", timestamp.utc)
   }
 
-  # In order to support the "deleted" filter, queries must be performed with default scope disabled.
+  # FIXME: In order to support the "deleted" filter, queries must be performed with default scope disabled.
   scope :filtered_by, lambda { |filters|
     scope = relation
     scope = scope.where("not deleted") unless filters['deleted'] == 'include'
