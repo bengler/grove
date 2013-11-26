@@ -39,6 +39,7 @@ class Post < ActiveRecord::Base
 
   serialize :document
   serialize :external_document
+  serialize :protected
 
   scope :by_path, lambda { |path|
     select("distinct posts.*").joins(:locations).where(:locations => Pebbles::Path.to_conditions(path)) unless path == '*'

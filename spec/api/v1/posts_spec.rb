@@ -73,6 +73,17 @@ describe "API v1 posts" do
         Post.first.created_by.should eq 1
       end
 
+      it "is unable to create a post with protected content" do
+        post "/posts/post:a.b.c", :post => {:protected=>{:a => '1'}, :document => {:title => 'document'}}
+        Post.first.protected.should eq nil
+      end
+
+      it "is unable to update a post with protected content" do
+        p = Post.create!(:uid => 'post:a.b.c', :document => {:title => 'Hello spaceboy'}, :created_by => 1)
+        post "/posts/#{p.uid}", :post => {:protected=>{:a => '1'}, :document => {:title => 'Hello pacman'}}
+        Post.first.protected.should eq nil
+      end
+
       it "updates a document" do
         post "/posts/post:a.b.c", :post => {:document => {:title => 'Hello spaceboy'}}
         uid = JSON.parse(last_response.body)['post']['uid']
@@ -942,6 +953,16 @@ describe "API v1 posts" do
       Post.first.created_by.should eq 666
     end
 
+    it "is able to create a post with protected content" do
+      post "/posts/post:a.b.c", :post => {:realm => 'a', :protected=>{:a => '1'}, :document => {:title => 'document'}}
+      last_response.status.should eq 201
+    end
+
+    it "is able to update a post with protected content" do
+      p = Post.create!(:uid => 'post:a.b.c', :realm => 'a', :document => {:title => 'Hello spaceboy'})
+      post "/posts/#{p.uid}", :post => {:protected=>{:a => '1'}, :document => {:title => 'Hello pacman'}}
+      last_response.status.should eq 200
+    end
 
   end
 end
