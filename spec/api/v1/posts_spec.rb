@@ -35,6 +35,13 @@ describe "API v1 posts" do
       result.first['post']['uid'].should eq post.uid
     end
 
+    it "can read the protected field" do
+      post = Post.create!(:uid => "post:a.b.c", :protected => {:price => 42}, :created_by => another_identity.id, :document => {'text' => 'xyzzy'})
+      get "/posts/post:a.b.c"
+      result = JSON.parse(last_response.body)['posts']
+      result.first['post']['protected']['price'].should eq 42
+    end
+
   end
 
   context "with a logged in identity" do
