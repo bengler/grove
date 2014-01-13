@@ -41,8 +41,15 @@ class Post < ActiveRecord::Base
   serialize :external_document
   serialize :protected
 
-  scope :by_path, lambda { |path|
-    select("distinct posts.*").joins(:locations).where(:locations => Pebbles::Path.to_conditions(path)) unless path == '*'
+  scope :by_path, ->(path) {
+    conditions = Pebbles::Path.to_conditions(path)
+    if conditions.empty?
+      nil
+    else
+      select("distinct posts.*").
+        joins(:locations).
+        where(locations: conditions)
+    end
   }
 
   scope :by_uid, lambda { |uid|
