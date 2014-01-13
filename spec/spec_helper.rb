@@ -7,20 +7,25 @@ SimpleCov.start
 $:.unshift(File.dirname(File.dirname(__FILE__)))
 
 ENV["RACK_ENV"] = "test"
+
 require 'config/environment'
 
 require 'api/v1'
 
 require 'rack/test'
 require 'pebblebed/rspec_helper'
-require 'config/logging'
 require 'timecop'
-
 require 'vcr'
+
 VCR.configure do |c|
   c.cassette_library_dir = 'spec/fixtures/vcr_cassettes'
   c.hook_into :webmock 
 end
+
+# Set up logging to log/test.log
+FileUtils.mkdir_p('log')
+LOGGER = Logger.new(File.open('log/test.log', 'a'))
+ActiveRecord::Base.logger = LOGGER
 
 set :environment, :test
 
