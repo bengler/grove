@@ -431,10 +431,4 @@ describe Post do
     end
   end
 
-  # TODO: This should be configurable
-  it "sanitizes some fields if the content is json" do
-    Post.create!(:uid => "post:x.y.z", :tags => ["france", "paris"], :document => {"text" => "<a><script>hei"})
-    Post.first.document['text'].should eq "hei"
-  end
-
 end

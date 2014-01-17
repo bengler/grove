@@ -27,7 +27,6 @@ class Post < ActiveRecord::Base
 
   before_save :revert_unmodified_values
   before_save :update_conflicted
-  before_save :sanitize
   before_save :attach_canonical_path
   before_destroy :attach_canonical_path
   before_save :update_readmarks_according_to_deleted_status
@@ -109,6 +108,10 @@ class Post < ActiveRecord::Base
     scope
   }
 
+  def bling
+    puts "BAM: #{self.attributes}"
+  end
+
   def attributes_for_export
     attributes.update('document' => merged_document).merge('paths' => paths.to_a, 'uid' => uid)
   end
@@ -135,13 +138,30 @@ class Post < ActiveRecord::Base
   end
 
   def external_document=(external_document)
-    write_attribute("external_document", external_document)
+    write_attribute('external_document', external_document)
     self.external_document_updated_at = Time.now
   end
 
-  def document=(document)
-    write_attribute("document", document)
+  def document=(doc)
+    write_attribute('document', doc)
     self.document_updated_at = Time.now
+  end
+
+  # Override getters on serialized attributes with dup so the
+  # attributes become dirty when we use the old value on the setter
+  def external_document
+    ed = read_attribute('external_document')
+    ed.dup if ed
+  end
+
+  def document
+    d = read_attribute('document')
+    d.dup if d
+  end
+
+  def protected
+    p = read_attribute('protected')
+    p.dup if p
   end
 
   def merged_document
@@ -228,15 +248,6 @@ class Post < ActiveRecord::Base
     $memcached.delete(cache_key)
   end
 
-  # TODO: Replace with something general. This is an ugly hack to make dittforslag.no scripthacking-safe.
-  def sanitize
-    return unless self.document.is_a?(Hash)
-    ['text', 'author_name', 'email'].each do |field|
-      self.document[field] = Sanitize.clean(self.document[field]) if self.document.has_key?(field)
-    end
-    self.document['text'] = self.document['text'][0..139] unless self.document['text'].nil?
-  end
-
   def assign_realm
     self.realm = self.canonical_path[/^[^\.]*/] if self.canonical_path
   end
@@ -297,8 +308,9 @@ class Post < ActiveRecord::Base
     # archive it to post.document in order to make forensics easier.
     if self.deleted_changed?
       if self.deleted && self.external_id != nil
-        self.document ||= {} # TODO: never have posts with nil document
-        self.document['external_id'] = self.external_id
+        doc = self.document || {} # TODO: never have posts with nil document
+        doc.merge!('external_id' => self.external_id)
+        self.document = doc
         self.external_id = nil
       end
     end
