@@ -42,6 +42,20 @@ describe RiverNotifications do
       p.save!
     end
 
+    it "publishes the post together with changed_attributes even if a serialized field has been updated" do
+      ActiveRecord::Base.observers.disable :all
+      p = Post.create!(:canonical_path => 'this.that', :published => false, :document => {:text => 'blipp'})
+      p.document = p.document.merge(:text => 'jumped over the lazy dog')
+      ActiveRecord::Base.observers.enable :all
+      RiverNotifications.any_instance.should_receive(:publish!) do |arg|
+        arg[:event].should eq :update
+        arg[:uid].should_not be nil
+        arg[:attributes].should_not be nil
+        arg[:changed_attributes][:document].should eq [{:text=>"blipp"}, {:text=>"jumped over the lazy dog"}]
+      end
+      p.save!
+    end
+
   end
 
   describe "delete" do
