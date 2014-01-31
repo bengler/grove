@@ -39,6 +39,7 @@ class Post < ActiveRecord::Base
   serialize :document
   serialize :external_document
   serialize :protected
+  serialize :sensitive
 
   scope :by_path, ->(path) {
     conditions = Pebbles::Path.to_conditions(path)
@@ -161,6 +162,11 @@ class Post < ActiveRecord::Base
 
   def protected
     p = read_attribute('protected')
+    p.dup if p
+  end
+
+  def sensitive
+    p = read_attribute('sensitive')
     p.dup if p
   end
 

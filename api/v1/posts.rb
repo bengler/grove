@@ -136,10 +136,10 @@ class GroveV1 < Sinatra::Base
     halt 404, "Post is deleted" if @post.deleted?
     response.status = 201 if @post.new_record?
 
-    allowed_attributes = ['external_document', 'document', 'paths', 'occurrences', 'tags', 'external_id', 'restricted', 'published']
+    allowed_attributes = ['external_document', 'document', 'sensitive', 'paths', 'occurrences', 'tags', 'external_id', 'restricted', 'published']
     # Gods have some extra fields they may update
     if current_identity.god?
-      allowed_attributes += ['created_at', 'created_by' , 'protected']
+      allowed_attributes += ['created_at', 'created_by', 'protected']
     end
     (allowed_attributes & attributes.keys).each do |field|
       @post.send(:"#{field}=", attributes[field])
