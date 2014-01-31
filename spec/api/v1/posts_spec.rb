@@ -28,6 +28,13 @@ describe "API v1 posts" do
       result.size.should eq 0
     end
 
+    it "cannot read the sensitive field" do
+      p = Post.create!(:uid => "post:a.b.c", :created_by => another_identity.id, :sensitive => {'secret_key' => 'foobarbaz'})
+      get "/posts/#{p.uid}"
+      result = JSON.parse(last_response.body)['post']
+      result['sensitive'].should be_nil
+    end
+
     it "can read published documents" do
       post = Post.create!(:uid => "post:a.b.c", :created_by => another_identity.id, :document => {'text' => 'xyzzy'}, :restricted => false, :published => true)
       get "/posts/post:a.b.c"
@@ -75,6 +82,11 @@ describe "API v1 posts" do
         Post.first.published.should eq false
       end
 
+      it "the sensitive field can be set" do
+        post "/posts/post:a.b.c", :post => {:sensitive => {:secret => "dont tell"}}
+        Post.first.sensitive['secret'].should eq 'dont tell'
+      end
+
       it "is unable to create a post on behalf of someone else" do
         post "/posts/post:a.b.c", :post => {:document => {:title => "spoofed document"}, :created_by => 666}
         Post.first.created_by.should eq 1
@@ -102,6 +114,13 @@ describe "API v1 posts" do
         p = Post.create!(:uid => "post:a.b.c", :created_by => another_identity.id, :document => {:title => 'Hello spaceboy'})
         post "/posts/#{p.uid}", :post => {:document => '{"title":"Hello nobody"}'}
         last_response.status.should eq 403
+      end
+
+      it "can't read the sensitive field of posts created by another identity" do
+        p = Post.create!(:uid => "post:a.b.c", :created_by => another_identity.id, :sensitive=> {:secret => 'shhhh'})
+        get "/posts/#{p.uid}"
+        last_response.status.should eq 200
+        JSON.parse(last_response.body)['post']['secret'].should eq nil
       end
 
       it "can't update a deleted document" do
@@ -930,6 +949,13 @@ describe "API v1 posts" do
       get "/posts/post:a.b.c"
       result = JSON.parse(last_response.body)['posts']
       result.size.should eq 1
+    end
+
+    it "can read sensitive fields in posts" do
+      p = Post.create!(:uid => "post:a.b.c", :created_by => another_identity, :sensitive => {:secret_key => 'foobarbaz'})
+      get "/posts/#{p.uid}"
+      post = JSON.parse(last_response.body)['post']
+      post['sensitive']['secret_key'].should eq 'foobarbaz'
     end
 
     it "can read unpublished documents created by other identities" do

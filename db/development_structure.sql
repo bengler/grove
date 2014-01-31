@@ -181,7 +181,8 @@ CREATE TABLE posts (
     external_document text,
     conflicted boolean DEFAULT false NOT NULL,
     published boolean DEFAULT true NOT NULL,
-    protected text
+    protected text,
+    sensitive text
 );
 
 
