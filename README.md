@@ -101,6 +101,17 @@ Typical UIDs will look like this:
 
 Grove supports Checkpoint callbacks. You may override Grove's internal rules about who has permissions to create, update and delete what by implementing callbacks. See [Checkpoint's documentation](https://github.com/bengler/checkpoint/blob/master/README.md) for details on how to do this.
 
+## Fancy fields, we should explain their intended use
+document
+protected
+external_document
+tags
+occurences
+published
+deleted
+sensitive
+
+
 ## API
 
 ### Querying
