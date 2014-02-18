@@ -16,6 +16,7 @@ A post collects the following information:
 * **Tags** — a list of simple string tags.
 * **Timestamps** — timestamps for retrieving documents on a timeline.
 * **Document** — the document proper.
+* **Sensitive data** — data only available to the identity that has edit access, or to "god" identities.
 
 ### Document class
 
@@ -97,20 +98,29 @@ Typical UIDs will look like this:
 - `post.event:acmecorp.calendarapp.events.facebook$121`
 - `post.comment:acmecorp.blogs.fotball.postings.121$453211`
 
-## Custom policies
+## Custom permission policies
 
-Grove supports Checkpoint callbacks. You may override Grove's internal rules about who has permissions to create, update and delete what by implementing callbacks. See [Checkpoint's documentation](https://github.com/bengler/checkpoint/blob/master/README.md) for details on how to do this.
+Grove supports Checkpoint callbacks. You may override Grove's internal rules about who has permissions to create, update and delete what by implementing callbacks.
 
-## Fancy fields, we should explain their intended use
-document
-protected
-external_document
-tags
-occurences
-published
-deleted
-sensitive
+See the [Checkpoint documentation](https://github.com/bengler/checkpoint/blob/master/README.md) for details on how to do this.
 
+## Sensitive and protected data
+
+Every post can have data set in the `sensitive` field. This data is only readable (and writeable) by an identity which has edit access to the post.
+
+Similarly, the `protected` column is only readable (and writerable) by an identity which has the `god` flag set.
+
+## Tags
+
+Every post can have a list of tags. A tag is a basic keyword containing only non-space characters. Tags can be used to query documents.
+
+## Published status
+
+A post is either visible or invisible. When `published` is `true`, it is always visible; when `false`, it is only visible if a query provides the parameter `unpublished=include` or `unpublished=only`.
+
+## Deleted
+
+A post can be marked as deleted. When `deleted` is `true`, it is invisible to queries unless the query provides the parameter `deleted=include`.
 
 ## API
 
