@@ -25,6 +25,7 @@ class Post < ActiveRecord::Base
     :message => "must start with a non-digit character"
   before_validation :assign_realm, :set_default_klass
 
+  before_save :ensure_timestamps
   before_save :revert_unmodified_values
   before_save :update_conflicted
   before_save :attach_canonical_path
@@ -340,5 +341,12 @@ class Post < ActiveRecord::Base
       end
     end
   end
+
+  private
+
+    def ensure_timestamps
+      self.document_updated_at ||= Time.now
+      self.external_document_updated_at ||= Time.now
+    end
 
 end
