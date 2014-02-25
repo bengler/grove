@@ -114,6 +114,25 @@ class Post < ActiveRecord::Base
     end
   end
 
+  # Is this a hash?
+  def self.hashlike?(value)
+    value.is_a?(Hash) || value.respond_to?(:to_h)
+  end
+
+  # Normalize a document. String keys are
+  def self.normalize_document(document)
+    document = (document.try(:dup) || {}).stringify_keys
+    HashWithIndifferentAccess[*document.entries.flat_map { |key, value|
+      value = normalize_document(value) if hashlike?(value)
+      [key, value]
+    }]
+  end
+
+  # Are two documents identical?
+  def self.documents_equal?(a, b)
+    normalize_document(a) == normalize_document(b)
+  end
+
   def attributes_for_export
     extras = {
       'paths' => paths.to_a,
@@ -155,41 +174,52 @@ class Post < ActiveRecord::Base
     return false
   end
 
-  def external_document=(external_document)
-    write_attribute('external_document', external_document)
-    self.external_document_updated_at = Time.now
+  def external_document=(value)
+    if value and not self.class.hashlike?(value)
+      raise ArgumentError, "Document must be hash-like"
+    end
+    value = self.class.normalize_document(value)
+    unless self.class.documents_equal?(value, self.external_document)
+      write_attribute(:external_document, value)
+      self.external_document_updated_at = Time.now
+    end
   end
 
-  def document=(doc)
-    write_attribute('document', doc)
-    self.document_updated_at = Time.now
+  def document=(value)
+    if value and not self.class.hashlike?(value)
+      raise ArgumentError, "Document must be hash-like"
+    end
+    value = self.class.normalize_document(value)
+    unless self.class.documents_equal?(value, self.document)
+      write_attribute(:document, value)
+      self.document_updated_at = Time.now
+    end
   end
 
   # Override getters on serialized attributes with dup so the
   # attributes become dirty when we use the old value on the setter
   def external_document
-    ed = read_attribute('external_document')
-    ed.dup if ed
+    read_attribute(:external_document).try(:dup) || {}
   end
 
   def document
-    d = read_attribute('document')
-    d.dup if d
+    read_attribute(:document).try(:dup) || {}
   end
 
   def protected
-    p = read_attribute('protected')
-    p.dup if p
+    read_attribute(:protected).try(:dup) || {}
   end
 
   def sensitive
-    p = read_attribute('sensitive')
-    p.dup if p
+    read_attribute(:sensitive).try(:dup) || {}
   end
 
   def merged_document
-    doc = (external_document || {}).merge(document || {}).merge((occurrences.empty? ? {} : {'occurrences' => occurrences}))
-    doc.empty? ? {} : doc
+    doc = HashWithIndifferentAccess.new
+    doc.merge!(self.external_document.symbolize_keys) if self.external_document
+    doc.merge!(self.document.symbolize_keys) if self.document
+    doc.merge!(occurrences: self.occurrences) if self.occurrences.present?
+    doc
   end
 
   def uid
@@ -311,7 +341,7 @@ class Post < ActiveRecord::Base
   def update_conflicted
     return if document.nil? or external_document.nil?
     overridden_fields = external_document.keys & document.keys
-    self.conflicted = (external_document_updated_at > document_updated_at and overridden_fields.any?)
+    self.conflicted = (self.external_document_updated_at > self.document_updated_at and overridden_fields.any?)
     true
   end
 

@@ -93,13 +93,13 @@ describe "API v1 posts" do
 
       it "is unable to create a post with protected content" do
         post "/posts/post:a.b.c", :post => {:protected=>{:a => '1'}, :document => {:title => 'document'}}
-        Post.first.protected.should eq nil
+        Post.first.protected.should eq({})
       end
 
       it "is unable to update a post with protected content" do
         p = Post.create!(:uid => 'post:a.b.c', :document => {:title => 'Hello spaceboy'}, :created_by => 1)
         post "/posts/#{p.uid}", :post => {:protected=>{:a => '1'}, :document => {:title => 'Hello pacman'}}
-        Post.first.protected.should eq nil
+        Post.first.protected.should eq({})
       end
 
       it "updates a document" do
@@ -111,7 +111,7 @@ describe "API v1 posts" do
 
       it "can't update a document created by another identity" do
         p = Post.create!(:uid => "post:a.b.c", :created_by => another_identity.id, :document => {:title => 'Hello spaceboy'})
-        post "/posts/#{p.uid}", :post => {:document => '{"title":"Hello nobody"}'}
+        post "/posts/#{p.uid}", :post => {:document => {:title => 'Hello nobody'}}
         last_response.status.should eq 403
       end
 

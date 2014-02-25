@@ -6,7 +6,7 @@ class DocumentValidator < ActiveModel::Validator
 
   def validate_field(record, field)
     value = record.send(field)
-    if value.present? && value.class != Hash
+    unless Post.hashlike?(value)
       record.errors[:base] << "The `#{field}` must be a hash."
     end
   end

@@ -179,11 +179,11 @@ describe Post do
       end
 
       it "reads from the cache" do
-        article.document = 'sentinel'
+        article.document = {'key' => 'sentinel'}
         $memcached.set(article.cache_key, article.attributes.to_json)
 
         posts = Post.cached_find_all_by_uid([Pebbles::Uid.cache_key(article.uid)])
-        posts.first.document.should eq 'sentinel'
+        posts.first.document.should eq({'key' => 'sentinel'})
       end
 
       it "respects order in the request" do
@@ -341,6 +341,28 @@ describe Post do
     end
 
     describe 'timestamps' do
+      it "updating document with no changes does not affect timestamp" do
+        previous_update = press_release.document_updated_at
+        previous_sync = press_release.external_document_updated_at
+
+        press_release.document = {}
+        press_release.save!
+
+        press_release.document_updated_at.should eq previous_update
+        press_release.external_document_updated_at.should eq previous_sync
+      end
+
+      it "updating external document with no changes does not affect timestamp" do
+        previous_update = press_release.document_updated_at
+        previous_sync = press_release.external_document_updated_at
+
+        press_release.external_document = press_release.external_document.dup
+        press_release.save!
+
+        press_release.document_updated_at.should eq previous_update
+        press_release.external_document_updated_at.should eq previous_sync
+      end
+
       it "updating document changes its timestamp, but not external document's timestamp" do
         previous_update = press_release.document_updated_at
         previous_sync = press_release.external_document_updated_at
