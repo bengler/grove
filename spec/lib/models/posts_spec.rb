@@ -401,6 +401,11 @@ describe Post do
         post = Post.create!(press_release_attributes.merge(document: {cause: 'mining accident'}))
         post.merged_document['observed'].should eq 'explosion'
       end
+
+      it 'preserves document keys that are the same as external document' do
+        press_release.document = press_release.external_document
+        press_release.document.empty?.should eq true
+      end
     end
 
     context "with a newer sync than document" do

@@ -190,6 +190,11 @@ class Post < ActiveRecord::Base
       raise ArgumentError, "Document must be hash-like"
     end
     value = self.class.normalize_document(value)
+    if self.external_document
+      value.reject! do |k, v|
+        self.external_document[k] == v
+      end
+    end
     unless self.class.documents_equal?(value, self.document)
       write_attribute(:document, value)
       self.document_updated_at = Time.now
