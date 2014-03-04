@@ -74,8 +74,10 @@ GEM
       map (>= 5.1.0)
     map (6.2.0)
     memcache_mock (0.0.11)
+    mini_portile (0.5.2)
     multi_json (1.8.4)
-    nokogiri (1.5.11)
+    nokogiri (1.6.1)
+      mini_portile (~> 0.5.0)
     pathbuilder (0.0.2)
     pebblebed (0.1.3)
       activesupport
@@ -108,8 +110,8 @@ GEM
     rspec-expectations (2.14.0)
       diff-lcs (>= 1.1.3, < 2.0)
     rspec-mocks (2.14.2)
-    sanitize (2.0.3)
-      nokogiri (>= 1.4.4, < 1.6)
+    sanitize (2.1.0)
+      nokogiri (>= 1.4.4)
     servolux (0.10.0)
     simplecov (0.6.4)
       multi_json (~> 1.0)
@@ -155,6 +157,7 @@ DEPENDENCIES
   dalli
   main
   memcache_mock
+  nokogiri (~> 1.6.1)
   pebblebed (>= 0.1.0)
   pebbles-cors!
   pebbles-path (>= 0.0.3)
@@ -166,7 +169,7 @@ DEPENDENCIES
   rack-test
   rake
   rspec (~> 2.8)
-  sanitize
+  sanitize (~> 2.1.0)
   servolux
   simplecov
   sinatra

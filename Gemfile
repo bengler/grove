@@ -13,13 +13,14 @@ gem 'pebbles-cors', github: 'bengler/pebbles-cors'
 gem 'dalli'
 gem 'ts_vector_tags'
 gem 'rake'
-gem 'sanitize'
+gem 'sanitize', '~> 2.1.0'
 gem 'curb'
 gem 'pebbles-path', '>=0.0.3'
 gem 'pebbles-uid'
 gem 'servolux'
 gem 'main'
 gem "memcache_mock"
+gem 'nokogiri', '~> 1.6.1'
 
 # Because of a bug in rack-protection (https://github.com/rkh/rack-protection/commit/a91810fa) that affects
 # cors-requests we'll need to get rack-protection from github
