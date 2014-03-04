@@ -5,6 +5,15 @@ GIT
     bengler_test_helper (0.0.5)
 
 GIT
+  remote: git://github.com/bengler/pebbles-cors.git
+  revision: b6f4820f2633ddecda25ea287923233db2f8119e
+  specs:
+    pebbles-cors (0.1.1)
+      dalli
+      pebblebed
+      rack
+
+GIT
   remote: git://github.com/rack/rack-contrib.git
   revision: 451f029857d655c4a37012564eb49665d2f9313a
   specs:
@@ -16,15 +25,6 @@ GIT
   revision: 4a771b640d70dc1acc54b93e654537a5efec0491
   specs:
     rack-protection (1.2.0)
-      rack
-
-GIT
-  remote: git@github.com:bengler/pebbles-cors.git
-  revision: b6f4820f2633ddecda25ea287923233db2f8119e
-  specs:
-    pebbles-cors (0.1.1)
-      dalli
-      pebblebed
       rack
 
 GEM
