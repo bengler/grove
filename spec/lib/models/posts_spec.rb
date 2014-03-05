@@ -279,7 +279,7 @@ describe Post do
 
       specify "are accessible to god" do
         article.visible_to?(zeus).should eq true
-        Post.with_restrictions(zeus).size.should eq 1
+        Post.with_restrictions(zeus).count.should eq 1
       end
     end
 

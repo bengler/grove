@@ -16,11 +16,11 @@ class Post < ActiveRecord::Base
 
   validate :canonical_path_must_be_valid
   validates_with DocumentValidator
-  validates_format_of :klass, :with => /^post(\.|$)/
+  validates_format_of :klass, :with => /\Apost(\.|\z)/
   # TODO: Remove '.' from allowed characters in external_id when parlor
   # has been updated
   validates_format_of :external_id,
-    :with => /^[a-zA-Z_-]/,
+    :with => /\A[a-zA-Z_-]/,
     :if => lambda { |record| !record.external_id.nil? },
     :message => "must start with a non-digit character"
   before_validation :assign_realm, :set_default_klass
@@ -74,7 +74,7 @@ class Post < ActiveRecord::Base
 
   # FIXME: In order to support the "deleted" filter, queries must be performed with default scope disabled.
   scope :filtered_by, lambda { |filters|
-    scope = relation
+    scope = all
     scope = scope.where("not deleted") unless filters['deleted'] == 'include'
     scope = scope.where("posts.created_at > ?", Time.parse(filters['created_after'])) if filters['created_after']
     scope = scope.where("posts.created_at < ?", Time.parse(filters['created_before'])) if filters['created_before']
@@ -95,19 +95,21 @@ class Post < ActiveRecord::Base
     scope
   }
 
-  scope :with_restrictions, lambda { |identity|
-    scope = relation
-    if !identity || !identity.respond_to?(:id)
-      scope = scope.where("not restricted and not deleted and published")
-    elsif !identity.god
-      scope = scope.
+  # Scope search to restrict posts visible to an identity.
+  def self.with_restrictions(identity)
+    if identity.nil? or not identity.respond_to?(:id)
+      where({restricted: false, deleted: false, published: true})
+    else
+      if identity.god
+        all
+      else
         joins(:locations).
-        joins("left outer join group_locations on group_locations.location_id = locations.id").
-        joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{identity.id}").
-        where(['(not restricted and not deleted and published) or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
+          joins("left outer join group_locations on group_locations.location_id = locations.id").
+          joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{identity.id}").
+          where(['(not restricted and not deleted and published) or created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
+      end
     end
-    scope
-  }
+  end
 
   def attributes_for_export
     extras = {

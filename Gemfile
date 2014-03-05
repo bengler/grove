@@ -2,9 +2,10 @@ source 'https://rubygems.org'
 
 gem 'sinatra'
 gem 'sinatra-contrib'
-gem 'sinatra-activerecord'
+gem 'sinatra-activerecord', '~> 1.4.0'
 gem 'rack-contrib', :git => 'git://github.com/rack/rack-contrib.git'
-gem 'activerecord', :require => 'active_record'
+gem 'activerecord', '~> 4.0', require: 'active_record'
+gem 'rails-observers', '~> 0.1', require: false
 gem 'pg'
 gem 'yajl-ruby', :require => "yajl"
 gem 'petroglyph'
@@ -29,7 +30,6 @@ gem 'thor', '~> 0.19.1'
 gem 'rack-protection', :git => 'git://github.com/rkh/rack-protection.git'
 
 group :development, :test do
-  gem 'bengler_test_helper', :git => "git://github.com/bengler/bengler_test_helper.git", :require => false
   gem 'rspec', '~> 2.8'
   # a monkeypatch in rack 1.3.4 causes :WFKV_ to be declared twice
   # so to silence the warning, adding this line until we upgrade to

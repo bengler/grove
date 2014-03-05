@@ -39,7 +39,10 @@ describe RiverNotifications do
         arg[:attributes].should_not be nil
         arg[:attributes]['version'].should_not be nil
         arg[:changed_attributes][:published].should eq [false, true]
-        arg[:changed_attributes][:document].should eq [{:text=>"blipp"}, {:text=>"jumped over the lazy dog"}]
+        arg[:changed_attributes][:document].should eq [
+          {'text' => "blipp"},
+          {'text' => "jumped over the lazy dog"}
+        ]
       end
       p.save!
     end
@@ -54,7 +57,10 @@ describe RiverNotifications do
         arg[:uid].should_not be nil
         arg[:attributes].should_not be nil
         arg[:attributes]['version'].should_not be nil
-        arg[:changed_attributes][:document].should eq [{:text=>"blipp"}, {:text=>"jumped over the lazy dog"}]
+        arg[:changed_attributes][:document].should eq [
+          {'text' => "blipp"},
+          {'text' => "jumped over the lazy dog"}
+        ]
       end
       p.save!
     end

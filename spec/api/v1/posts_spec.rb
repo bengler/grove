@@ -18,14 +18,14 @@ describe "API v1 posts" do
       Post.create!(:uid => "post:a.b.c", :created_by => another_identity.id, :document => {'text' => 'xyzzy'}, :restricted => true)
       get "/posts/post:a.b.c"
       result = JSON.parse(last_response.body)['posts']
-      result.size.should eq 0
+      result.should be_empty
     end
 
     it "cannot read unpublished documents" do
       Post.create!(:uid => "post:a.b.c", :created_by => another_identity.id, :document => {'text' => 'xyzzy'}, :restricted => false, :published => false)
       get "/posts/post:a.b.c"
       result = JSON.parse(last_response.body)['posts']
-      result.size.should eq 0
+      result.should be_empty
     end
 
     it "cannot read the sensitive field" do
@@ -873,9 +873,9 @@ describe "API v1 posts" do
     end
 
     describe "patching occurrences" do
-      let(:now) { Time.new(2012, 1, 1, 11, 11, 11) }
-      let(:soft_deadline) { Time.new(2012, 2, 7, 18, 28, 18) }
-      let(:hard_deadline) { Time.new(2012, 3, 14, 15, 9, 26) }
+      let(:now) { Time.new(2012, 1, 1, 11, 11, 11, '+00:00') }
+      let(:soft_deadline) { Time.new(2012, 2, 7, 18, 28, 18, '+00:00') }
+      let(:hard_deadline) { Time.new(2012, 3, 14, 15, 9, 26, '+00:00') }
 
       describe "POST /posts/:uid/occurrences/:event" do
         it "creates an occurrence" do
@@ -883,7 +883,7 @@ describe "API v1 posts" do
           post "/posts/#{p.uid}/occurrences/due", :at => soft_deadline
 
           p.reload
-          p.occurrences['due'].should eq([soft_deadline])
+          p.occurrences['due'].map(&:utc).should eq([soft_deadline.utc])
         end
 
         it "creates multiple occurrences" do
@@ -975,20 +975,20 @@ describe "API v1 posts" do
       result.size.should eq 1
     end
 
-    it "can update a document created by another identity without modifying created_by field" do
-      p = Post.create!(:uid => "post:a.b.c", :created_by => another_identity, :document => {'text' => "Hello spaceboy"})
+    it "does not modify created_by when updating a document" do
+      p = Post.create!(:uid => "post:a.b.c", :created_by => another_identity.id, :document => {'text' => "Hello spaceboy"})
       post "/posts/#{p.uid}", :post => {:document => {'text' => "hello nobody"}}
       last_response.status.should eq 200
       result = JSON.parse(last_response.body)['post']
-      result['created_by'].should eq 1
+      result['created_by'].should eq another_identity.id
     end
 
     it "can update timestamps" do
       p = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => 1)
-      new_time = Time.now-60000
+      new_time = Time.new(2012, 1, 1, 11, 11, 11, '+00:00')
       post "/posts/#{p.uid}", :post => {:document => {'text' => '2'}, :created_at => new_time}
       last_response.status.should eq 200
-      Time.parse(JSON.parse(last_response.body)['post']['created_at']).to_s.should eq new_time.to_s
+      Time.parse(JSON.parse(last_response.body)['post']['created_at']).utc.should eq new_time.utc
     end
 
     it "is able to create a post on behalf of someone else" do

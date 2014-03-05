@@ -319,7 +319,7 @@ class GroveV1 < Sinatra::Base
         @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
         pg :posts, :locals => {:posts => @posts, :pagination => @pagination}
       else
-	# Retrieve a single specific post.
+        # Retrieve a single specific post.
         @post = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params).first
         halt 404, "No such post" unless @post
         halt 403, "Forbidden" if !@post.published && !['include', 'only'].include?(params[:unpublished])

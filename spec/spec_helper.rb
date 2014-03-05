@@ -22,11 +22,6 @@ VCR.configure do |c|
   c.hook_into :webmock 
 end
 
-# Set up logging to log/test.log
-FileUtils.mkdir_p('log')
-LOGGER = Logger.new(File.open('log/test.log', 'a'))
-ActiveRecord::Base.logger = LOGGER
-
 set :environment, :test
 
 # Run all examples in a transaction

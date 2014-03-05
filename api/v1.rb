@@ -31,7 +31,9 @@ class GroveV1 < Sinatra::Base
       realm = post.realm || post.canonical_path.split('.').first
       return yield if current_identity.try(:god) && current_identity.realm == realm
 
-      if post.protected_changed?
+      if post.protected_changed? and not post.new_record?
+        realm = post.realm || post.canonical_path.split('.').first
+        return yield if current_identity && current_identity.god && current_identity.realm == realm
         halt 403, "You are not allowed to #{action} #{post.uid}. Reason: Only gods may touch the protected field."
       end
       if settings.respond_to?(:disable_callbacks) && settings.disable_callbacks
