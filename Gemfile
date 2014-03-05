@@ -18,6 +18,7 @@ gem 'sanitize', '~> 2.1.0'
 gem 'curb'
 gem 'pebbles-path', '>=0.0.3'
 gem 'pebbles-uid'
+gem 'pebbles-river', '~> 0.1'
 gem 'servolux'
 gem 'main'
 gem "memcache_mock"

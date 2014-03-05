@@ -73,8 +73,9 @@ GEM
       map (>= 5.1.0)
     map (6.2.0)
     memcache_mock (0.0.11)
+    mercenary (0.3.4)
     mini_portile (0.6.0)
-    minitest (5.3.5)
+    minitest (5.4.1)
     multi_json (1.10.1)
     nokogiri (1.6.3.1)
       mini_portile (= 0.6.0)
@@ -91,6 +92,12 @@ GEM
       yajl-ruby
     pebbles-path (0.0.3)
       pebbles-uid (>= 0.0.6)
+    pebbles-river (0.1.6)
+      activesupport (>= 3.0)
+      bunny (~> 1.4.0)
+      mercenary (~> 0.3.3)
+      pebblebed (>= 0.2.2)
+      servolux (~> 0.10)
     pebbles-uid (0.0.17)
     petroglyph (0.0.7)
       tilt
@@ -139,7 +146,7 @@ GEM
     tilt (1.4.1)
     timecop (0.3.5)
     ts_vector_tags (0.0.10)
-    tzinfo (1.2.1)
+    tzinfo (1.2.2)
       thread_safe (~> 0.1)
     unicorn (4.8.3)
       kgio (~> 2.6)
@@ -166,6 +173,7 @@ DEPENDENCIES
   pebblebed (>= 0.2.3)
   pebbles-cors!
   pebbles-path (>= 0.0.3)
+  pebbles-river (~> 0.1)
   pebbles-uid
   petroglyph
   pg

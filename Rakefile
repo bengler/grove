@@ -21,7 +21,7 @@ namespace :bagera do
 
     LOGGER.info "Beginning symlink/import process for #{Post.where(:klass => 'post.event').count} events."
 
-    river = Pebblebed::River.new
+    river = Pebbles::River::River.new
     Post.where(:klass => 'post.event').find_each do |post|
       begin
         river.publish(:event => 'create', :uid => post.uid, :attributes => post.attributes.update('document' => post.merged_document))
@@ -43,7 +43,7 @@ namespace :river do
 
     LOGGER ||= Logger.new(STDOUT)
 
-    river = Pebblebed::River.new
+    river = Pebbles::River::River.new
     scope = Post.where(:restricted => false)
     scope = scope.where(:realm => args[:realm]) if args[:realm]
     scope = scope.where(:klass => args[:klass]) if args[:klass]
