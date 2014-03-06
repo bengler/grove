@@ -49,7 +49,21 @@ class GroveV1 < Sinatra::Base
   # @status 403 Forbidden. This is not your post, and you are not god.
 
   post "/posts/:uid" do |uid|
-    save_post_with_data_race_protection(uid)
+    @post = save_post_with_data_race_protection(uid, params[:post])
+
+    # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
+    pg :post, :locals => {:mypost => @post}
+  end
+
+  put "/posts/batch" do
+    @posts = []
+    if (posts = params[:posts])
+      posts.each do |post|
+        @posts.push(save_post_with_data_race_protection(post['uid'], post['post']))
+      end
+    end
+
+    pg :posts, locals: {posts: @posts, pagination: nil}
   end
 
   # @apidoc
@@ -77,13 +91,16 @@ class GroveV1 < Sinatra::Base
   # @status 403 Forbidden. This is not your post, and you are not god.
 
   put "/posts/:uid" do |uid|
-    save_post_with_data_race_protection(uid, :only_updates=>true)
+    @post = save_post_with_data_race_protection(uid, params[:post], :only_updates => true)
+
+    # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
+    pg :post, :locals => {:mypost => @post}
   end
 
   # Will save_post and retry once if a data race gets in our way.
-  def save_post_with_data_race_protection(uid, opts={})
+  def save_post_with_data_race_protection(uid, attributes, opts = {})
     begin
-      save_post(uid, opts)
+      save_post(uid, attributes, opts)
     rescue ActiveRecord::RecordNotUnique => e
       # Handles uniqueness violations in the case of a data-race
       # Reraise unless uniqueness violation
@@ -92,7 +109,7 @@ class GroveV1 < Sinatra::Base
       sleep(rand/2)
       # Try again once
       begin
-        save_post(uid, opts)
+        save_post(uid, attributes, opts)
       rescue ActiveRecord::RecordNotUnique => e
         LOGGER.exception(e) if LOGGER.respond_to?(:exception)
         # We failed again. This must be a write storm.
@@ -101,11 +118,12 @@ class GroveV1 < Sinatra::Base
     end
   end
 
-  def save_post(uid, opts={})
+  def save_post(uid, attributes, opts = {})
     require_identity
 
-    attributes = params[:post]
     halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless attributes
+
+    @post = nil
 
     # If an external_id is submitted this is considered a sync with an external system.
     # external_id must be unique across a single realm. If there is a post with the
@@ -153,7 +171,7 @@ class GroveV1 < Sinatra::Base
       end
     end
 
-    pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
+    @post
   end
 
 

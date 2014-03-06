@@ -42,6 +42,10 @@ group :development, :test do
   gem 'approvals'
 end
 
+group :test do
+  gem 'rspec-partial-hash'
+end
+
 group :production do
   gem 'airbrake', '~> 3.1.4', :require => false
   gem 'unicorn', '~> 4.1.1'

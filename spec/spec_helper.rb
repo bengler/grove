@@ -8,6 +8,9 @@ $:.unshift(File.dirname(File.dirname(__FILE__)))
 
 ENV["RACK_ENV"] = "test"
 
+require 'bundler'
+Bundler.require(:test)
+
 require 'config/environment'
 
 require 'api/v1'

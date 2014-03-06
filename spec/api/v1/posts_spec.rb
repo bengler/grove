@@ -394,6 +394,42 @@ describe "API v1 posts" do
         end
       end
 
+      describe 'PUT /posts/batch' do
+
+        let :post1 do
+          Post.create!(
+            uid: "post:a.b.c",
+            created_by: 1,
+            document: {text: 'xyzzy'})
+        end
+
+        let :post2 do
+          Post.create!(
+            uid: "post:a.b.c",
+            created_by: 1,
+            document: {text: 'xyzzy'})
+        end
+
+        it 'updates multiple documents' do
+          put '/posts/batch', posts: [
+            {uid: post1.uid, post: {document: {text: 'one'}}},
+            {uid: post2.uid, post: {document: {text: 'two'}}}
+          ]
+          last_response.status.should eq 200
+
+          response = JSON.parse(last_response.body)
+
+          response['posts'].should be_a_kind_of(Array)
+          response['posts'].length.should eq 2
+
+          response['posts'][0]['post'].should include_partial_hash({
+            'uid' => post1.uid, 'document' => {'text' => 'one'}})
+          response['posts'][1]['post'].should include_partial_hash({
+            'uid' => post2.uid, 'document' => {'text' => 'two'}})
+        end
+
+      end
+
       describe "collection queries" do
         it "retrieves a collection of documents" do
           10.times do |i|
