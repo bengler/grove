@@ -228,6 +228,7 @@ describe Post do
     let(:john_q_public) { DeepStruct.wrap({:id => 1, :god => false, :realm => 'area51'}) }
     let(:alice) { DeepStruct.wrap({:id => 2, :god => false, :realm => 'area51'}) }
     let(:zeus) { DeepStruct.wrap({:id => 1337, :god => true, :realm => 'area51'}) }
+    let(:false_god) { DeepStruct.wrap({:id => 1337, :god => true, :realm => 'area52'}) }
 
     context "public documents" do
       before(:each) do
@@ -277,9 +278,14 @@ describe Post do
         Post.with_restrictions(alice).size.should eq 1
       end
 
-      specify "are accessible to god" do
+      specify "are accessible to god in same realm" do
         article.visible_to?(zeus).should eq true
         Post.with_restrictions(zeus).count.should eq 1
+      end
+
+      specify "are inaccessible to god in wrong realm" do
+        article.visible_to?(false_god).should eq false
+        Post.with_restrictions(false_god).count.should eq 0
       end
     end
 

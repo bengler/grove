@@ -101,7 +101,7 @@ class Post < ActiveRecord::Base
       where({restricted: false, deleted: false, published: true})
     else
       if identity.god
-        all
+        where(realm: identity.realm)
       else
         joins(:locations).
           joins("left outer join group_locations on group_locations.location_id = locations.id").
@@ -125,7 +125,8 @@ class Post < ActiveRecord::Base
   def visible_to?(identity)
     return true if !restricted && !deleted && published
     return false if nobody?(identity)
-    identity.god || identity.id == created_by
+    return true if identity.god and identity.realm == self.realm
+    identity.id == created_by
   end
 
   def nobody?(identity)
