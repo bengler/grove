@@ -172,7 +172,7 @@ class Post < ActiveRecord::Base
 
   def merged_document
     doc = (external_document || {}).merge(document || {}).merge((occurrences.empty? ? {} : {'occurrences' => occurrences}))
-    doc.empty? ? nil : doc
+    doc.empty? ? {} : doc
   end
 
   def uid

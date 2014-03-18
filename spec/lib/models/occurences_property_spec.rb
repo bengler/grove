@@ -20,7 +20,7 @@ describe Post::OccurrencesAccessor do
   it "ignores occurrences if there are none" do
     p = Post.create!(:uid => "post:a.b.c")
     q = Post.find(p.id)
-    q.merged_document.should eq(nil)
+    q.merged_document.should eq({})
   end
 
   it "puts occurrences into the merged document" do
