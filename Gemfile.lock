@@ -22,9 +22,9 @@ GIT
 
 GIT
   remote: git://github.com/rkh/rack-protection.git
-  revision: 4a771b640d70dc1acc54b93e654537a5efec0491
+  revision: eddcc6dae781e995a0c594eeafe0d111fe68ac62
   specs:
-    rack-protection (1.2.0)
+    rack-protection (1.5.2)
       rack
 
 GEM
