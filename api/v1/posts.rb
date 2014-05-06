@@ -367,6 +367,49 @@ class GroveV1 < Sinatra::Base
   end
 
   # @apidoc
+  # Find all tags of documents that match the given UID. Returns a hash of tags
+  # and occurrence counts. The resulting tag list will be a superset of all tags
+  # of the matched documents.
+  #
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/:uid/tags
+  # @http GET
+  # @example /api/grove/v1/posts/post:acme.invoices.*$*/tags
+  # @optional [String] uid A wildcard uid query (e.g. "*:acme.invoices.*").
+  # @optional [String] tags Constrain query by tags. Either a comma separated list of required tags or a
+  #   boolean expression like 'paris & !texas' or 'closed & (failed | pending)'.
+  # @optional [String] unpublished If set to 'include', accessible unpublished posts will be counted too.
+  # @optional [String] deleted If set to 'include', accessible deleted posts will be counted too.
+  # @optional [Integer] created_by Only documents created by this checkpoint identity will be counted.
+  # @optional [String] created_after Only documents created after this date (yyyy.mm.dd) will be counted.
+  # @optional [String] created_before Only documents created before this date (yyyy.mm.dd) will be returned.
+  # @optional [Integer] limit The maximum amount of posts to return.
+  # @optional [Integer] offset The index of the first result to return (for pagination).
+  # @status 200 JSON.
+  # @status 404 No such post.
+  # @status 403 Forbidden (the post is restricted, and you are not invited!)
+  get "/posts/:uid/tags" do |uid|
+    filter_sql = Post.unscoped.
+      by_uid(uid).
+      with_restrictions(current_identity).
+      filtered_by(params).
+      except(:select).
+      select('tags_vector').to_sql
+
+    relation = Post.arel_table.
+      project(:word, :ndoc).
+      from(Arel::Nodes::NamedFunction.new(:ts_stat, [filter_sql]))
+
+    counts = {}
+    Post.connection.select_rows(relation.to_sql).each do |row|
+      counts[row.first] = row[1].to_i
+    end
+
+    halt 200, {'Content-Type' => 'application/json'},
+      {:tags => counts}.to_json
+  end
+
+  # @apidoc
   # Touch a post (updating the updated_at field)
   #
   # @category Grove/Posts

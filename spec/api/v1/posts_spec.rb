@@ -10,7 +10,6 @@ describe "API v1 posts" do
     GroveV1
   end
 
-
   context "with no current identity" do
     before(:each) { guest! }
 
@@ -785,6 +784,109 @@ describe "API v1 posts" do
           JSON.parse(last_response.body)['count'].should eq 3
         end
       end
+    end
+
+    describe "GET /posts/:uid/tags" do
+
+      before do
+        Post.create!(
+          uid: "post:a.b.c",
+          document: {text: "blah"},
+          tags: %w(one))
+        Post.create!(
+          uid: "post:a.b.c",
+          document: {text: "blah"},
+          tags: %w(one two))
+        Post.create!(
+          uid: "post:a.b.c",
+          document: {text: "blah"},
+          tags: %w(three))
+      end
+
+      context 'no matches' do
+        it "returns empty hash" do
+          get "/posts/post:x$*/tags"
+
+          result = JSON.parse(last_response.body)
+          expect(result).to include('tags')
+          expect(result['tags']).to be_empty
+        end
+      end
+
+      context 'with basic path' do
+        it "returns tags" do
+          get "/posts/post:a.b.*$*/tags"
+
+          result = JSON.parse(last_response.body)
+          expect(result).to include('tags')
+          expect(result['tags']).to eq({
+            'one' => 2,
+            'two' => 1,
+            'three' => 1,
+          })
+        end
+      end
+
+      context 'with single tag' do
+        it "returns tags" do
+          get "/posts/post:a.b.*$*/tags", {tags: "one"}
+
+          result = JSON.parse(last_response.body)
+          expect(result['tags']).to eq({
+            'one' => 2,
+            'two' => 1,
+          })
+        end
+      end
+
+      context 'with an "and" tag query' do
+        it "returns tags" do
+          get "/posts/post:a.b.*$*/tags", {tags: "one & two"}
+
+          result = JSON.parse(last_response.body)
+          expect(result['tags']).to eq({
+            'one' => 1,
+            'two' => 1
+          })
+        end
+      end
+
+      context 'with a list of tags' do
+        it "returns tags" do
+          get "/posts/post:a.b.*$*/tags", {tags: "one,two"}
+
+          result = JSON.parse(last_response.body)
+          expect(result['tags']).to eq({
+            'one' => 1,
+            'two' => 1
+          })
+        end
+      end
+
+      context 'with a list of tags as an array' do
+        it "returns tags" do
+          get "/posts/post:a.b.*$*/tags", {tags: %w(one two)}
+
+          result = JSON.parse(last_response.body)
+          expect(result['tags']).to eq({
+            'one' => 1,
+            'two' => 1
+          })
+        end
+      end
+
+      context 'with an "or" tag query' do
+        it "returns tags" do
+          get "/posts/post:a.b.*$*/tags", {tags: "one | two"}
+
+          result = JSON.parse(last_response.body)
+          expect(result['tags']).to eq({
+            'one' => 2,
+            'two' => 1
+          })
+        end
+      end
+
     end
 
     describe "POST /posts/:uid/paths/:path" do
