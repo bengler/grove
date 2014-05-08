@@ -181,7 +181,7 @@ class Post < ActiveRecord::Base
 
   def uid=(value)
     self.klass, self.canonical_path, _oid = Pebbles::Uid.parse(value)
-    raise ArgumentError, "Do not assign oid. It is managed by the model. (omit '...$#{_oid}' from uid)" if _oid != '' && _oid != self.id
+    raise ArgumentError, "Do not assign oid. It is managed by the model. (omit '...$#{_oid}' from uid)" if _oid != '' && _oid != self.id.to_s
   end
 
   def self.find_by_uid(uid)
