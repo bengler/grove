@@ -313,6 +313,24 @@ describe "API v1 posts" do
           end
         end
 
+        context 'with ?raw=true' do
+          let :post do
+            Post.create!(
+              uid: "post:a.b.c",
+              created_by: 1,
+              document: {title: 'Smurf'},
+              external_document: {smurf_color: 'blue'})
+          end
+
+          it 'returns raw post' do
+            get "/posts/#{post.uid}", unpublished: :include, raw: true
+
+            result = JSON.parse(last_response.body)['post']
+            result['document'].should eq({'title' => 'Smurf'})
+            result['external_document'].should eq({'smurf_color' => 'blue'})
+          end
+        end
+
         describe "checking editable status in response" do
           it "returns true if identity is creator" do
             p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'})

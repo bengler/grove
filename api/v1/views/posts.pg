@@ -1,6 +1,8 @@
+raw = self.raw if self.respond_to?(:raw)
+
 collection :posts => posts do |post|
   if post
-    partial :post, :mypost => post
+    partial :post, :mypost => post, :raw => raw
   else
     node :post => nil
   end

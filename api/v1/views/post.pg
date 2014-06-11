@@ -1,7 +1,15 @@
+raw = self.raw if self.respond_to?(:raw)
+
 node :post => mypost do
   attributes :uid, :created_by, :created_at, :updated_at, :deleted, :tags, :external_id, :paths, :restricted, :published, :conflicted, :protected
   node :id => mypost.uid
-  node :document => mypost.merged_document
+  if raw
+    node document: mypost.document
+    node external_document: mypost.external_document
+    node occurrences: mypost.occurrences
+  else
+    node document: mypost.merged_document
+  end
   node :may_edit => mypost.editable_by?(current_identity)
   node :in_access_group => mypost.privileged_access_by?(current_identity)
   if mypost.editable_by?(current_identity)

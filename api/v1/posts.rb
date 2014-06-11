@@ -276,11 +276,14 @@ class GroveV1 < Sinatra::Base
   # @optional [Integer] offset The index of the first result to return (for pagination).
   # @optional [String] sort_by Name of field to sort by. Defaults to 'created_at'.
   # @optional [String] direction Direction of sort. Defaults to 'desc'.
+  # @optional [Boolean] raw If `true`, does not return the merged document, but instead
+  #   provides the raw `document`, `external_document` and `occurrences` separately.
   # @status 200 JSON.
   # @status 404 No such post.
   # @status 403 Forbidden (the post is restricted, and you are not invited!)
 
   get "/posts/:uid" do |uid|
+    @raw = params[:raw] == 'true' or params[:raw] == true
     if params[:external_id]
       @post = Post.unscoped.filtered_by(params)
       realm = uid.split(':')[1] ? (uid.split(':')[1].split('.')[0] != '*' ? uid.split(':')[1].split('.')[0] : nil) : nil
@@ -290,7 +293,7 @@ class GroveV1 < Sinatra::Base
       @post = @post.find_by_external_id(params[:external_id])
       halt 404, "No such post" unless @post
       halt 403, "Forbidden" unless @post.visible_to?(current_identity)
-      pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
+      pg :post, :locals => {:mypost => @post, raw: @raw} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
     else
       begin
         query = Pebbles::Uid.query(uid)
@@ -305,7 +308,7 @@ class GroveV1 < Sinatra::Base
         @posts = query.terms.map do |term|
           Post.unscoped.by_uid(term).filtered_by(params).with_restrictions(current_identity).first
         end
-        pg :posts, :locals => {:posts => @posts, :pagination => nil}
+        pg :posts, :locals => {:posts => @posts, :pagination => nil, raw: @raw}
       elsif query.collection?
         sort_field = 'created_at'
         if params['sort_by']
@@ -324,7 +327,7 @@ class GroveV1 < Sinatra::Base
           @posts = @posts.select("distinct posts.*")
         end
         @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
-        pg :posts, :locals => {:posts => @posts, :pagination => @pagination}
+        pg :posts, :locals => {:posts => @posts, :pagination => @pagination, raw: @raw}
       else
         # Retrieve a single specific post.
         @post = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params).first
@@ -332,7 +335,7 @@ class GroveV1 < Sinatra::Base
         halt 403, "Forbidden" if !@post.published && !['include', 'only'].include?(params[:unpublished])
         # TODO: Teach .visible_to? about PSM so we can go back to using cached results
         #halt 403, "Forbidden" unless @post.visible_to?(current_identity)
-        pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
+        pg :post, :locals => {:mypost => @post, raw: @raw} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
       end
     end
   end
