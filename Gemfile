@@ -8,7 +8,7 @@ gem 'activerecord', :require => 'active_record'
 gem 'pg'
 gem 'yajl-ruby', :require => "yajl"
 gem 'petroglyph'
-gem 'pebblebed', '>=0.1.0'
+gem 'pebblebed', '>=0.2'
 gem 'pebbles-cors', github: 'bengler/pebbles-cors'
 gem 'dalli'
 gem 'ts_vector_tags'
