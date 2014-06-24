@@ -62,7 +62,7 @@ GEM
     dalli (2.7.0)
     deepstruct (0.0.7)
     diff-lcs (1.2.4)
-    eventmachine (0.12.10)
+    eventmachine (1.0.3)
     fattr (2.2.1)
     futurevalue (0.0.2)
     girl_friday (0.10.0)
