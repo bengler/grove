@@ -282,7 +282,12 @@ class GroveV1 < Sinatra::Base
 
   get "/posts/:uid" do |uid|
     if params[:external_id]
-      @post = Post.unscoped.filtered_by(params).find_by_external_id(params[:external_id])
+      @post = Post.unscoped.filtered_by(params)
+      realm = uid.split(':')[1] ? (uid.split(':')[1].split('.')[0] != '*' ? uid.split(':')[1].split('.')[0] : nil) : nil
+      klass = uid.split(':')[0] unless uid.split(':')[0] == "*"
+      @post = @post.where(:realm => realm) if realm
+      @post = @post.where(:klass => klass) if klass
+      @post = @post.find_by_external_id(params[:external_id])
       halt 404, "No such post" unless @post
       halt 403, "Forbidden" unless @post.visible_to?(current_identity)
       pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5

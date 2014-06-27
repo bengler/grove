@@ -499,6 +499,16 @@ describe "API v1 posts" do
           result['external_id'].should eq external_id
         end
 
+        it "can retrieve a document by external_id and realm and klass" do
+          external_id = "pippi_232323"
+          p = Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {:title => 'Hello spaceboy'}, :external_id => external_id)
+          get "/posts/post:a.*", :external_id => external_id
+          last_response.status.should == 200
+          result = JSON.parse(last_response.body)['post']
+          result['uid'].should eq "post:a.b.c$#{p.id}"
+          result['external_id'].should eq external_id
+        end
+
         it "sorts the result by a specified attribute" do
           time = Time.new(2014, 12, 24)
           post = {
