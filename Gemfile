@@ -8,7 +8,7 @@ gem 'activerecord', :require => 'active_record'
 gem 'pg'
 gem 'yajl-ruby', :require => "yajl"
 gem 'petroglyph'
-gem 'pebblebed', '>=0.1.0'
+gem 'pebblebed', '>=0.2.1'
 gem 'pebbles-cors', github: 'bengler/pebbles-cors'
 gem 'dalli'
 gem 'ts_vector_tags'
@@ -45,5 +45,5 @@ end
 group :production do
   gem 'airbrake', '~> 3.1.4', :require => false
   gem 'rollbar', :require => false
-  gem 'unicorn', '~> 4.1.1'
+  gem 'unicorn'
 end
