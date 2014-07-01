@@ -6,9 +6,9 @@ GIT
 
 GIT
   remote: git://github.com/bengler/pebbles-cors.git
-  revision: b6f4820f2633ddecda25ea287923233db2f8119e
+  revision: 869d6b6540577b8f598dac9263b82c783513243c
   specs:
-    pebbles-cors (0.1.1)
+    pebbles-cors (0.2.2)
       dalli
       pebblebed
       rack
