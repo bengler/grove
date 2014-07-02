@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+
+require_relative '../config/environment'
+
+ActiveRecord::Base.logger.level = Logger::INFO
+
+Grove::CLI::Main.start
