@@ -302,9 +302,9 @@ class GroveV1 < Sinatra::Base
         # TODO: return to using cached results when we have support for it
         # @posts = filter_visible_posts(Post.cached_find_all_by_uid(query.cache_keys))
         # @posts = filter_published(@posts, :unpublished => params['unpublished'])
-        @posts = query.terms.map { |term|
+        @posts = query.terms.map do |term|
           Post.unscoped.by_uid(term).filtered_by(params).with_restrictions(current_identity).first
-        }.compact
+        end
         pg :posts, :locals => {:posts => @posts, :pagination => nil}
       elsif query.collection?
         sort_field = 'created_at'
