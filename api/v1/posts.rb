@@ -242,7 +242,7 @@ class GroveV1 < Sinatra::Base
     scope = scope.occurs_before(Time.parse(spec['to'])) if spec['to']
     direction = spec['order'].try(:downcase) == 'desc' ? 'DESC' : 'ASC'
     scope = scope.order("occurrence_entries.at #{direction}")
-    scope.select("posts.*, occurrence_entries.at")
+    scope
   end
 
   # @apidoc
@@ -316,6 +316,13 @@ class GroveV1 < Sinatra::Base
         @posts = apply_occurrence_scope(@posts, params['occurrence'])
         direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
         @posts = @posts.order("posts.#{sort_field} #{direction}")
+        if params['occurrence']
+          # FIXME: This exposes an unfortunate lack of separation of concerns, but
+          #   this scoping logic was never built for that
+          @posts = @posts.select("posts.*, occurrence_entries.at")
+        else
+          @posts = @posts.select("distinct posts.*")
+        end
         @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
         pg :posts, :locals => {:posts => @posts, :pagination => @pagination}
       else
