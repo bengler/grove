@@ -242,7 +242,7 @@ class GroveV1 < Sinatra::Base
     scope = scope.occurs_before(Time.parse(spec['to'])) if spec['to']
     direction = spec['order'].try(:downcase) == 'desc' ? 'DESC' : 'ASC'
     scope = scope.order("occurrence_entries.at #{direction}")
-    scope
+    scope.select("posts.*, occurrence_entries.at")
   end
 
   # @apidoc

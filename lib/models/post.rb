@@ -34,7 +34,9 @@ class Post < ActiveRecord::Base
   after_update :invalidate_cache
   before_destroy :invalidate_cache
 
-  default_scope where("not deleted")
+  default_scope do
+    where("not deleted")
+  end
 
   serialize :document
   serialize :external_document
@@ -61,7 +63,7 @@ class Post < ActiveRecord::Base
   }
 
   scope :by_occurrence, lambda { |label|
-    select('posts.*').select('occurrence_entries.at').joins(:occurrence_entries).where(:occurrence_entries => {:label => label})
+    joins(:occurrence_entries).where(occurrence_entries: {label: label})
   }
 
   scope :occurs_after, lambda { |timestamp|
