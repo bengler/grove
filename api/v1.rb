@@ -28,9 +28,10 @@ class GroveV1 < Sinatra::Base
 
     # Yields the block if the user is allowed to perform the action to the post
     def check_allowed(action, post, &block)
+      realm = post.realm || post.canonical_path.split('.').first
+      return yield if current_identity.try(:god) && current_identity.realm == realm
+
       if post.protected_changed?
-        realm = post.realm || post.canonical_path.split('.').first
-        return yield if current_identity && current_identity.god && current_identity.realm == realm
         halt 403, "You are not allowed to #{action} #{post.uid}. Reason: Only gods may touch the protected field."
       end
       if settings.respond_to?(:disable_callbacks) && settings.disable_callbacks
