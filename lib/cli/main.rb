@@ -1,3 +1,5 @@
+require_relative 'colorization'
+
 module Grove
   module CLI
 
