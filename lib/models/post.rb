@@ -46,12 +46,21 @@ class Post < ActiveRecord::Base
 
   scope :by_path, ->(path) {
     conditions = Pebbles::Path.to_conditions(path)
-    if conditions.empty?
-      nil
+    if conditions.any?
+      locations = Location.arel_table
+      locations_posts = Arel::Table.new('locations_posts')
+      subquery = locations_posts.project(:post_id).
+        join(locations).on(locations[:id].eq(locations_posts[:location_id]))
+      conditions.each do |column, value|
+        if value.respond_to?(:to_ary)
+          subquery.where(locations[column].in(value))
+        else
+          subquery.where(locations[column].eq(value))
+        end
+      end
+      where(Post.arel_table[:id].in(subquery))
     else
-      select("distinct posts.*").
-        joins(:locations).
-        where(locations: conditions)
+      nil
     end
   }
 
@@ -64,7 +73,7 @@ class Post < ActiveRecord::Base
   }
 
   scope :by_occurrence, lambda { |label|
-    joins(:occurrence_entries).where(occurrence_entries: {label: label})
+    joins(:occurrence_entries).readonly(false).where(occurrence_entries: {label: label})
   }
 
   scope :occurs_after, lambda { |timestamp|

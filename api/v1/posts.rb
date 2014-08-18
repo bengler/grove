@@ -214,7 +214,9 @@ class GroveV1 < Sinatra::Base
       @post = Post.unscoped.joins(:locations).
         joins("left outer join group_locations on group_locations.location_id = locations.id").
         joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{current_identity.id}").
-        where(['group_memberships.identity_id = ?', current_identity.id]).find_by_uid(uid)
+        where(['group_memberships.identity_id = ?', current_identity.id]).
+        readonly(false).
+        find_by_uid(uid)
     end
     if !the_post
       halt 404, "No such post"
