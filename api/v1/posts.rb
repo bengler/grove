@@ -317,7 +317,9 @@ class GroveV1 < Sinatra::Base
           sort_field = params['sort_by'].downcase
           halt 400, "Unknown field #{sort_field}" unless %w(created_at updated_at document_updated_at external_document_updated_at external_document).include? sort_field
         end
-        @posts = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params)
+        @posts = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params).
+          includes(:occurrence_entries).
+          includes(:locations)
         @posts = apply_occurrence_scope(@posts, params['occurrence'])
         direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
         @posts = @posts.order("posts.#{sort_field} #{direction}")
