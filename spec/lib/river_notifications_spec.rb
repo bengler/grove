@@ -17,6 +17,7 @@ describe RiverNotifications do
         arg[:event].should eq :create
         arg[:uid].should_not be nil
         arg[:attributes].should_not be nil
+        arg[:attributes]['version'].should_not be nil
         arg[:changed_attributes].should be nil
       end
       Post.create!(:canonical_path => 'this.that')
@@ -36,6 +37,7 @@ describe RiverNotifications do
         arg[:event].should eq :update
         arg[:uid].should_not be nil
         arg[:attributes].should_not be nil
+        arg[:attributes]['version'].should_not be nil
         arg[:changed_attributes][:published].should eq [false, true]
         arg[:changed_attributes][:document].should eq [{:text=>"blipp"}, {:text=>"jumped over the lazy dog"}]
       end
@@ -51,6 +53,7 @@ describe RiverNotifications do
         arg[:event].should eq :update
         arg[:uid].should_not be nil
         arg[:attributes].should_not be nil
+        arg[:attributes]['version'].should_not be nil
         arg[:changed_attributes][:document].should eq [{:text=>"blipp"}, {:text=>"jumped over the lazy dog"}]
       end
       p.save!

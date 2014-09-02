@@ -110,7 +110,12 @@ class Post < ActiveRecord::Base
   }
 
   def attributes_for_export
-    attributes.update('document' => merged_document).merge('paths' => paths.to_a, 'uid' => uid)
+    extras = {
+      'paths' => paths.to_a,
+      'uid' => uid,
+      'version' => (updated_at.to_f()*1000).to_i
+    }
+    attributes.update('document' => merged_document).merge(extras)
   end
 
   # TODO: This method does not respect access-groups!? This is not a problem since we currently avoid
