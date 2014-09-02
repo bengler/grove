@@ -17,7 +17,7 @@ class Post < ActiveRecord::Base
   validate :canonical_path_must_be_valid
   validates_with DocumentValidator
   validates_format_of :klass, :with => /^post(\.|$)/
-  # TODO: Remove '.' from allowed characters in external_id when parlor 
+  # TODO: Remove '.' from allowed characters in external_id when parlor
   # has been updated
   validates_format_of :external_id,
     :with => /^[a-zA-Z_-]/,
@@ -108,10 +108,6 @@ class Post < ActiveRecord::Base
     end
     scope
   }
-
-  def bling
-    puts "BAM: #{self.attributes}"
-  end
 
   def attributes_for_export
     attributes.update('document' => merged_document).merge('paths' => paths.to_a, 'uid' => uid)
