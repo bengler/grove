@@ -67,4 +67,23 @@ describe Location do
   it "won't accept malformed paths" do
     -> { Location.declare!("some.f@$%&ing.sh*t.characters")}.should raise_error ArgumentError
   end
+
+
+  it "knows who has access" do
+    group_id = 555
+    identity_id = 1
+    random_visitor_id = 2
+
+    accessible_location = Location.declare!('rips.er.tvilsomt')
+    GroupLocation.allow_subtree(group_id, 'rips.er.tvilsomt')
+    accessible_location.accessible_by?(identity_id).should be_false
+
+    GroupMembership.declare!(group_id, identity_id)
+    accessible_location.accessible_by?(identity_id).should be_true
+
+    inaccessible_location = Location.declare!('rips.suger')
+    inaccessible_location.accessible_by?(identity_id).should be_false
+    inaccessible_location.accessible_by?(random_visitor_id).should be_false
+  end
+
  end
