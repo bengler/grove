@@ -1,4 +1,4 @@
-# Defines which locations that have access to restricted content at a certain location
+# Defines which groups that have access to restricted content at a certain location
 # Each entry in the group_locations table grants access to one single location for one particular group.
 # The access semantics of Pebbles is hierarchical, and this class helps maintain all the individual
 # records according to the hierarchy of access modelled by checkpoint.
