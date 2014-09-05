@@ -463,4 +463,19 @@ describe Post do
     end
   end
 
+  describe 'versioning' do
+    it 'assigns version initially' do
+      post = Post.create!(uid: 'post:a.b.c', document: {text: 'foo'})
+      expect(post.version).not_to be_nil
+    end
+
+    it 'increments version on update' do
+      post = Post.create!(uid: 'post:a.b.c', document: {text: 'foo'})
+      version = post.version
+      post.document = {text: 'bar'}
+      post.save!
+      expect(post.version).to be > version
+    end
+  end
+
 end

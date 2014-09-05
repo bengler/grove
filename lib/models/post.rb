@@ -3,7 +3,11 @@ require_relative './post/document_validator'
 require_relative '../cache_key'
 
 class Post < ActiveRecord::Base
+
   class CanonicalPathConflict < StandardError; end
+
+  # Optimistic locking via version column
+  self.locking_column = 'version'
 
   include TsVectorTags
   include CacheKey

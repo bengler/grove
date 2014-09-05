@@ -62,4 +62,8 @@ class GroveV1 < Sinatra::Base
     end
   end
 
+  error ActiveRecord::StaleObjectError do |e|
+    halt 409, "Post has been modified; refetch and try again"
+  end
+
 end

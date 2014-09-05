@@ -1,7 +1,9 @@
 raw = self.raw if self.respond_to?(:raw)
 
 node :post => mypost do
-  attributes :uid, :created_by, :created_at, :updated_at, :deleted, :tags, :external_id, :paths, :restricted, :published, :conflicted, :protected
+  attributes :uid, :created_by, :created_at, :updated_at, :deleted,
+    :tags, :external_id, :paths, :restricted, :published, :conflicted,
+    :protected, :version
   node :id => mypost.uid
   if raw
     node document: mypost.document

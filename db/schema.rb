@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140211194851) do
+ActiveRecord::Schema.define(version: 20140905205824) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -93,6 +93,7 @@ ActiveRecord::Schema.define(version: 20140211194851) do
     t.text      "sensitive"
     t.timestamp "publish_at",                   precision: 6
     t.timestamp "expire_at",                    precision: 6
+    t.integer   "version",                                    default: 1,     null: false
   end
 
   add_index "posts", ["conflicted"], name: "index_posts_on_conflicted", using: :btree
