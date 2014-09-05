@@ -139,6 +139,16 @@ class Post < ActiveRecord::Base
     new_record? || editable_by?(identity)
   end
 
+  def privileged_access_by?(identity)
+    return false if nobody?(identity)
+    return true if (identity.god && identity.realm == self.realm)
+    return true if identity.id == created_by
+    self.locations.each do |location|
+      return true if location.accessible_by?(identity.id)
+    end
+    return false
+  end
+
   def external_document=(external_document)
     write_attribute('external_document', external_document)
     self.external_document_updated_at = Time.now
