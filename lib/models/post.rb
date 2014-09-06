@@ -119,20 +119,6 @@ class Post < ActiveRecord::Base
     value.is_a?(Hash) || (value.respond_to?(:to_h) && !value.is_a?(Array))
   end
 
-  # Normalize a document. String keys are
-  def self.normalize_document(document)
-    document = (document.try(:dup) || {}).stringify_keys
-    HashWithIndifferentAccess[*document.entries.flat_map { |key, value|
-      value = normalize_document(value) if hashlike?(value)
-      [key, value]
-    }]
-  end
-
-  # Are two documents identical?
-  def self.documents_equal?(a, b)
-    normalize_document(a) == normalize_document(b)
-  end
-
   def attributes_for_export
     extras = {
       'paths' => paths.to_a,
@@ -178,8 +164,8 @@ class Post < ActiveRecord::Base
     if value and not self.class.hashlike?(value)
       raise ArgumentError, "Document must be hash-like"
     end
-    value = self.class.normalize_document(value)
-    unless self.class.documents_equal?(value, self.external_document)
+    value = normalize_document(value)
+    unless documents_equal?(value, self.external_document)
       write_attribute(:external_document, value)
       self.external_document_updated_at = Time.now
     end
@@ -189,13 +175,13 @@ class Post < ActiveRecord::Base
     if value and not self.class.hashlike?(value)
       raise ArgumentError, "Document must be hash-like"
     end
-    value = self.class.normalize_document(value)
+    value = normalize_document(value)
     if self.external_document
       value.reject! do |k, v|
         self.external_document[k] == v
       end
     end
-    unless self.class.documents_equal?(value, self.document)
+    unless documents_equal?(value, self.document)
       write_attribute(:document, value)
       self.document_updated_at = Time.now
     end
@@ -378,6 +364,20 @@ class Post < ActiveRecord::Base
   end
 
   private
+
+    # Normalize a document.
+    def normalize_document(document)
+      document = (document.try(:dup) || {}).stringify_keys
+      HashWithIndifferentAccess[*document.entries.flat_map { |key, value|
+        value = normalize_document(value) if self.class.hashlike?(value)
+        [key, value]
+      }]
+    end
+
+    # Are two documents identical?
+    def documents_equal?(a, b)
+      normalize_document(a) == normalize_document(b)
+    end
 
     def ensure_timestamps
       self.document_updated_at ||= Time.now
