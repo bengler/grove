@@ -3,6 +3,15 @@ $:.unshift(File.dirname(__FILE__))
 require 'sinatra/activerecord/rake'
 require_relative 'config/environment'
 
+# TODO: This exists only so CI server will find the task. Change CI
+#   script so we don't need it.
+namespace :db do
+  namespace :test do
+    desc "Prepare test database."
+    task :prepare
+  end
+end
+
 namespace :bagera do
   desc "trigger initial delta migrations"
   task :trigger_delta do
