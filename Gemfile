@@ -1,8 +1,8 @@
 source 'https://rubygems.org'
 
 gem 'sinatra'
-gem 'sinatra-contrib'
-gem 'sinatra-activerecord', '~> 1.4.0'
+gem 'sinatra-contrib', require: false
+gem 'sinatra-activerecord', '~> 2.0'
 gem 'rack-contrib', :git => 'git://github.com/rack/rack-contrib.git'
 gem 'activerecord', '~> 4.0', require: 'active_record'
 gem 'rails-observers', '~> 0.1', require: false

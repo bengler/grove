@@ -1,14 +1,11 @@
 $:.unshift(File.dirname(__FILE__))
 
 require 'sinatra/activerecord/rake'
-
-task :environment do
-  require 'config/environment'
-end
+require_relative 'config/environment'
 
 namespace :bagera do
   desc "trigger initial delta migrations"
-  task :trigger_delta => :environment do
+  task :trigger_delta do
     require 'logger'
 
     LOGGER ||= Logger.new(STDOUT)
@@ -32,7 +29,7 @@ end
 
 namespace :river do
   desc "put all posts into the river with event 'exists'. e.g. bx rake river:put_existing[area51,post.event]"
-  task :put_existing, [:realm, :klass] => :environment do |t, args|
+  task :put_existing, [:realm, :klass] do |t, args|
     require 'logger'
 
     LOGGER ||= Logger.new(STDOUT)
@@ -53,36 +50,5 @@ namespace :river do
         LOGGER.info "Published #{post.uid} to river with 'exists' event."
       end
     end
-  end
-end
-
-
-namespace :db do
-  task :migrate => :environment
-  namespace :test do
-    task :purge => :environment
-    task :load => :environment
-    task :prepare => :environment
-  end
-  namespace :schema do
-    task :dump => :environment
-  end
-
-  desc "bootstrap db user, recreate, run migrations"
-  task :bootstrap do
-    name = "grove"
-    `createuser -sdR #{name}`
-    `createdb -O #{name} #{name}_development`
-    Rake::Task['db:migrate'].invoke
-    Rake::Task['db:test:prepare'].invoke
-  end
-
-  desc "nuke db, recreate, run migrations"
-  task :nuke do
-    name = "grove"
-    `dropdb #{name}_development`
-    `createdb -O #{name} #{name}_development`
-    Rake::Task['db:migrate'].invoke
-    Rake::Task['db:test:prepare'].invoke
   end
 end
