@@ -135,8 +135,7 @@ class Post < ActiveRecord::Base
   def attributes_for_export
     extras = {
       'paths' => paths.to_a,
-      'uid' => uid,
-      'version' => (updated_at.to_f()*1000).to_i
+      'uid' => uid
     }
     attributes.update('document' => merged_document).merge(extras)
   end
