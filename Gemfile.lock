@@ -1,5 +1,5 @@
 GIT
-  remote: git://github.com/bengler/pebbles-cors.git
+  remote: https://github.com/bengler/pebbles-cors
   revision: 869d6b6540577b8f598dac9263b82c783513243c
   specs:
     pebbles-cors (0.2.2)
@@ -8,17 +8,17 @@ GIT
       rack
 
 GIT
-  remote: git://github.com/rack/rack-contrib.git
-  revision: 451f029857d655c4a37012564eb49665d2f9313a
+  remote: https://github.com/rack/rack-contrib
+  revision: 5c12ace4ba2b9e4802e4d948a8ee0114da18760b
   specs:
-    rack-contrib (1.1.0)
+    rack-contrib (1.2.0)
       rack (>= 0.9.1)
 
 GIT
-  remote: git://github.com/rkh/rack-protection.git
-  revision: eddcc6dae781e995a0c594eeafe0d111fe68ac62
+  remote: https://github.com/rkh/rack-protection
+  revision: 6cfaeb049587f6d9d62801277637b1695101a9c5
   specs:
-    rack-protection (1.5.2)
+    rack-protection (1.5.3)
       rack
 
 GEM
@@ -53,7 +53,8 @@ GEM
       amq-protocol (>= 1.9.2)
     chronic (0.8.0)
     connection_pool (0.9.2)
-    crack (0.3.1)
+    crack (0.4.2)
+      safe_yaml (~> 1.0.0)
     curb (0.8.6)
     dalli (2.7.0)
     deepstruct (0.0.7)
@@ -120,6 +121,7 @@ GEM
     rspec-expectations (2.14.0)
       diff-lcs (>= 1.1.3, < 2.0)
     rspec-mocks (2.14.2)
+    safe_yaml (1.0.3)
     sanitize (2.1.0)
       nokogiri (>= 1.4.4)
     servolux (0.10.0)
@@ -165,6 +167,7 @@ DEPENDENCIES
   activerecord (~> 4.0)
   airbrake (~> 3.1.4)
   approvals
+  crack (>= 0.3.2)
   curb
   dalli
   main
