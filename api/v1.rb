@@ -60,6 +60,29 @@ class GroveV1 < Sinatra::Base
         end
       end
     end
+
+    # Will save_post and retry once if a data race gets in our way.
+    def with_data_race_protection(&block)
+      retriable = true
+      begin
+        return yield
+      rescue ActiveRecord::RecordNotUnique => e
+        # Handles uniqueness violations in the case of a data-race
+        # Reraise unless uniqueness violation
+        raise unless e.message =~ /violates.*index_posts_on_realm_and_external_id/
+        if retriable
+          # Sleep a random amount of time to avoid congestion
+          sleep(rand / 2)
+          retriable = false
+          retry
+        else
+          LOGGER.exception(e) if LOGGER.respond_to?(:exception)
+          halt 409, "Unable to resolve data-race. Multiple agents seems to be " \
+            "creating a document with this external_id at this time."
+        end
+      end
+    end
+
   end
 
   error ActiveRecord::StaleObjectError do |e|

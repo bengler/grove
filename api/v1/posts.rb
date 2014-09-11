@@ -49,7 +49,9 @@ class GroveV1 < Sinatra::Base
   # @status 403 Forbidden. This is not your post, and you are not god.
 
   post "/posts/:uid" do |uid|
-    save_post_with_data_race_protection(uid)
+    with_data_race_protection do
+      save_post(uid)
+    end
   end
 
   # @apidoc
@@ -77,27 +79,8 @@ class GroveV1 < Sinatra::Base
   # @status 403 Forbidden. This is not your post, and you are not god.
 
   put "/posts/:uid" do |uid|
-    save_post_with_data_race_protection(uid, :only_updates=>true)
-  end
-
-  # Will save_post and retry once if a data race gets in our way.
-  def save_post_with_data_race_protection(uid, opts={})
-    begin
-      save_post(uid, opts)
-    rescue ActiveRecord::RecordNotUnique => e
-      # Handles uniqueness violations in the case of a data-race
-      # Reraise unless uniqueness violation
-      raise unless e.message =~ /violates.*index_posts_on_realm_and_external_id/
-      # Sleep a random amount of time to avoid congestion
-      sleep(rand/2)
-      # Try again once
-      begin
-        save_post(uid, opts)
-      rescue ActiveRecord::RecordNotUnique => e
-        LOGGER.exception(e) if LOGGER.respond_to?(:exception)
-        # We failed again. This must be a write storm.
-        halt 409, "Unable to resolve data-race. Multiple agents seems to be creating a document with this external_id at this time."
-      end
+    with_data_race_protection do
+      save_post(uid, only_updates: true)
     end
   end
 
