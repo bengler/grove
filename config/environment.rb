@@ -29,4 +29,5 @@ ActiveRecord::Base.logger = LOGGER
 ActiveRecord::Base.configurations = YAML.load(
   ERB.new(File.read(File.expand_path("../database.yml", __FILE__))).result)
 ActiveRecord::Base.include_root_in_json = true
+ActiveRecord::Base.default_timezone = :local
 ActiveRecord::Base.establish_connection(ActiveRecord::Base.configurations[environment])
