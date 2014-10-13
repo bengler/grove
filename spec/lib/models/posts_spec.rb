@@ -92,6 +92,58 @@ describe Post do
     other_article.paths.to_a.sort.should eq(["area51.abc", "area51.xyz"])
   end
 
+  describe '#filtered_by' do
+    let! :article1 do
+      p = Post.create!(default_attributes)
+      p.created_at = p.updated_at = Time.parse("1950-01-01 12:00:00")
+      p.record_timestamps = false
+      p.save!
+      p
+    end
+
+    let! :article2 do
+      p = Post.create!(default_attributes)
+      p.created_at = p.updated_at = Time.parse("1951-01-01 12:00:01")
+      p.record_timestamps = false
+      p.save!
+      p
+    end
+
+    describe '"since" parameter' do
+      it 'returns posts created at or after timestamp' do
+        expect(Post.filtered_by(
+          'since' => Time.parse('1951-01-01 12:00:00')
+        ).order('id')).to eq [article2]
+
+        expect(Post.filtered_by(
+          'since' => Time.parse('1950-01-01 12:00:00')
+        ).order('id')).to eq [article1, article2]
+
+        expect(Post.filtered_by(
+          'since' => Time.parse('1951-01-01 12:00:01')
+        ).order('id')).to eq [article2]
+
+        expect(Post.filtered_by(
+          'since' => Time.parse('1951-01-01 12:00:02')
+        )).to eq []
+
+        expect(Post.filtered_by('since' => Time.now + 10.years)).to be_empty
+      end
+
+      it 'truncates timestamp to nearest second' do
+        expect(Post.filtered_by(
+          'since' => Time.parse('1951-01-01 12:00:01.500')
+        ).order('id')).to eq [article2]
+      end
+
+      it 'accepts string timestamp' do
+        expect(Post.filtered_by(
+          'since' => '1951-01-01 12:00:00'
+        ).order('id')).to eq [article2]
+      end
+    end
+  end
+
   describe "finders and filters" do
 
     it "finds by uid" do

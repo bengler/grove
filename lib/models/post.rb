@@ -92,6 +92,11 @@ class Post < ActiveRecord::Base
   scope :filtered_by, lambda { |filters|
     scope = all
     scope = scope.where("not deleted") unless filters['deleted'] == 'include'
+    if (since = filters['since'])
+      since = Time.parse(since) unless since.is_a?(Time) or since.is_a?(DateTime)
+      since = Time.at(since.to_f.floor)  # Truncate to nearest second
+      scope = scope.where("(posts.created_at >= ? or posts.updated_at >= ?)", since, since)
+    end
     scope = scope.where("posts.created_at > ?", Time.parse(filters['created_after'])) if filters['created_after']
     scope = scope.where("posts.created_at < ?", Time.parse(filters['created_before'])) if filters['created_before']
     scope = scope.where(:realm => filters['realm']) if filters['realm']
