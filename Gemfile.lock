@@ -49,7 +49,7 @@ GEM
     arrayfields (4.7.4)
     backports (2.5.3)
     builder (3.2.2)
-    bunny (1.4.1)
+    bunny (1.6.0.rc2)
       amq-protocol (>= 1.9.2)
     chronic (0.8.0)
     connection_pool (0.9.2)
@@ -76,14 +76,14 @@ GEM
     memcache_mock (0.0.11)
     mercenary (0.3.4)
     mini_portile (0.6.0)
-    minitest (5.4.1)
+    minitest (5.4.2)
     multi_json (1.10.1)
     nokogiri (1.6.3.1)
       mini_portile (= 0.6.0)
     pathbuilder (0.0.2)
-    pebblebed (0.2.3)
+    pebblebed (0.3.0)
       activesupport
-      bunny (~> 1.4.0)
+      bunny (= 1.6.0.rc2)
       curb (>= 0.8.4)
       deepstruct (>= 0.0.4)
       futurevalue
@@ -93,11 +93,11 @@ GEM
       yajl-ruby
     pebbles-path (0.0.3)
       pebbles-uid (>= 0.0.6)
-    pebbles-river (0.1.9)
+    pebbles-river (0.2.0)
       activesupport (>= 3.0)
-      bunny (~> 1.4.0)
+      bunny (= 1.6.0.rc2)
       mercenary (~> 0.3.3)
-      pebblebed (>= 0.2.2)
+      pebblebed (~> 0.3.0)
       servolux (~> 0.10)
     pebbles-uid (0.0.17)
     petroglyph (0.0.7)
@@ -176,7 +176,7 @@ DEPENDENCIES
   pebblebed (>= 0.2.3)
   pebbles-cors!
   pebbles-path (>= 0.0.3)
-  pebbles-river (~> 0.1)
+  pebbles-river (~> 0.2.0)
   pebbles-uid
   petroglyph
   pg
