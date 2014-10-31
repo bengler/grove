@@ -164,7 +164,7 @@ class Post < ActiveRecord::Base
   end
 
   def may_be_managed_by?(identity)
-    new_record? || editable_by?(identity)
+    new_record? || privileged_access_by?(identity)
   end
 
   def privileged_access_by?(identity)
