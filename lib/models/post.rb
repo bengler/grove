@@ -132,6 +132,23 @@ class Post < ActiveRecord::Base
     end
   end
 
+  # Scope search to restrict posts writable to an identity.
+  def self.with_privileged_access(identity)
+    if identity.nil? or not identity.respond_to?(:id)
+      where('false') # shortcut any chained scopes
+    else
+      if identity.god
+        where(realm: identity.realm)
+      else
+        joins(:locations).
+        joins("left outer join group_locations on group_locations.location_id = locations.id").
+        joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{identity.id}").
+        where(['created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
+      end
+    end
+  end
+
+
   # Is this a hash?
   def self.hashlike?(value)
     value.is_a?(Hash) || (value.respond_to?(:to_h) && !value.is_a?(Array))
