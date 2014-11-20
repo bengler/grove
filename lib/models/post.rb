@@ -116,7 +116,7 @@ class Post < ActiveRecord::Base
     scope
   }
 
-  # Scope search to restrict posts visible to an identity.
+  # Scope search to return posts visible to an identity.
   def self.with_restrictions(identity)
     if identity.nil? or not identity.respond_to?(:id)
       where({restricted: false, deleted: false, published: true})
@@ -132,10 +132,10 @@ class Post < ActiveRecord::Base
     end
   end
 
-  # Scope search to restrict posts writable to an identity.
-  def self.with_privileged_access(identity)
+  # Scope search to return posts editable by an identity.
+  def self.editable_by(identity)
     if identity.nil? or not identity.respond_to?(:id)
-      where('false') # shortcut any chained scopes
+      where('false') # shortcuts any other chained scopes
     else
       if identity.god
         where(realm: identity.realm)
@@ -175,16 +175,12 @@ class Post < ActiveRecord::Base
     !identity || !identity.respond_to?(:id)
   end
 
-  def editable_by?(identity)
-    return false if nobody?(identity)
-    return (identity.god && identity.realm == self.realm) || identity.id == created_by
-  end
-
   def may_be_managed_by?(identity)
-    new_record? || privileged_access_by?(identity)
+    new_record? || editable_by?(identity)
   end
 
-  def privileged_access_by?(identity)
+  # not to be confused with the scope Post.editable_by(identity)
+  def editable_by?(identity)
     return false if nobody?(identity)
     return true if (identity.god && identity.realm == self.realm)
     return true if identity.id == created_by
