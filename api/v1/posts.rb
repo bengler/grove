@@ -276,14 +276,14 @@ class GroveV1 < Sinatra::Base
 
   get "/posts/:uid" do |uid|
     @raw = params[:raw] == 'true' or params[:raw] == true
-    only_editable = params[:only_editable] == true
+    only_editable = params[:only_editable] == 'true' or params[:only_editable] == true
     if params[:external_id]
       @post = Post.unscoped.filtered_by(params)
       realm = uid.split(':')[1] ? (uid.split(':')[1].split('.')[0] != '*' ? uid.split(':')[1].split('.')[0] : nil) : nil
       klass = uid.split(':')[0] unless uid.split(':')[0] == "*"
       @post = @post.where(:realm => realm) if realm
       @post = @post.where(:klass => klass) if klass
-      @post = @post.only_editable(current_identity) if only_editable
+      @post = @post.editable_by(current_identity) if only_editable
       @post = @post.find_by_external_id(params[:external_id])
       halt 404, "No such post" unless @post
       halt 403, "Forbidden" unless @post.visible_to?(current_identity)
@@ -300,7 +300,7 @@ class GroveV1 < Sinatra::Base
         # @posts = filter_visible_posts(Post.cached_find_all_by_uid(query.cache_keys))
         # @posts = filter_published(@posts, :unpublished => params['unpublished'])
         scope = Post.unscoped.filtered_by(params).with_restrictions(current_identity)
-        scope = scope.only_editable(current_identity) if only_editable
+        scope = scope.editable_by(current_identity) if only_editable
         @posts = query.terms.map do |term|
           scope.by_uid(term).first
         end
@@ -314,7 +314,7 @@ class GroveV1 < Sinatra::Base
         @posts = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params).
           includes(:occurrence_entries).
           includes(:locations)
-        @posts = @posts.only_editable(current_identity) if only_editable
+        @posts = @posts.editable_by(current_identity) if only_editable
         @posts = apply_occurrence_scope(@posts, params['occurrence'])
         direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
         @posts = @posts.order("posts.#{sort_field} #{direction}")
@@ -330,7 +330,7 @@ class GroveV1 < Sinatra::Base
       else
         # Retrieve a single specific post.
         scope = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params)
-        scope = scope.only_editable(current_identity) if only_editable
+        scope = scope.editable_by(current_identity) if only_editable
         @post = scope.first
         halt 404, "No such post" unless @post
         halt 403, "Forbidden" if !@post.published && !['include', 'only'].include?(params[:unpublished])
