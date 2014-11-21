@@ -140,7 +140,7 @@ class Post < ActiveRecord::Base
       if identity.god
         where(realm: identity.realm)
       else
-        where('created_by = :id or (id in (
+        where('created_by = :id or (posts.id in (
           select post_id
           from locations_posts
           join group_locations gl on gl.location_id = locations_posts.location_id
