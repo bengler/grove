@@ -140,10 +140,12 @@ class Post < ActiveRecord::Base
       if identity.god
         where(realm: identity.realm)
       else
-        joins(:locations).
-        joins("left outer join group_locations on group_locations.location_id = locations.id").
-        joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{identity.id}").
-        where(['created_by = ? or group_memberships.identity_id = ?', identity.id, identity.id])
+        where('created_by = :id or (id in (
+          select post_id
+          from locations_posts
+          join group_locations gl on gl.location_id = locations_posts.location_id
+          join group_memberships gm on gm.group_id = gl.group_id
+          where gm.identity_id = :id))', id: identity.id)
       end
     end
   end
