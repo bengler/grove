@@ -28,6 +28,10 @@ describe "Post security" do
     DeepStruct.wrap(:id => 2, :god => false)
   end
 
+  let :god do
+    DeepStruct.wrap(:id => 0, :god => true, :realm => 'norway')
+  end
+
   it "limits visibility" do
     restricted_post
     invisible_restricted_post
@@ -42,6 +46,17 @@ describe "Post security" do
     GroupLocation.allow_subtree(1, "norway.oslo")
     restricted_post
     Post.with_restrictions(member).count.should eq 1
+  end
+
+  it "knows who has write access" do
+    restricted_post
+    invisible_restricted_post
+    Post.editable_by(member).count.should eq 0
+    GroupLocation.allow_subtree(1, "norway.oslo")
+    Post.editable_by(member).count.should eq 1
+    Post.editable_by(non_member).count.should eq 0
+    Post.editable_by(nil).count.should eq 0
+    Post.editable_by(god).count.should eq 2
   end
 
 end

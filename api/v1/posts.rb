@@ -269,18 +269,21 @@ class GroveV1 < Sinatra::Base
   # @optional [String] direction Direction of sort. Defaults to 'desc'.
   # @optional [Boolean] raw If `true`, does not return the merged document, but instead
   #   provides the raw `document`, `external_document` and `occurrences` separately.
+  # @optional [string] editable If `only`, return only posts writable for current_identity. Defaults to `include`.
   # @status 200 JSON.
   # @status 404 No such post.
   # @status 403 Forbidden (the post is restricted, and you are not invited!)
 
   get "/posts/:uid" do |uid|
     @raw = params[:raw] == 'true' or params[:raw] == true
+    only_editable = params[:editable] == 'only'
     if params[:external_id]
       @post = Post.unscoped.filtered_by(params)
       realm = uid.split(':')[1] ? (uid.split(':')[1].split('.')[0] != '*' ? uid.split(':')[1].split('.')[0] : nil) : nil
       klass = uid.split(':')[0] unless uid.split(':')[0] == "*"
       @post = @post.where(:realm => realm) if realm
       @post = @post.where(:klass => klass) if klass
+      @post = @post.editable_by(current_identity) if only_editable
       @post = @post.find_by_external_id(params[:external_id])
       halt 404, "No such post" unless @post
       halt 403, "Forbidden" unless @post.visible_to?(current_identity)
@@ -296,8 +299,10 @@ class GroveV1 < Sinatra::Base
         # TODO: return to using cached results when we have support for it
         # @posts = filter_visible_posts(Post.cached_find_all_by_uid(query.cache_keys))
         # @posts = filter_published(@posts, :unpublished => params['unpublished'])
+        scope = Post.unscoped.filtered_by(params).with_restrictions(current_identity)
+        scope = scope.editable_by(current_identity) if only_editable
         @posts = query.terms.map do |term|
-          Post.unscoped.by_uid(term).filtered_by(params).with_restrictions(current_identity).first
+          scope.by_uid(term).first
         end
         pg :posts, :locals => {:posts => @posts, :pagination => nil, raw: @raw}
       elsif query.collection?
@@ -309,6 +314,7 @@ class GroveV1 < Sinatra::Base
         @posts = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params).
           includes(:occurrence_entries).
           includes(:locations)
+        @posts = @posts.editable_by(current_identity) if only_editable
         @posts = apply_occurrence_scope(@posts, params['occurrence'])
         direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
         @posts = @posts.order("posts.#{sort_field} #{direction}")
@@ -323,7 +329,9 @@ class GroveV1 < Sinatra::Base
         pg :posts, :locals => {:posts => @posts, :pagination => @pagination, raw: @raw}
       else
         # Retrieve a single specific post.
-        @post = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params).first
+        scope = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params)
+        scope = scope.editable_by(current_identity) if only_editable
+        @post = scope.first
         halt 404, "No such post" unless @post
         halt 403, "Forbidden" if !@post.published && !['include', 'only'].include?(params[:unpublished])
         # TODO: Teach .visible_to? about PSM so we can go back to using cached results

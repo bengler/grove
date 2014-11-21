@@ -116,7 +116,7 @@ class Post < ActiveRecord::Base
     scope
   }
 
-  # Scope search to restrict posts visible to an identity.
+  # Scope search to return posts visible to an identity.
   def self.with_restrictions(identity)
     if identity.nil? or not identity.respond_to?(:id)
       where({restricted: false, deleted: false, published: true})
@@ -131,6 +131,25 @@ class Post < ActiveRecord::Base
       end
     end
   end
+
+  # Scope search to return posts editable by an identity.
+  def self.editable_by(identity)
+    if identity.nil? or not identity.respond_to?(:id)
+      where('false') # shortcuts any other chained scopes
+    else
+      if identity.god
+        where(realm: identity.realm)
+      else
+        where('created_by = :id or (id in (
+          select post_id
+          from locations_posts
+          join group_locations gl on gl.location_id = locations_posts.location_id
+          join group_memberships gm on gm.group_id = gl.group_id
+          where gm.identity_id = :id))', id: identity.id)
+      end
+    end
+  end
+
 
   # Is this a hash?
   def self.hashlike?(value)
@@ -158,16 +177,12 @@ class Post < ActiveRecord::Base
     !identity || !identity.respond_to?(:id)
   end
 
-  def editable_by?(identity)
-    return false if nobody?(identity)
-    return (identity.god && identity.realm == self.realm) || identity.id == created_by
-  end
-
   def may_be_managed_by?(identity)
-    new_record? || privileged_access_by?(identity)
+    new_record? || editable_by?(identity)
   end
 
-  def privileged_access_by?(identity)
+  # not to be confused with the scope Post.editable_by(identity)
+  def editable_by?(identity)
     return false if nobody?(identity)
     return true if (identity.god && identity.realm == self.realm)
     return true if identity.id == created_by
