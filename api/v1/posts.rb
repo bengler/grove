@@ -269,14 +269,14 @@ class GroveV1 < Sinatra::Base
   # @optional [String] direction Direction of sort. Defaults to 'desc'.
   # @optional [Boolean] raw If `true`, does not return the merged document, but instead
   #   provides the raw `document`, `external_document` and `occurrences` separately.
-  # @optional [Boolean] only_editable If `true`, return only posts writable for current_identity. Defaults to `false`.
+  # @optional [string] editable If `only`, return only posts writable for current_identity. Defaults to `include`.
   # @status 200 JSON.
   # @status 404 No such post.
   # @status 403 Forbidden (the post is restricted, and you are not invited!)
 
   get "/posts/:uid" do |uid|
     @raw = params[:raw] == 'true' or params[:raw] == true
-    only_editable = params[:only_editable] == 'true' or params[:only_editable] == true
+    only_editable = params[:editable] == 'only'
     if params[:external_id]
       @post = Post.unscoped.filtered_by(params)
       realm = uid.split(':')[1] ? (uid.split(':')[1].split('.')[0] != '*' ? uid.split(':')[1].split('.')[0] : nil) : nil
