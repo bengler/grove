@@ -366,7 +366,7 @@ class GroveV1 < Sinatra::Base
     count_deleted_posts = (params['deleted'] == 'include')
     posts = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params)
     posts = apply_occurrence_scope(posts, params['occurrence'])
-    count = posts.count
+    count = posts.count(:id)
     halt 200, {'Content-Type' => 'application/json'}, {:uid => uid, :count => count}.to_json
   end
 
