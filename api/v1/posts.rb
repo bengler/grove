@@ -103,8 +103,8 @@ class GroveV1 < Sinatra::Base
     # we protect against double posting.
     if attributes[:external_id].nil? && !current_identity.god? && !(uid =~ /\$.+$/)
       Post.where(:created_by => current_identity.id).
-        where("posts.created_at > now() - interval '2 minutes'").by_uid(uid).order('posts.created_at desc').
-        each do |post|
+        where("posts.created_at > ?", Time.now - 120).
+        by_uid(uid).order('posts.created_at desc').each do |post|
         if post.document == attributes['document']
           @post = post # Found a match, proceed as if updating this document
           break
