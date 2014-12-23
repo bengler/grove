@@ -25,6 +25,7 @@ Pebblebed.config do
 end
 
 ActiveRecord::Base.add_observer RiverNotifications.instance unless environment == 'test'
+ActiveRecord::Base.add_observer ChangeObserver.instance
 ActiveRecord::Base.logger = LOGGER
 ActiveRecord::Base.configurations = YAML.load(
   ERB.new(File.read(File.expand_path("../database.yml", __FILE__))).result)

@@ -1,0 +1,3 @@
+collection changes: changes do |change|
+  attributes :id, :uid, :time, :kind
+end

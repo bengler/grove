@@ -15,6 +15,9 @@ class Post < ActiveRecord::Base
   has_and_belongs_to_many :locations, :uniq => true,
     :after_add => :increment_unread_counts,
     :after_remove => :decrement_unread_counts
+  has_many :change_records,
+    class_name: 'Change',
+    dependent: :destroy
 
   validates_presence_of :realm
 
@@ -319,6 +322,13 @@ class Post < ActiveRecord::Base
   def replace_occurrences!(event, at = [])
     remove_occurrences!(event)
     add_occurrences!(event, at)
+  end
+
+  def delete!
+    unless deleted?
+      self.deleted = true
+      save!
+    end
   end
 
   private
