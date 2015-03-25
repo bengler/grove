@@ -4,4 +4,25 @@ require_relative '../config/environment'
 
 ActiveRecord::Base.logger.level = Logger::INFO
 
-Grove::CLI::Main.start
+Dir.glob(File.expand_path('../../lib/grove/cli/**/*.rb')).each do |f|
+  require(f)
+end
+
+Mercenary.program :grove do |p|
+  p.syntax "grove [global-option ...] <subcommand> [option ...]"
+  [
+    Grove::CLI::Ls,
+    Grove::CLI::Rm
+  ].each do |klass|
+    klass.build(p)
+  end
+  p.command :help do |c|
+    c.syntax 'help'
+    c.description "Print this help"
+    c.action do |args, options|
+      puts p
+      exit(0)
+    end
+  end
+  p.default_command :help
+end

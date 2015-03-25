@@ -20,10 +20,9 @@ gem 'pebbles-path', '>=0.0.3'
 gem 'pebbles-uid'
 gem 'pebbles-river', '~> 0.2.0'
 gem 'servolux'
-gem 'main'
+gem 'mercenary'
 gem "memcache_mock"
 gem 'nokogiri', '~> 1.6.1'
-gem 'thor', '~> 0.19.1'
 gem 'crack', '>= 0.3.2'
 
 # Because of a bug in rack-protection (https://github.com/rkh/rack-protection/commit/a91810fa) that affects
