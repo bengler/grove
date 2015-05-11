@@ -47,7 +47,6 @@ class RiverNotifications < ActiveRecord::Observer
         params[:changed_attributes] = post.changes if event == :update
         params[:soft_deleted] = true if options[:soft_deleted]
         publish!(params)
-        LOGGER.info("published #{params[:uid]}")
       end
     end
 
