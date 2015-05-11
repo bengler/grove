@@ -25,6 +25,9 @@ gem "memcache_mock"
 gem 'nokogiri', '~> 1.6.1'
 gem 'crack', '>= 0.3.2'
 
+# For console
+gem 'pry'
+
 # Because of a bug in rack-protection (https://github.com/rkh/rack-protection/commit/a91810fa) that affects
 # cors-requests we'll need to get rack-protection from github
 # This can safely be changed to the official rubygems version '> 1.2.0' whenever it is released
