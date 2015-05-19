@@ -46,10 +46,12 @@ GEM
       nokogiri
       thor
     arel (5.0.1.20140414130214)
+    arrayfields (4.9.2)
     backports (2.5.3)
     builder (3.2.2)
     bunny (1.6.0.rc2)
       amq-protocol (>= 1.9.2)
+    chronic (0.10.2)
     coderay (1.1.0)
     connection_pool (0.9.2)
     crack (0.4.2)
@@ -59,12 +61,19 @@ GEM
     deepstruct (0.0.7)
     diff-lcs (1.2.4)
     eventmachine (1.0.4)
+    fattr (2.2.2)
     futurevalue (0.0.2)
     girl_friday (0.10.0)
       connection_pool (~> 0.9.0)
     i18n (0.7.0)
     json (1.8.2)
     kgio (2.9.2)
+    main (6.1.0)
+      arrayfields (>= 4.7.4)
+      chronic (>= 0.6.2)
+      fattr (>= 2.2.0)
+      map (>= 5.1.0)
+    map (6.5.5)
     memcache_mock (0.0.11)
     mercenary (0.3.4)
     method_source (0.8.2)
@@ -168,6 +177,7 @@ DEPENDENCIES
   crack (>= 0.3.2)
   curb
   dalli
+  main
   memcache_mock
   mercenary
   nokogiri (~> 1.6.1)
