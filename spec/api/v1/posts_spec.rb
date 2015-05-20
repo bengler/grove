@@ -361,6 +361,29 @@ describe "API v1 posts" do
           result.last['post'].should eq nil
         end
 
+        it "retrieves a list of documents even if klass is omitted" do
+          10.times do |i|
+            Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})
+          end
+          post_ids = Post.all.map(&:id)
+          get "/posts/*:a.*$#{(post_ids + [999999]).join(CGI.escape('|'))}"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 11
+          result.first['post']['id'].split('$').last.to_i.should eq post_ids.first
+          result.last['post'].should eq nil
+        end
+
+        it "returns an array if only a pipe is appended" do
+          10.times do |i|
+            Post.create!(:uid => "post:a.b.c", :document => {'text' => i.to_s})
+          end
+          post_id = Post.all.map(&:id).first
+          get "/posts/*:a.*$#{post_id}#{CGI.escape("|")}"
+          result = JSON.parse(last_response.body)['posts']
+          result.size.should eq 1
+          result.first['post']['id'].split('$').last.to_i.should eq post_id
+        end
+
         it "can only read restricted posts created by current identity" do
           posts = []
           posts << Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'xyzzy'}, :restricted => true)

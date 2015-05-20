@@ -66,6 +66,8 @@ GEM
     girl_friday (0.10.0)
       connection_pool (~> 0.9.0)
     i18n (0.7.0)
+    its (0.2.0)
+      rspec-core
     json (1.8.2)
     kgio (2.9.2)
     main (6.1.0)
@@ -101,7 +103,7 @@ GEM
       mercenary (~> 0.3.3)
       pebblebed (~> 0.3.0)
       servolux (~> 0.10)
-    pebbles-uid (0.0.17)
+    pebbles-uid (0.0.20)
     petroglyph (0.0.7)
       tilt
     pg (0.18.1)
@@ -177,6 +179,7 @@ DEPENDENCIES
   crack (>= 0.3.2)
   curb
   dalli
+  its
   main
   memcache_mock
   mercenary
@@ -185,7 +188,7 @@ DEPENDENCIES
   pebbles-cors!
   pebbles-path (>= 0.0.3)
   pebbles-river (~> 0.2.0)
-  pebbles-uid
+  pebbles-uid (~> 0.0.20)
   petroglyph
   pg
   pry
