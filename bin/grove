@@ -12,7 +12,8 @@ Mercenary.program :grove do |p|
   p.syntax "grove [global-option ...] <subcommand> [option ...]"
   [
     Grove::CLI::Ls,
-    Grove::CLI::Rm
+    Grove::CLI::Rm,
+    Grove::CLI::Touch
   ].each do |klass|
     klass.build(p)
   end
