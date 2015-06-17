@@ -256,6 +256,7 @@ class GroveV1 < Sinatra::Base
   # @optional [Integer] created_by Only documents created by this checkpoint identity will be returned.
   # @optional [String] created_after Only documents created after this date (yyyy.mm.dd) will be returned.
   # @optional [String] created_before Only documents created before this date (yyyy.mm.dd) will be returned.
+  # @optional [String] since Only documents created or updated after this timestamp (ISO 8601) will be returned.
   # @optional [String] unpublished If set to 'include', accessible unpublished posts will be included with the result. If set to 'only', only accessible unpublished posts will be included with the result.
   # @optional [String] deleted If set to 'include', accessible deleted posts will be included with the result.
   # @optional [String] occurrence[label] Require that the post have an occurrence with this label.
