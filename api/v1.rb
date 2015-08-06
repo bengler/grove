@@ -89,4 +89,9 @@ class GroveV1 < Sinatra::Base
     halt 409, "Post has been modified; refetch and try again"
   end
 
+  error Pebbles::River::ConnectionError do |e|
+    logger.error("#{e.class}: #{e.message}")
+    halt 503, "Internal connection error"
+  end
+
 end
