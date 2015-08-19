@@ -33,6 +33,7 @@ class RiverNotifications < ActiveRecord::Observer
 
   def publish!(params)
     self.class.river.publish(params)
+    LOGGER.info("river.publish! #{params.inspect}")
   end
 
   private
