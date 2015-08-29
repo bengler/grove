@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140905205824) do
+ActiveRecord::Schema.define(version: 20150829185637) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -99,6 +99,7 @@ ActiveRecord::Schema.define(version: 20140905205824) do
   add_index "posts", ["created_at"], name: "index_posts_on_created_at", using: :btree
   add_index "posts", ["created_by"], name: "index_posts_on_created_by", using: :btree
   add_index "posts", ["deleted"], name: "index_posts_on_deleted", using: :btree
+  add_index "posts", ["deleted"], name: "index_posts_on_deleted_where_not_deleted", where: "(NOT deleted)", using: :btree
   add_index "posts", ["klass"], name: "index_posts_on_klass", using: :btree
   add_index "posts", ["published"], name: "index_posts_on_published", using: :btree
   add_index "posts", ["realm", "external_id"], name: "index_posts_on_realm_and_external_id", unique: true, using: :btree
