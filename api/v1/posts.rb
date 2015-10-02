@@ -257,6 +257,8 @@ class GroveV1 < Sinatra::Base
   # @optional [String] created_after Only documents created after this date (yyyy.mm.dd) will be returned.
   # @optional [String] created_before Only documents created before this date (yyyy.mm.dd) will be returned.
   # @optional [String] since Only documents created or updated after this timestamp (ISO 8601) will be returned.
+  # @optional [String] since_id Only posts with an ID higher than this ID will be returned. Useful for
+  #   combining with sort_by=id to scan a large number of posts.
   # @optional [String] unpublished If set to 'include', accessible unpublished posts will be included with the result. If set to 'only', only accessible unpublished posts will be included with the result.
   # @optional [String] deleted If set to 'include', accessible deleted posts will be included with the result.
   # @optional [String] occurrence[label] Require that the post have an occurrence with this label.
@@ -307,11 +309,12 @@ class GroveV1 < Sinatra::Base
         end
         pg :posts, :locals => {:posts => @posts, :pagination => nil, raw: @raw}
       elsif query.collection?
-        sort_field = 'created_at'
-        if params['sort_by']
-          sort_field = params['sort_by'].downcase
-          halt 400, "Unknown field #{sort_field}" unless %w(created_at updated_at document_updated_at external_document_updated_at external_document).include? sort_field
+        sort_field = params['sort_by'].try(:downcase)
+        if sort_field and not Post::SORTABLE_FIELDS.include?(sort_field)
+          halt 400, "Unknown field #{sort_field}"
         end
+        sort_field ||= 'created_at'
+
         @posts = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params).
           includes(:occurrence_entries).
           includes(:locations)

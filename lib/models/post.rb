@@ -6,6 +6,15 @@ class Post < ActiveRecord::Base
 
   class CanonicalPathConflict < StandardError; end
 
+  SORTABLE_FIELDS = %w(
+    id
+    created_at
+    updated_at
+    document_updated_at
+    external_document_updated_at
+    external_document
+  )
+
   # Optimistic locking via version column
   self.locking_column = 'version'
 
@@ -96,6 +105,9 @@ class Post < ActiveRecord::Base
       since = Time.parse(since) unless since.is_a?(Time) or since.is_a?(DateTime)
       since = Time.at(since.to_f.floor)  # Truncate to nearest second
       scope = scope.where("(posts.created_at >= ? or posts.updated_at >= ?)", since, since)
+    end
+    if (since_id = filters['since_id'])
+      scope = scope.where("posts.id > ?", since_id)
     end
     scope = scope.where("posts.created_at > ?", Time.parse(filters['created_after'])) if filters['created_after']
     scope = scope.where("posts.created_at < ?", Time.parse(filters['created_before'])) if filters['created_before']
