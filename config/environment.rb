@@ -24,6 +24,13 @@ Pebblebed.config do
   service :checkpoint
 end
 
+# Use yajl for JSON
+require 'yajl/json_gem'
+
+# Faster JBuilder output
+require 'multi_json'
+MultiJson.use :yajl
+
 ActiveRecord::Base.add_observer RiverNotifications.instance unless environment == 'test'
 ActiveRecord::Base.logger = LOGGER
 ActiveRecord::Base.configurations = YAML.load(
