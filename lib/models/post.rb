@@ -106,9 +106,6 @@ class Post < ActiveRecord::Base
       since = Time.at(since.to_f.floor)  # Truncate to nearest second
       scope = scope.where("(posts.created_at >= ? or posts.updated_at >= ?)", since, since)
     end
-    if (since_id = filters['since_id'])
-      scope = scope.where("posts.id > ?", since_id)
-    end
     scope = scope.where("posts.created_at > ?", Time.parse(filters['created_after'])) if filters['created_after']
     scope = scope.where("posts.created_at < ?", Time.parse(filters['created_before'])) if filters['created_before']
     scope = scope.where(:realm => filters['realm']) if filters['realm']
@@ -249,11 +246,13 @@ class Post < ActiveRecord::Base
     read_attribute(:sensitive).try(:dup) || {}
   end
 
-  def merged_document
+  def merged_document(options = {})
     doc = HashWithIndifferentAccess.new
     doc.merge!(self.external_document.symbolize_keys) if self.external_document
     doc.merge!(self.document.symbolize_keys) if self.document
-    doc.merge!(occurrences: self.occurrences) if self.occurrences.present?
+    if options[:include_occurrences] != false
+      doc.merge!(occurrences: self.occurrences) if self.occurrences.present?
+    end
     doc
   end
 

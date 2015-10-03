@@ -257,8 +257,6 @@ class GroveV1 < Sinatra::Base
   # @optional [String] created_after Only documents created after this date (yyyy.mm.dd) will be returned.
   # @optional [String] created_before Only documents created before this date (yyyy.mm.dd) will be returned.
   # @optional [String] since Only documents created or updated after this timestamp (ISO 8601) will be returned.
-  # @optional [String] since_id Only posts with an ID higher than this ID will be returned. Useful for
-  #   combining with sort_by=id to scan a large number of posts.
   # @optional [String] unpublished If set to 'include', accessible unpublished posts will be included with the result. If set to 'only', only accessible unpublished posts will be included with the result.
   # @optional [String] deleted If set to 'include', accessible deleted posts will be included with the result.
   # @optional [String] occurrence[label] Require that the post have an occurrence with this label.
@@ -276,9 +274,9 @@ class GroveV1 < Sinatra::Base
   # @status 200 JSON.
   # @status 404 No such post.
   # @status 403 Forbidden (the post is restricted, and you are not invited!)
-
   get "/posts/:uid" do |uid|
-    @raw = params[:raw] == 'true' or params[:raw] == true
+    @raw = params[:raw] == 'true' || params[:raw] == true
+
     only_editable = params[:editable] == 'only'
     if params[:external_id]
       @post = Post.unscoped.filtered_by(params)
@@ -343,6 +341,124 @@ class GroveV1 < Sinatra::Base
         pg :post, :locals => {:mypost => @post, raw: @raw} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
       end
     end
+  end
+
+  # @apidoc
+  # Returns posts in ID order, with limited filtering support. Always sorts by ID order.
+  # Response will contain next cursor.
+  #
+  # @category Grove/Posts
+  # @path /api/grove/v1/posts/:uid/since/:cursor
+  # @http GET
+  # @required [String] uid The uid of a specific post, a comma separated list of uids or a wildcard.
+  #   uid query (e.g. "*:acme.invoices.*")
+  # @required [String] cursor Previous cursor. Pass 'start' to begin from beginning.
+  # @optional [Integer] external_id The external_id of the post you want.
+  # @optional [String] tags Constrain query by tags. Either a comma separated list of required tags or a
+  #   boolean expression like 'paris & !texas' or 'closed & (failed | pending)'.
+  # @optional [Integer] created_by Only documents created by this checkpoint identity will be returned.
+  # @optional [String] created_after Only documents created after this date (yyyy.mm.dd) will be returned.
+  # @optional [String] created_before Only documents created before this date (yyyy.mm.dd) will be returned.
+  # @optional [String] since Only documents created or updated after this timestamp (ISO 8601) will be returned.
+  # @optional [String] unpublished If set to 'include', accessible unpublished posts will be included with the result. If set to 'only', only accessible unpublished posts will be included with the result.
+  # @optional [String] deleted If set to 'include', accessible deleted posts will be included with the result.
+  # @optional [Integer] limit The maximum amount of posts to return.
+  # @optional [String] exclude_attributes Comma-separated list of top-level attributes that can
+  #   be excluded from the results to optimize performance. Defaults to none.
+  # @optional [Boolean] raw If `true`, does not return the merged document, but instead
+  #   provides the raw `document`, `external_document` and `occurrences` separately.
+  # @optional [string] editable If `only`, return only posts writable for current_identity. Defaults to `include`.
+  # @status 200 JSON.
+  # @status 404 No such post.
+  # @status 403 Forbidden (the post is restricted, and you are not invited!)
+  get "/posts/:uid/since/:cursor" do |uid, cursor|
+    @raw = params[:raw] == 'true' || params[:raw] == true
+
+    begin
+      query = Pebbles::Uid.query(uid)
+      unless query.collection?
+        halt 400, "Query must resolved to a collection"
+      end
+    rescue ArgumentError => e
+      halt 400, e.message
+    end
+
+    klass, path, _ = Pebbles::Uid.parse(uid)
+
+    limit = (params[:limit] || 100).to_i
+
+    cursor = params[:cursor]
+    unless cursor.present?
+      halt 400, "Invalid cursor"
+    end
+
+    if cursor == 'start'
+      posts = Post.unscoped.
+        by_uid(uid).
+        with_restrictions(current_identity).
+        filtered_by(params).
+        reorder('posts.id').
+        limit(1).to_a
+      if posts.any?
+        cursor = posts.first.id - 1
+      else
+        cursor = nil
+      end
+    else
+      cursor = cursor.to_i
+    end
+
+    @posts = []
+    if cursor
+      from_id, max_id = cursor, nil
+
+      offset, batch_size = 0, limit * 10
+      loop do
+        LOGGER.info "Fetching #{limit} posts @ #{from_id} [+#{offset} #{@posts.length}]"
+
+        # We use a CTE with a minimal filter expression to quickly find the next IDs
+        # to look at
+        parent_scope = Location.select("distinct post_id").
+          by_path("#{path}.*").
+          joins("join locations_posts on locations_posts.location_id = locations.id").
+          where("post_id > ?", from_id).
+          order("post_id").
+          offset(offset).
+          limit(batch_size)
+
+        scope = Post.unscoped.with(lp: parent_scope).
+          where(klass: klass).
+          joins('join lp on lp.post_id = posts.id').
+          with_restrictions(current_identity).
+          filtered_by(params).
+          limit(limit)
+
+        posts = scope.to_a
+        if posts.any?
+          @posts.concat(posts)
+          from_id = posts.map(&:id).max
+          offset = 0
+
+          # Break if we have enough data or we're looped a lot
+          break if @posts.length >= limit or offset > limit * 5
+        else
+          # With WITH query returned a page that was all filtered out. Now we need to
+          # loop until we find more data.
+          offset += batch_size
+          break if offset > limit * 10 and parent_scope.empty?
+        end
+      end
+
+      @next_cursor = @posts.map(&:id).max
+    end
+
+    if (exclude_attributes = params[:exclude_attributes]) && exclude_attributes.present?
+      @exclude_attributes = exclude_attributes.split(',')
+    else
+      @exclude_attributes = []
+    end
+
+    jbuilder :posts
   end
 
   # @apidoc

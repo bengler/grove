@@ -7,6 +7,9 @@ gem 'rack-contrib', :git => 'https://github.com/rack/rack-contrib'
 gem 'activerecord', '~> 4.0', require: 'active_record'
 gem 'rails-observers', '~> 0.1', require: false
 gem 'pg'
+gem 'postgres_ext'
+gem 'jbuilder'
+gem 'tilt-jbuilder', require: 'sinatra/jbuilder'
 gem 'yajl-ruby', :require => "yajl"
 gem 'petroglyph'
 gem 'pebblebed', '>=0.2.3'
