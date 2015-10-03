@@ -10,13 +10,13 @@ class RiverNotifications < ActiveRecord::Observer
   end
 
   def after_create(object)
-    if object.is_a?(Post)
+    if should_publish?(object)
       prepare_for_publish(object, :create)
     end
   end
 
   def after_update(object)
-    if object.is_a?(Post)
+    if should_publish?(object)
       if object.deleted?
         prepare_for_publish(object, :delete, :soft_deleted => true)
       else
@@ -26,7 +26,7 @@ class RiverNotifications < ActiveRecord::Observer
   end
 
   def after_destroy(object)
-    if object.is_a?(Post)
+    if should_publish?(object)
       prepare_for_publish(object, :delete)
     end
   end
@@ -36,6 +36,14 @@ class RiverNotifications < ActiveRecord::Observer
   end
 
   private
+
+    def should_publish?(object)
+      if object.is_a?(Post)
+        return !object.skip_river_notification_on_save
+      else
+        return false
+      end
+    end
 
     def prepare_for_publish(post, event, options = {})
       post.paths.each do |path|

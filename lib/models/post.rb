@@ -18,6 +18,9 @@ class Post < ActiveRecord::Base
   # Optimistic locking via version column
   self.locking_column = 'version'
 
+  # If set to true, observers won't notify about this record
+  attr_accessor :skip_river_notification_on_save
+
   include TsVectorTags
   include CacheKey
 
