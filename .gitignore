@@ -9,3 +9,4 @@ coverage/
 *.received.txt
 config/site.rb
 config/database.yml
+config/database_mappings.yml

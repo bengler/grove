@@ -45,6 +45,9 @@ GEM
     approvals (0.0.6)
       nokogiri
       thor
+    ar-multidb (0.1.13)
+      activerecord (>= 3.0)
+      activesupport (>= 3.0)
     arel (5.0.1.20140414130214)
     arrayfields (4.9.2)
     backports (2.5.3)
@@ -187,6 +190,7 @@ DEPENDENCIES
   activerecord (~> 4.0)
   airbrake (~> 3.1.4)
   approvals
+  ar-multidb
   crack (>= 0.3.2)
   curb
   dalli

@@ -29,6 +29,7 @@ gem "memcache_mock"
 gem 'nokogiri', '~> 1.6.1'
 gem 'crack', '>= 0.3.2'
 gem 'main'
+gem 'ar-multidb'
 
 # For console
 gem 'pry'

@@ -17,7 +17,7 @@ class GroveV1 < Sinatra::Base
     LOGGER.info "Params: #{params.inspect}"
 
     # If this service, for some reason lives behind a proxy that rewrites the Cache-Control headers into
-    # "must-revalidate" (which IE9, and possibly other IEs, does not respect), these two headers should properly prevent 
+    # "must-revalidate" (which IE9, and possibly other IEs, does not respect), these two headers should properly prevent
     # caching in IE (see http://support.microsoft.com/kb/234067)
     headers 'Pragma' => 'no-cache'
     headers 'Expires' => '-1'
@@ -81,6 +81,37 @@ class GroveV1 < Sinatra::Base
             "creating a document with this external_id at this time."
         end
       end
+    end
+
+    def with_database(uid_or_path, &block)
+      if (mappings = database_mappings) && mappings.any?
+        if uid_or_path !~ /:/
+          path = uid_or_path
+        else
+          _, path, _ = Pebbles::Uid.parse(uid_or_path) rescue nil
+        end
+        if path
+          _, name = mappings.find { |(k, v)| k == path || path.index("#{k}.") == 0 }
+          if name
+            LOGGER.info "Mapping path #{path} to database #{name}"
+            return Multidb.use(name, &block)
+          end
+        end
+      end
+      return yield
+    end
+
+    def database_mappings
+      @@database_mappings ||= load_database_mappings
+    end
+
+    def load_database_mappings
+      mappings = YAML.load(File.read(File.expand_path('../../config/database_mappings.yml', __FILE__))).
+        sort_by { |k, v| -k.length }
+      LOGGER.info "Loaded mappings: #{mappings.inspect}"
+      mappings
+    rescue Errno::ENOENT => e
+      {}
     end
 
   end

@@ -49,8 +49,10 @@ class GroveV1 < Sinatra::Base
   # @status 403 Forbidden. This is not your post, and you are not god.
 
   post "/posts/:uid" do |uid|
-    with_data_race_protection do
-      save_post(uid)
+    with_database(uid) do
+      with_data_race_protection do
+        save_post(uid)
+      end
     end
   end
 
@@ -79,8 +81,10 @@ class GroveV1 < Sinatra::Base
   # @status 403 Forbidden. This is not your post, and you are not god.
 
   put "/posts/:uid" do |uid|
-    with_data_race_protection do
-      save_post(uid, only_updates: true)
+    with_database(uid) do
+      with_data_race_protection do
+        save_post(uid, only_updates: true)
+      end
     end
   end
 
@@ -145,7 +149,6 @@ class GroveV1 < Sinatra::Base
     pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
   end
 
-
   # @apidoc
   # Delete a post.
   #
@@ -165,18 +168,20 @@ class GroveV1 < Sinatra::Base
   delete "/posts/:uid" do |uid|
     require_identity
 
-    if params[:external_id]
-      @post = Post.find_by_external_id(params[:external_id])
-      halt 404, "No post with external_id #{params[:external_id]}" unless @post
-    else
-      @post = Post.find_by_uid(uid)
-      halt 404, "No post with uid #{uid}" unless @post
-    end
+    with_database(uid) do
+      if params[:external_id]
+        @post = Post.find_by_external_id(params[:external_id])
+        halt 404, "No post with external_id #{params[:external_id]}" unless @post
+      else
+        @post = Post.find_by_uid(uid)
+        halt 404, "No post with uid #{uid}" unless @post
+      end
 
-    check_allowed :delete, @post do
-      @post.deleted = true
-      @post.save!
-      response.status = 204
+      check_allowed :delete, @post do
+        @post.deleted = true
+        @post.save!
+        response.status = 204
+      end
     end
   end
 
@@ -196,25 +201,28 @@ class GroveV1 < Sinatra::Base
 
   post "/posts/:uid/undelete" do |uid|
     require_identity
-    the_post = Post.unscoped.find_by_uid(uid)
-    if current_identity.god
-      @post = the_post
-    else
-      @post = Post.unscoped.joins(:locations).
-        joins("left outer join group_locations on group_locations.location_id = locations.id").
-        joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{current_identity.id}").
-        where(['group_memberships.identity_id = ?', current_identity.id]).
-        readonly(false).
-        find_by_uid(uid)
-    end
-    if !the_post
-      halt 404, "No such post"
-    elsif @post
-        @post.deleted = false
-        @post.save!
-        response.status = 200
-    else
-      halt 403, "You don't have permission to undelete this post."
+
+    with_database(uid) do
+      the_post = Post.unscoped.find_by_uid(uid)
+      if current_identity.god
+        @post = the_post
+      else
+        @post = Post.unscoped.joins(:locations).
+          joins("left outer join group_locations on group_locations.location_id = locations.id").
+          joins("left outer join group_memberships on group_memberships.group_id = group_locations.group_id and group_memberships.identity_id = #{current_identity.id}").
+          where(['group_memberships.identity_id = ?', current_identity.id]).
+          readonly(false).
+          find_by_uid(uid)
+      end
+      if !the_post
+        halt 404, "No such post"
+      elsif @post
+          @post.deleted = false
+          @post.save!
+          response.status = 200
+      else
+        halt 403, "You don't have permission to undelete this post."
+      end
     end
   end
 
@@ -275,70 +283,72 @@ class GroveV1 < Sinatra::Base
   # @status 404 No such post.
   # @status 403 Forbidden (the post is restricted, and you are not invited!)
   get "/posts/:uid" do |uid|
-    @raw = params[:raw] == 'true' || params[:raw] == true
+    with_database(uid) do
+      @raw = params[:raw] == 'true' || params[:raw] == true
 
-    only_editable = params[:editable] == 'only'
-    if params[:external_id]
-      @post = Post.unscoped.filtered_by(params)
-      realm = uid.split(':')[1] ? (uid.split(':')[1].split('.')[0] != '*' ? uid.split(':')[1].split('.')[0] : nil) : nil
-      klass = uid.split(':')[0] unless uid.split(':')[0] == "*"
-      @post = @post.where(:realm => realm) if realm
-      @post = @post.where(:klass => klass) if klass
-      @post = @post.editable_by(current_identity) if only_editable
-      @post = @post.find_by_external_id(params[:external_id])
-      halt 404, "No such post" unless @post
-      halt 403, "Forbidden" unless @post.visible_to?(current_identity)
-      pg :post, :locals => {:mypost => @post, raw: @raw} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
-    else
-      begin
-        query = Pebbles::Uid.query(uid)
-      rescue ArgumentError => e
-        halt 400, e.message
-      end
-      if query.list?
-	      # Retrieve a list of posts.
-        # TODO: return to using cached results when we have support for it
-        # @posts = filter_visible_posts(Post.cached_find_all_by_uid(query.cache_keys))
-        # @posts = filter_published(@posts, :unpublished => params['unpublished'])
-        scope = Post.unscoped.filtered_by(params).with_restrictions(current_identity)
-        scope = scope.editable_by(current_identity) if only_editable
-        @posts = query.terms.map do |term|
-          scope.by_uid(term).first
-        end
-        pg :posts, :locals => {:posts => @posts, :pagination => nil, raw: @raw}
-      elsif query.collection?
-        sort_field = params['sort_by'].try(:downcase)
-        if sort_field and not Post::SORTABLE_FIELDS.include?(sort_field)
-          halt 400, "Unknown field #{sort_field}"
-        end
-        sort_field ||= 'created_at'
-
-        @posts = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params).
-          includes(:occurrence_entries).
-          includes(:locations)
-        @posts = @posts.editable_by(current_identity) if only_editable
-        @posts = apply_occurrence_scope(@posts, params['occurrence'])
-        direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
-        @posts = @posts.order("posts.#{sort_field} #{direction}")
-        if params['occurrence']
-          # FIXME: This exposes an unfortunate lack of separation of concerns, but
-          #   this scoping logic was never built for that
-          @posts = @posts.select("posts.*, occurrence_entries.at")
-        else
-          @posts = @posts.select("distinct posts.*")
-        end
-        @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
-        pg :posts, :locals => {:posts => @posts, :pagination => @pagination, raw: @raw}
-      else
-        # Retrieve a single specific post.
-        scope = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params)
-        scope = scope.editable_by(current_identity) if only_editable
-        @post = scope.first
+      only_editable = params[:editable] == 'only'
+      if params[:external_id]
+        @post = Post.unscoped.filtered_by(params)
+        realm = uid.split(':')[1] ? (uid.split(':')[1].split('.')[0] != '*' ? uid.split(':')[1].split('.')[0] : nil) : nil
+        klass = uid.split(':')[0] unless uid.split(':')[0] == "*"
+        @post = @post.where(:realm => realm) if realm
+        @post = @post.where(:klass => klass) if klass
+        @post = @post.editable_by(current_identity) if only_editable
+        @post = @post.find_by_external_id(params[:external_id])
         halt 404, "No such post" unless @post
-        halt 403, "Forbidden" if !@post.published && !['include', 'only'].include?(params[:unpublished])
-        # TODO: Teach .visible_to? about PSM so we can go back to using cached results
-        #halt 403, "Forbidden" unless @post.visible_to?(current_identity)
+        halt 403, "Forbidden" unless @post.visible_to?(current_identity)
         pg :post, :locals => {:mypost => @post, raw: @raw} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
+      else
+        begin
+          query = Pebbles::Uid.query(uid)
+        rescue ArgumentError => e
+          halt 400, e.message
+        end
+        if query.list?
+  	      # Retrieve a list of posts.
+          # TODO: return to using cached results when we have support for it
+          # @posts = filter_visible_posts(Post.cached_find_all_by_uid(query.cache_keys))
+          # @posts = filter_published(@posts, :unpublished => params['unpublished'])
+          scope = Post.unscoped.filtered_by(params).with_restrictions(current_identity)
+          scope = scope.editable_by(current_identity) if only_editable
+          @posts = query.terms.map do |term|
+            scope.by_uid(term).first
+          end
+          pg :posts, :locals => {:posts => @posts, :pagination => nil, raw: @raw}
+        elsif query.collection?
+          sort_field = params['sort_by'].try(:downcase)
+          if sort_field and not Post::SORTABLE_FIELDS.include?(sort_field)
+            halt 400, "Unknown field #{sort_field}"
+          end
+          sort_field ||= 'created_at'
+
+          @posts = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params).
+            includes(:occurrence_entries).
+            includes(:locations)
+          @posts = @posts.editable_by(current_identity) if only_editable
+          @posts = apply_occurrence_scope(@posts, params['occurrence'])
+          direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
+          @posts = @posts.order("posts.#{sort_field} #{direction}")
+          if params['occurrence']
+            # FIXME: This exposes an unfortunate lack of separation of concerns, but
+            #   this scoping logic was never built for that
+            @posts = @posts.select("posts.*, occurrence_entries.at")
+          else
+            @posts = @posts.select("distinct posts.*")
+          end
+          @posts, @pagination = limit_offset_collection(@posts, :limit => params['limit'], :offset => params['offset'])
+          pg :posts, :locals => {:posts => @posts, :pagination => @pagination, raw: @raw}
+        else
+          # Retrieve a single specific post.
+          scope = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params)
+          scope = scope.editable_by(current_identity) if only_editable
+          @post = scope.first
+          halt 404, "No such post" unless @post
+          halt 403, "Forbidden" if !@post.published && !['include', 'only'].include?(params[:unpublished])
+          # TODO: Teach .visible_to? about PSM so we can go back to using cached results
+          #halt 403, "Forbidden" unless @post.visible_to?(current_identity)
+          pg :post, :locals => {:mypost => @post, raw: @raw} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
+        end
       end
     end
   end
@@ -372,91 +382,93 @@ class GroveV1 < Sinatra::Base
   # @status 404 No such post.
   # @status 403 Forbidden (the post is restricted, and you are not invited!)
   get "/posts/:uid/since/:cursor" do |uid, cursor|
-    @raw = params[:raw] == 'true' || params[:raw] == true
+    with_database(uid) do
+      @raw = params[:raw] == 'true' || params[:raw] == true
 
-    begin
-      query = Pebbles::Uid.query(uid)
-      unless query.collection?
-        halt 400, "Query must resolved to a collection"
+      begin
+        query = Pebbles::Uid.query(uid)
+        unless query.collection?
+          halt 400, "Query must resolved to a collection"
+        end
+      rescue ArgumentError => e
+        halt 400, e.message
       end
-    rescue ArgumentError => e
-      halt 400, e.message
-    end
 
-    klass, path, _ = Pebbles::Uid.parse(uid)
+      klass, path, _ = Pebbles::Uid.parse(uid)
 
-    limit = (params[:limit] || 100).to_i
+      limit = (params[:limit] || 100).to_i
 
-    cursor = params[:cursor]
-    unless cursor.present?
-      halt 400, "Invalid cursor"
-    end
-
-    if cursor == 'start'
-      posts = Post.unscoped.
-        by_uid(uid).
-        with_restrictions(current_identity).
-        filtered_by(params).
-        reorder('posts.id').
-        limit(1).to_a
-      if posts.any?
-        cursor = posts.first.id - 1
-      else
-        cursor = nil
+      cursor = params[:cursor]
+      unless cursor.present?
+        halt 400, "Invalid cursor"
       end
-    else
-      cursor = cursor.to_i
-    end
 
-    @posts = []
-    if cursor
-      offset, batch_size, from_id = 0, limit * 10, cursor
-      loop do
-        LOGGER.info "Fetching #{limit} posts @ #{from_id} [+#{offset} #{@posts.length}]"
-
-        # We use a CTE with a minimal filter expression to quickly find the next IDs
-        # to look at
-        parent_scope = Location.select("distinct post_id").
-          by_path(path).
-          joins("join locations_posts on locations_posts.location_id = locations.id").
-          where("post_id > ?", from_id).
-          order("post_id").
-          offset(offset).
-          limit(batch_size)
-
-        scope = Post.unscoped.with(lp: parent_scope).
-          joins('join lp on lp.post_id = posts.id').
+      if cursor == 'start'
+        posts = Post.unscoped.
+          by_uid(uid).
           with_restrictions(current_identity).
           filtered_by(params).
-          limit(limit)
-        scope = scope.where(klass: klass) if klass != '*'
-
-        posts = scope.to_a
+          reorder('posts.id').
+          limit(1).to_a
         if posts.any?
-          @posts.concat(posts)
-          from_id = posts.map(&:id).max
-          offset = 0
-
-          # Break if we have enough data or we're looped a lot
-          break if @posts.length >= limit or offset > limit * 5
+          cursor = posts.first.id - 1
         else
-          # With WITH query returned a page that was all filtered out. Now we need to
-          # loop until we find more data.
-          offset += batch_size
-          break if offset > limit * 10 and parent_scope.empty?
+          cursor = nil
         end
+      else
+        cursor = cursor.to_i
       end
 
-      @next_cursor = @posts.map(&:id).max
-    end
+      @posts = []
+      if cursor
+        offset, batch_size, from_id = 0, limit * 10, cursor
+        loop do
+          LOGGER.info "Fetching #{limit} posts @ #{from_id} [+#{offset} #{@posts.length}]"
 
-    if (exclude_attributes = params[:exclude_attributes]) && exclude_attributes.present?
-      @exclude_attributes = exclude_attributes.split(',')
-    else
-      @exclude_attributes = []
-    end
+          # We use a CTE with a minimal filter expression to quickly find the next IDs
+          # to look at
+          parent_scope = Location.select("distinct post_id").
+            by_path(path).
+            joins("join locations_posts on locations_posts.location_id = locations.id").
+            where("post_id > ?", from_id).
+            order("post_id").
+            offset(offset).
+            limit(batch_size)
 
-    jbuilder :posts
+          scope = Post.unscoped.with(lp: parent_scope).
+            joins('join lp on lp.post_id = posts.id').
+            with_restrictions(current_identity).
+            filtered_by(params).
+            limit(limit)
+          scope = scope.where(klass: klass) if klass != '*'
+
+          posts = scope.to_a
+          if posts.any?
+            @posts.concat(posts)
+            from_id = posts.map(&:id).max
+            offset = 0
+
+            # Break if we have enough data or we're looped a lot
+            break if @posts.length >= limit or offset > limit * 5
+          else
+            # With WITH query returned a page that was all filtered out. Now we need to
+            # loop until we find more data.
+            offset += batch_size
+            break if offset > limit * 10 and parent_scope.empty?
+          end
+        end
+
+        @next_cursor = @posts.map(&:id).max
+      end
+
+      if (exclude_attributes = params[:exclude_attributes]) && exclude_attributes.present?
+        @exclude_attributes = exclude_attributes.split(',')
+      else
+        @exclude_attributes = []
+      end
+
+      jbuilder :posts
+    end
   end
 
   # @apidoc
@@ -481,11 +493,13 @@ class GroveV1 < Sinatra::Base
   # @status 403 Forbidden (the post is restricted, and you are not invited!)
 
   get "/posts/:uid/count" do |uid|
-    count_deleted_posts = (params['deleted'] == 'include')
-    posts = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params)
-    posts = apply_occurrence_scope(posts, params['occurrence'])
-    count = posts.count(:id)
-    halt 200, {'Content-Type' => 'application/json'}, {:uid => uid, :count => count}.to_json
+    with_database(uid) do
+      count_deleted_posts = (params['deleted'] == 'include')
+      posts = Post.unscoped.by_uid(uid).with_restrictions(current_identity).filtered_by(params)
+      posts = apply_occurrence_scope(posts, params['occurrence'])
+      count = posts.count(:id)
+      halt 200, {'Content-Type' => 'application/json'}, {:uid => uid, :count => count}.to_json
+    end
   end
 
   # @apidoc
@@ -511,24 +525,26 @@ class GroveV1 < Sinatra::Base
   # @status 404 No such post.
   # @status 403 Forbidden (the post is restricted, and you are not invited!)
   get "/posts/:uid/tags" do |uid|
-    filter_sql = Post.unscoped.
-      by_uid(uid).
-      with_restrictions(current_identity).
-      filtered_by(params).
-      except(:select).
-      select('tags_vector').to_sql
+    with_database(uid) do
+      filter_sql = Post.unscoped.
+        by_uid(uid).
+        with_restrictions(current_identity).
+        filtered_by(params).
+        except(:select).
+        select('tags_vector').to_sql
 
-    relation = Post.arel_table.
-      project(:word, :ndoc).
-      from(Arel::Nodes::NamedFunction.new(:ts_stat, [filter_sql]))
+      relation = Post.arel_table.
+        project(:word, :ndoc).
+        from(Arel::Nodes::NamedFunction.new(:ts_stat, [filter_sql]))
 
-    counts = {}
-    Post.connection.select_rows(relation.to_sql).each do |row|
-      counts[row.first] = row[1].to_i
+      counts = {}
+      Post.connection.select_rows(relation.to_sql).each do |row|
+        counts[row.first] = row[1].to_i
+      end
+
+      halt 200, {'Content-Type' => 'application/json'},
+        {:tags => counts}.to_json
     end
-
-    halt 200, {'Content-Type' => 'application/json'},
-      {:tags => counts}.to_json
   end
 
   # @apidoc
@@ -545,13 +561,15 @@ class GroveV1 < Sinatra::Base
   put "/posts/:uid/touch" do |uid|
     require_identity
 
-    @post = Post.find_by_uid(uid)
-    halt 404, "No such post" unless @post
+    with_database(uid) do
+      @post = Post.find_by_uid(uid)
+      halt 404, "No such post" unless @post
 
-    check_allowed :update, @post do
-      @post.touch
+      check_allowed :update, @post do
+        @post.touch
+      end
+      pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
     end
-    pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
   end
 
   # @apidoc
@@ -570,14 +588,16 @@ class GroveV1 < Sinatra::Base
   post "/posts/:uid/paths/:path" do |uid, path|
     require_identity
 
-    post = Post.find_by_uid(uid)
-    halt 404, "No such post" unless post
+    with_database(uid) do
+      post = Post.find_by_uid(uid)
+      halt 404, "No such post" unless post
 
-    check_allowed :update, post do
-      post.add_path!(path) unless post.paths.include?(path)
+      check_allowed :update, post do
+        post.add_path!(path) unless post.paths.include?(path)
+      end
+
+      pg :post, :locals => {:mypost => post}
     end
-
-    pg :post, :locals => {:mypost => post}
   end
 
   # @apidoc
@@ -596,17 +616,19 @@ class GroveV1 < Sinatra::Base
   delete "/posts/:uid/paths/:path" do |uid, path|
     require_identity
 
-    post = Post.find_by_uid(uid)
-    halt 404, "No such post" unless post
+    with_database(uid) do
+      post = Post.find_by_uid(uid)
+      halt 404, "No such post" unless post
 
-    check_allowed :update, post do
-      begin
-        post.remove_path!(path)
-      rescue Exception => e
-        halt 500, e.message
+      check_allowed :update, post do
+        begin
+          post.remove_path!(path)
+        rescue Exception => e
+          halt 500, e.message
+        end
       end
+      pg :post, :locals => {:mypost => post}
     end
-    pg :post, :locals => {:mypost => post}
   end
 
   # @apidoc
@@ -626,14 +648,16 @@ class GroveV1 < Sinatra::Base
   post "/posts/:uid/occurrences/:event" do |uid, event|
     require_identity
 
-    post = Post.find_by_uid(uid)
-    halt 404, "No such post" unless post
+    with_database(uid) do
+      post = Post.find_by_uid(uid)
+      halt 404, "No such post" unless post
 
-    check_allowed :update, post do
-      post.add_occurrences!(event, params[:at])
+      check_allowed :update, post do
+        post.add_occurrences!(event, params[:at])
+      end
+
+      pg :post, :locals => {:mypost => post}
     end
-
-    pg :post, :locals => {:mypost => post}
   end
 
   # @apidoc
@@ -653,14 +677,16 @@ class GroveV1 < Sinatra::Base
   delete "/posts/:uid/occurrences/:event" do |uid, event|
     require_identity
 
-    post = Post.find_by_uid(uid)
-    halt 404, "No such post" unless post
+    with_database(uid) do
+      post = Post.find_by_uid(uid)
+      halt 404, "No such post" unless post
 
-    check_allowed :update, post do
-      post.remove_occurrences!(event)
+      check_allowed :update, post do
+        post.remove_occurrences!(event)
+      end
+
+      response.status = 204
     end
-
-    response.status = 204
   end
 
   # @apidoc
@@ -680,14 +706,16 @@ class GroveV1 < Sinatra::Base
   put "/posts/:uid/occurrences/:event" do |uid, event|
     require_identity
 
-    post = Post.find_by_uid(uid)
-    halt 404, "No such post" unless post
+    with_database(uid) do
+      post = Post.find_by_uid(uid)
+      halt 404, "No such post" unless post
 
-    check_allowed :update, post do
-      post.replace_occurrences!(event, params[:at])
+      check_allowed :update, post do
+        post.replace_occurrences!(event, params[:at])
+      end
+
+      pg :post, :locals => {:mypost => post}
     end
-
-    pg :post, :locals => {:mypost => post}
   end
 
   # @apidoc
@@ -706,17 +734,19 @@ class GroveV1 < Sinatra::Base
   post "/posts/:uid/tags/:tags" do |uid, tags|
     require_identity
 
-    @post = Post.find_by_uid(uid)
-    halt 404, "No such post" unless @post
+    with_database(uid) do
+      @post = Post.find_by_uid(uid)
+      halt 404, "No such post" unless @post
 
-    check_allowed :update, @post do
-      @post.with_lock do
-        @post.tags += params[:tags].split(',')
-        @post.save!
+      check_allowed :update, @post do
+        @post.with_lock do
+          @post.tags += params[:tags].split(',')
+          @post.save!
+        end
       end
-    end
 
-    pg :post, :locals => {:mypost => @post}
+      pg :post, :locals => {:mypost => @post}
+    end
   end
 
   # @apidoc
@@ -735,17 +765,19 @@ class GroveV1 < Sinatra::Base
   put "/posts/:uid/tags/:tags" do |uid, tags|
     require_identity
 
-    @post = Post.find_by_uid(uid)
-    halt 404, "No such post" unless @post
+    with_database(uid) do
+      @post = Post.find_by_uid(uid)
+      halt 404, "No such post" unless @post
 
-    check_allowed :update, @post do
-      @post.with_lock do
-        @post.tags = params[:tags]
-        @post.save!
+      check_allowed :update, @post do
+        @post.with_lock do
+          @post.tags = params[:tags]
+          @post.save!
+        end
       end
-    end
 
-    pg :post, :locals => {:mypost => @post}
+      pg :post, :locals => {:mypost => @post}
+    end
   end
 
   # @apidoc
@@ -764,16 +796,18 @@ class GroveV1 < Sinatra::Base
   delete "/posts/:uid/tags/:tags" do |uid, tags|
     require_identity
 
-    @post = Post.find_by_uid(uid)
-    halt 404, "No such post" unless @post
+    with_database(uid) do
+      @post = Post.find_by_uid(uid)
+      halt 404, "No such post" unless @post
 
-    check_allowed :update, @post do
-      @post.with_lock do
-        @post.tags -= params[:tags].split(',')
-        @post.save!
+      check_allowed :update, @post do
+        @post.with_lock do
+          @post.tags -= params[:tags].split(',')
+          @post.save!
+        end
       end
-    end
 
-    pg :post, :locals => {:mypost => @post}
+      pg :post, :locals => {:mypost => @post}
+    end
   end
 end
