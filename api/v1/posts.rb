@@ -410,16 +410,14 @@ class GroveV1 < Sinatra::Base
 
     @posts = []
     if cursor
-      from_id, max_id = cursor, nil
-
-      offset, batch_size = 0, limit * 10
+      offset, batch_size, from_id = 0, limit * 10, cursor
       loop do
         LOGGER.info "Fetching #{limit} posts @ #{from_id} [+#{offset} #{@posts.length}]"
 
         # We use a CTE with a minimal filter expression to quickly find the next IDs
         # to look at
         parent_scope = Location.select("distinct post_id").
-          by_path("#{path}.*").
+          by_path(path).
           joins("join locations_posts on locations_posts.location_id = locations.id").
           where("post_id > ?", from_id).
           order("post_id").
@@ -427,11 +425,11 @@ class GroveV1 < Sinatra::Base
           limit(batch_size)
 
         scope = Post.unscoped.with(lp: parent_scope).
-          where(klass: klass).
           joins('join lp on lp.post_id = posts.id').
           with_restrictions(current_identity).
           filtered_by(params).
           limit(limit)
+        scope = scope.where(klass: klass) if klass != '*'
 
         posts = scope.to_a
         if posts.any?
