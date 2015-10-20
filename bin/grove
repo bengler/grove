@@ -13,7 +13,8 @@ Mercenary.program :grove do |p|
   [
     Grove::CLI::Ls,
     Grove::CLI::Rm,
-    Grove::CLI::Touch
+    Grove::CLI::Touch,
+    Grove::CLI::IssueNuker
   ].each do |klass|
     klass.build(p)
   end
