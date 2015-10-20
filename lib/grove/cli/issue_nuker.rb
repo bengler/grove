@@ -42,7 +42,7 @@ module Grove
             post.deleted = true
             post.save!
             count += 1
-            message = "#{format("%.3f", (count * 100.0 / num))}%"
+            message = "#{format("%.1f", (count * 100.0 / num))}%"
             if message != previous_message
               print "\b" * message.length
               print colorize(message, :yellow, :bright)
