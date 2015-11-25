@@ -56,9 +56,11 @@ describe "API v1 posts" do
     describe "POST /posts/:uid" do
 
       it "creates a document" do
-        post "/posts/post:a.b.c", :post => {:document => {content: "hello world"}}
+        post "/posts/post:a.b.c", :post => {:document => {content: "hello world", foo: {bar: nil}}}
         uid = JSON.parse(last_response.body)['post']['uid']
-        Post.find_by_uid(uid).document['content'].should eq "hello world"
+        get "/posts/#{uid}"
+        last_response.status.should eq 200
+        JSON.parse(last_response.body)['post']['document'].should eq ({"content"=>"hello world", "foo"=>{"bar"=>nil}})
       end
 
       it "creates a tagged document" do
@@ -407,7 +409,7 @@ describe "API v1 posts" do
         end
 
         context "with unpublished=include" do
-  
+
           it "will return unpublished posts created by current identity" do
             posts = [
               Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => 'xyzzy'}, :published => false),
@@ -811,7 +813,7 @@ describe "API v1 posts" do
           3.times do |i|
             Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => "zippo #{i}"}, :published => false)
           end
-          get "/posts/post:a.b.c$*/count", :unpublished => 'include' 
+          get "/posts/post:a.b.c$*/count", :unpublished => 'include'
           JSON.parse(last_response.body)['count'].should eq 6
         end
         it "does not count other identities's unpublished posts" do
@@ -821,7 +823,7 @@ describe "API v1 posts" do
           3.times do |i|
             Post.create!(:uid => "post:a.b.c", :created_by => 1, :document => {'text' => "zippo #{i}"}, :published => false)
           end
-          get "/posts/post:a.b.c$*/count", :unpublished => 'include' 
+          get "/posts/post:a.b.c$*/count", :unpublished => 'include'
           JSON.parse(last_response.body)['count'].should eq 3
         end
       end

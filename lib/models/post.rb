@@ -165,7 +165,7 @@ class Post < ActiveRecord::Base
 
   # Is this a hash?
   def self.hashlike?(value)
-    value.is_a?(Hash) || (value.respond_to?(:to_h) && !value.is_a?(Array))
+    value.is_a?(Hash) || (value.respond_to?(:to_h) && !value.is_a?(Array)) && !value.nil?
   end
 
   def attributes_for_export

@@ -109,6 +109,14 @@ describe Post do
       p
     end
 
+    describe 'document normalization' do
+      it 'keeps nil values as nil values' do
+        p = Post.create!(default_attributes.merge({:document => {:foo => {:bar => nil}}}))
+        p.save!
+        expect(p.document).to eq ({"foo" => {"bar" => nil}})
+      end
+    end
+
     describe '"since" parameter' do
       it 'returns posts created at or after timestamp' do
         expect(Post.filtered_by(
