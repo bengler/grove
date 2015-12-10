@@ -92,7 +92,7 @@ class GroveV1 < Sinatra::Base
         end
         if path
           _, name = mappings.find { |(k, v)| k == path || path.index("#{k}.") == 0 }
-          if name
+          if name and name != 'default'
             LOGGER.info "Mapping path #{path} to database #{name}"
             return Multidb.use(name, &block)
           end
