@@ -43,6 +43,8 @@ class GroveV1 < Sinatra::Base
   # @optional [JSON] post[paths] Array of synonymous paths for the post.
   # @optional [JSON] post[occurrences] Hash of arrays of timestamps for this post.
   #   E.g. {"start_time" => ['2012-11-14T10:54:22+01:00']}
+  # @optional [Boolean] merge Attributes will be merged on top of post. This allows partial
+  #   updates. Conflicts will be retried.
   # @status 204 Success.
   # @status 404 No such post.
   # @status 409 The external_id is in use on a post with a different path.
@@ -75,6 +77,8 @@ class GroveV1 < Sinatra::Base
   # @optional [JSON] post[tags] Array of tags for the post.
   # @optional [JSON] post[paths] Array of synonymous paths for the post.
   # @optional [JSON] post[occurrences] Hash of arrays of timestamps for this post.
+  # @optional [Boolean] merge Attributes will be merged on top of post. This allows partial
+  #   updates. Conflicts will be retried.
   # @status 204 Success.
   # @status 404 No such post.
   # @status 409 The external_id is in use on a post with a different path.
@@ -134,16 +138,37 @@ class GroveV1 < Sinatra::Base
     if current_identity.god?
       allowed_attributes += ['created_at', 'created_by', 'protected']
     end
-    (allowed_attributes & attributes.keys).each do |field|
-      @post.send(:"#{field}=", attributes[field])
-    end
 
-    check_allowed @post.new_record? ? 'create' : 'update', @post do
-      begin
-        @post.save!
-      rescue Post::CanonicalPathConflict => e
-        halt 403, e.message
+    is_merge = params[:merge].to_s == 'true'
+    if is_merge
+      mergeable_keys = %w(external_document document sensitive protected)
+    else
+      mergeable_keys = []
+    end
+    begin
+      (allowed_attributes & attributes.keys).each do |field|
+        value = attributes[field]
+        if mergeable_keys.include?(field)
+          value ||= {}
+          value = merge_hashes(@post.send(field), value)
+        end
+        @post.send("#{field}=", value)
       end
+
+      if @post.new_record? or @post.changed?
+        check_allowed @post.new_record? ? 'create' : 'update', @post do
+          @post.save!
+        end
+      end
+    rescue Post::CanonicalPathConflict => e
+      halt 403, e.message
+    rescue ActiveRecord::StaleObjectError => e
+      raise unless is_merge
+      logger.info "Conflict saving #{@post.uid}, reloading to re-apply patch"
+      @post = Post.find(@post.id)
+      attributes['version'] = @post.version
+      sleep(rand * 0.25)  # Sleep up to 250ms
+      retry
     end
 
     pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
@@ -810,4 +835,31 @@ class GroveV1 < Sinatra::Base
       pg :post, :locals => {:mypost => @post}
     end
   end
+
+  private
+
+    def merge_hashes(dest, source)
+      if source
+        if dest
+          source, dest = source.stringify_keys, dest.stringify_keys
+          source.each_pair do |key, value|
+            if value.is_a?(Hash)
+              if dest[key].is_a?(Hash)
+                dest[key] = merge_hashes(dest[key], value)
+              else
+                dest[key] = value
+              end
+            elsif value
+              dest[key] = value
+            else
+              dest.delete(key)
+            end
+          end
+        else
+          source
+        end
+      end
+      dest
+    end
+
 end
