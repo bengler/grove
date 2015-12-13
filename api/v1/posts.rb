@@ -139,7 +139,7 @@ class GroveV1 < Sinatra::Base
       allowed_attributes += ['created_at', 'created_by', 'protected']
     end
 
-    is_merge = params[:merge].to_s == 'true'
+    is_merge = params[:merge].to_s == 'true' && !@post.new_record?
     if is_merge
       mergeable_keys = %w(external_document document sensitive protected)
     else
