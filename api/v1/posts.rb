@@ -98,8 +98,6 @@ class GroveV1 < Sinatra::Base
     attributes = params[:post]
     halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless attributes
 
-    new_record = @post.new_record?
-
     # If an external_id is submitted this is considered a sync with an external system.
     # external_id must be unique across a single realm. If there is a post with the
     # provided external_id it is updated with the provided content.
@@ -125,6 +123,8 @@ class GroveV1 < Sinatra::Base
     @post ||= Post.unscoped.find_by_uid(uid)
     @post ||= Post.new(:uid => uid, :created_by => current_identity.id) unless opts[:only_updates]
     halt 404, "Post not found" unless @post
+
+    new_record = @post.new_record?
 
     halt 404, "Post is deleted" if @post.deleted?
     response.status = 201 if new_record

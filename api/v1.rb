@@ -88,10 +88,18 @@ class GroveV1 < Sinatra::Base
         if uid_or_path !~ /:/
           path = uid_or_path
         else
+          begin
+            query = Pebbles::Uid.query(uid_or_path)
+          rescue ArgumentError
+          else
+            if query.list?
+              uid_or_path = query.terms.first
+            end
+          end
           _, path, _ = Pebbles::Uid.parse(uid_or_path) rescue nil
         end
         if path
-          _, name = mappings.find { |(k, v)| k == path || path.index("#{k}.") == 0 }
+          _, name = mappings.find { |(k, _)| k == path || path.index("#{k}.") == 0 }
           if name and name != 'default'
             LOGGER.info "Mapping path #{path} to database #{name}"
             return Multidb.use(name, &block)
@@ -110,7 +118,7 @@ class GroveV1 < Sinatra::Base
         sort_by { |k, v| -k.length }
       LOGGER.info "Loaded mappings: #{mappings.inspect}"
       mappings
-    rescue Errno::ENOENT => e
+    rescue Errno::ENOENT
       {}
     end
 
