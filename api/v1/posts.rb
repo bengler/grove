@@ -98,6 +98,8 @@ class GroveV1 < Sinatra::Base
     attributes = params[:post]
     halt 400, "No post. Remember to namespace your hashes {\"post\":{\"document\":{...}}" unless attributes
 
+    new_record = @post.new_record?
+
     # If an external_id is submitted this is considered a sync with an external system.
     # external_id must be unique across a single realm. If there is a post with the
     # provided external_id it is updated with the provided content.
@@ -125,9 +127,9 @@ class GroveV1 < Sinatra::Base
     halt 404, "Post not found" unless @post
 
     halt 404, "Post is deleted" if @post.deleted?
-    response.status = 201 if @post.new_record?
+    response.status = 201 if new_record
 
-    if attributes[:version] and @post.new_record?
+    if attributes[:version] and new_record
       halt 403, "You may not specify initial version when creating post"
     end
 
@@ -139,7 +141,7 @@ class GroveV1 < Sinatra::Base
       allowed_attributes += ['created_at', 'created_by', 'protected']
     end
 
-    is_merge = params[:merge].to_s == 'true' && !@post.new_record?
+    is_merge = params[:merge].to_s == 'true' && !new_record
     if is_merge
       mergeable_keys = %w(external_document document sensitive protected)
     else
@@ -155,8 +157,8 @@ class GroveV1 < Sinatra::Base
         @post.send("#{field}=", value)
       end
 
-      if @post.new_record? or @post.changed?
-        check_allowed @post.new_record? ? 'create' : 'update', @post do
+      if new_record or @post.changed?
+        check_allowed(new_record ? 'create' : 'update', @post) do
           @post.save!
         end
       end
@@ -169,6 +171,12 @@ class GroveV1 < Sinatra::Base
       attributes['version'] = @post.version
       sleep(rand * 0.25)  # Sleep up to 250ms
       retry
+    end
+
+    if new_record
+      LOGGER.info "Created #{@post.uid}"
+    else
+      LOGGER.info "Updated #{@post.uid}"
     end
 
     pg :post, :locals => {:mypost => @post} # named "mypost" due to https://github.com/kytrinyx/petroglyph/issues/5
@@ -206,6 +214,8 @@ class GroveV1 < Sinatra::Base
         @post.deleted = true
         @post.save!
         response.status = 204
+
+        LOGGER.info "Deleted #{@post.uid}"
       end
     end
   end
@@ -242,9 +252,10 @@ class GroveV1 < Sinatra::Base
       if !the_post
         halt 404, "No such post"
       elsif @post
-          @post.deleted = false
-          @post.save!
-          response.status = 200
+        @post.deleted = false
+        @post.save!
+        response.status = 200
+        LOGGER.info "Undeleted #{@post.uid}"
       else
         halt 403, "You don't have permission to undelete this post."
       end
