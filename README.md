@@ -43,7 +43,7 @@ Examples of paths:
 - `acmecorp.blogs.football.postings`
 - `acmecorp.users`
 
-A document has one *canonical path*, which is where the "original" document is stored. If you need the document to appear in multiple places in the folder hierarchy you may post it to multiple paths, which will act like "symlinks" to the document, and enable the  todocument appear in query results as if it were stored in all the provided paths; in reality, the original document is always returned. If the underlying document is updated, it will be updated for all paths.
+A document has one *canonical path*, which is where the "original" document is stored. If you need the document to appear in multiple places in the folder hierarchy you may post it to multiple paths, which will act like "symlinks" to the document, and enable the document to appear in query results as if it were stored in all the provided paths; in reality, the original document is always returned. If the underlying document is updated, it will be updated for all paths.
 
 Folders are created automatically whenever a document is posted; you don't have to manually create them. Any path you postulate is acceptable as long as it is within the _realm_ of your application.
 
