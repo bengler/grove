@@ -457,7 +457,7 @@ class GroveV1 < Sinatra::Base
 
       @posts = []
       if cursor
-        offset, batch_size, from_id = 0, limit * 10, cursor
+        offset, batch_size, from_id, deadline = 0, limit * 10, cursor, Time.now + 10.seconds
         loop do
           LOGGER.info "Fetching #{limit} posts @ #{from_id} [+#{offset} #{@posts.length}]"
 
@@ -485,12 +485,16 @@ class GroveV1 < Sinatra::Base
             offset = 0
 
             # Break if we have enough data or we're looped a lot
-            break if @posts.length >= limit or offset > limit * 5
+            break if @posts.length >= limit or offset > limit * 5 or Time.now > deadline
           else
             # With WITH query returned a page that was all filtered out. Now we need to
             # loop until we find more data.
             offset += batch_size
-            break if offset > limit * 10 and parent_scope.empty?
+            break if offset > limit * 10 and Location.select('1').
+              by_path(path).
+              joins("join locations_posts on locations_posts.location_id = locations.id").
+              where("post_id > ?", from_id).
+              offset(offset).limit(1).empty?
           end
         end
 
