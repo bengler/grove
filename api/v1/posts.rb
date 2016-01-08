@@ -439,13 +439,15 @@ class GroveV1 < Sinatra::Base
         halt 400, "Invalid cursor"
       end
 
+      scope = Post.unscoped.
+        by_path(path).
+        with_restrictions(current_identity).
+        filtered_by(params)
+      scope = scope.where(klass: klass) if klass != '*'
+
       if cursor == 'start'
-        posts = Post.unscoped.
-          by_uid(uid).
-          with_restrictions(current_identity).
-          filtered_by(params).
-          reorder('posts.id').
-          limit(1).to_a
+        LOGGER.info "Finding start cursor at #{path}"
+        posts = scope.reorder('posts.id').limit(1).to_a
         if posts.any?
           cursor = posts.first.id - 1
         else
@@ -455,51 +457,22 @@ class GroveV1 < Sinatra::Base
         cursor = cursor.to_i
       end
 
-      @posts = []
       if cursor
-        offset, batch_size, from_id, deadline = 0, limit * 10, cursor, Time.now + 10.seconds
-        loop do
-          LOGGER.info "Fetching #{limit} posts @ #{from_id} [+#{offset} #{@posts.length}]"
+        LOGGER.info "Fetching #{limit} posts @ #{cursor}"
 
-          # We use a CTE with a minimal filter expression to quickly find the next IDs
-          # to look at
-          parent_scope = Location.select("distinct post_id").
-            by_path(path).
-            joins("join locations_posts on locations_posts.location_id = locations.id").
-            where("post_id > ?", from_id).
-            order("post_id").
-            offset(offset).
-            limit(batch_size)
+        window = Location.select("distinct post_id").
+          by_path(path).
+          joins("join locations_posts on locations_posts.location_id = locations.id").
+          where("post_id > ?", cursor).
+          order("post_id").
+          limit(limit).pluck(:post_id)
 
-          scope = Post.unscoped.with(lp: parent_scope).
-            joins('join lp on lp.post_id = posts.id').
-            with_restrictions(current_identity).
-            filtered_by(params).
-            limit(limit)
-          scope = scope.where(klass: klass) if klass != '*'
-
-          posts = scope.to_a
-          if posts.any?
-            @posts.concat(posts)
-            from_id = posts.map(&:id).max
-            offset = 0
-
-            # Break if we have enough data or we're looped a lot
-            break if @posts.length >= limit or offset > limit * 5 or Time.now > deadline
-          else
-            # With WITH query returned a page that was all filtered out. Now we need to
-            # loop until we find more data.
-            offset += batch_size
-            break if offset > limit * 10 and Location.select('1').
-              by_path(path).
-              joins("join locations_posts on locations_posts.location_id = locations.id").
-              where("post_id > ?", from_id).
-              offset(offset).limit(1).empty?
-          end
+        if window.any?
+          @posts = scope.where("posts.id between ? and ?", window.first, window.last).limit(limit).to_a
+          @next_cursor = @posts.last.try(:id) || window.last
         end
-
-        @next_cursor = @posts.map(&:id).max
       end
+      @posts ||= []
 
       if (exclude_attributes = params[:exclude_attributes]) && exclude_attributes.present?
         @exclude_attributes = exclude_attributes.split(',')
