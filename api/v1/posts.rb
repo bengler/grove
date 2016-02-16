@@ -116,7 +116,6 @@ class GroveV1 < Sinatra::Base
     @post ||= Post.new(:uid => uid, :created_by => current_identity.id) unless opts[:only_updates]
     halt 404, "Post not found" unless @post
 
-    halt 404, "Post is deleted" if @post.deleted?
     response.status = 201 if @post.new_record?
 
     if attributes[:version] and @post.new_record?

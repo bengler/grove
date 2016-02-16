@@ -122,10 +122,10 @@ describe "API v1 posts" do
         JSON.parse(last_response.body)['post']['secret'].should eq nil
       end
 
-      it "can't update a deleted document" do
+      it "can update a deleted document" do
         p = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => 1, :deleted => true)
         post "/posts/#{p.uid}", :post => {:document => {'text' => '2'}}
-        last_response.status.should eq 404
+        last_response.status.should eq 200
       end
 
       it "can't update timestamps" do
@@ -133,12 +133,6 @@ describe "API v1 posts" do
         post "/posts/#{p.uid}", :post => {:document => {'text' => '2'}, :created_at => Time.new(0)}
         last_response.status.should eq 200
         Time.parse(JSON.parse(last_response.body)['post']['created_at']).to_s.should eq p.created_at.to_s
-      end
-
-      it "can't update a deleted external document" do
-        p = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => 1, :deleted => true, :external_id => 'foo_123')
-        post "/posts/#{p.uid}", :post => {:document => {'text' => '2'}, :external_id => 'foo_123'}
-        last_response.status.should eq 404
       end
 
       it "can post with external_id and avoid duplicates" do
