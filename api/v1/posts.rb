@@ -125,8 +125,6 @@ class GroveV1 < Sinatra::Base
     halt 404, "Post not found" unless @post
 
     new_record = @post.new_record?
-
-    halt 404, "Post is deleted" if @post.deleted?
     response.status = 201 if new_record
 
     if attributes[:version] and new_record
