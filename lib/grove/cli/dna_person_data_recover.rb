@@ -67,13 +67,15 @@ module Grove
         end
 
         # Let's go
-
+        dirty = false
+        
         # Put back old field values on current_person
         ['image', 'facebook', 'twitter', 'bio'].each do |field|
           if deleted_doc[field] && !doc[field]
             next if deleted_doc[field].class == String && deleted_doc[field].strip.empty?
             doc[field] = deleted_doc[field]
             puts colorize("  #{field}: #{deleted_doc[field]}", :green, :bright)
+            dirty = true
           end
         end
         # Write back updated document
@@ -88,13 +90,14 @@ module Grove
           if deleted_sens[field] && !sens[field]
             sens[field] = deleted_sens[field]
             puts colorize("  #{field}: #{deleted_sens[field]}", :green, :bright)
+            dirty = true
           end
         end
         # Write back the sensitive field
         current_person.sensitive = sens
 
         # Save current_person
-        current_person.save!
+        current_person.save! if dirty
       end
 
     end
