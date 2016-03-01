@@ -29,11 +29,14 @@ module Grove
         ids = Post.unscoped.where(klass: 'post.person', realm: 'dna', deleted: true).where('updated_at > ?', Time.new(2016, 2, 18)).order('created_at asc').pluck(:id)
 
         num = ids.count
+        increment = 0
         puts colorize("Total persons to handle: #{num}", :green, :bright)
 
         ids.each_slice(512) do |chunk|
           Post.unscoped.find(chunk).each do |deleted_person|
-            handle! deleted_person
+            increment += 1
+            puts colorize("[#{increment}/#{num}] #{deleted_person.document['name']} (#{deleted_person.id})", :green, :dim)
+            handle!(deleted_person)
             done[deleted_person.id] = true
           end
         end
@@ -64,7 +67,6 @@ module Grove
         end
 
         # Let's go
-        puts colorize("#{deleted_doc['name']} (#{current_person.external_id})", :green, :dim)
 
         # Put back old field values on current_person
         ['image', 'facebook', 'twitter', 'bio'].each do |field|
