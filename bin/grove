@@ -14,7 +14,8 @@ Mercenary.program :grove do |p|
     Grove::CLI::Ls,
     Grove::CLI::Rm,
     Grove::CLI::Touch,
-    Grove::CLI::IssueNuker
+    Grove::CLI::IssueNuker,
+    Grove::CLI::DnaPersonDataRecover
   ].each do |klass|
     klass.build(p)
   end
