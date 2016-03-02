@@ -17,17 +17,18 @@ module Grove
           c.syntax "recover"
           c.description "Recover person data"
           c.action do |args, options|
-            DnaPersonDataRecover.new.handle_all!
+            DnaPersonDataRecover.new.handle_all! args
           end
         end
       end
 
 
-      def handle_all!
+      def handle_all!(args = [])
+        begin_at = args.empty? ? 0 : args.first.to_i
         done = {}
         # find all deleted posts in time window
         ids = Post.unscoped.where(klass: 'post.person', realm: 'dna', deleted: true).where('updated_at > ?', Time.new(2016, 2, 18)).order('created_at asc').pluck(:id)
-
+        ids = ids[begin_at, ids.count]
         num = ids.count
         increment = 0
         puts colorize("Total persons to handle: #{num}", :green, :bright)
@@ -68,7 +69,7 @@ module Grove
 
         # Let's go
         dirty = false
-        
+
         # Put back old field values on current_person
         ['image', 'facebook', 'twitter', 'bio'].each do |field|
           if deleted_doc[field] && !doc[field]
