@@ -1122,12 +1122,22 @@ describe "API v1 posts" do
       result['created_by'].should eq another_identity.id
     end
 
-    it "can update timestamps" do
+    it "can update created_at timestamp" do
       p = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => 1)
       new_time = Time.new(2012, 1, 1, 11, 11, 11, '+00:00')
       post "/posts/#{p.uid}", :post => {:document => {'text' => '2'}, :created_at => new_time}
       last_response.status.should eq 200
       Time.parse(JSON.parse(last_response.body)['post']['created_at']).utc.should eq new_time.utc
+    end
+
+    it "can't update updated_at timestamp" do
+      p = Post.create!(:uid => "post:a.b.c", :document => {'text' => '1'}, :created_by => 1)
+      initial_updated_at = p.updated_at
+      new_created_at = Time.new(2012, 1, 1)
+      post "/posts/#{p.uid}", :post => {:document => {'text' => '2'}, :created_at => new_created_at}
+      post "/posts/#{p.uid}", :post => {:document => {'text' => '3'}, :updated_at => new_created_at}
+      current_updated_at = Time.parse(JSON.parse(last_response.body)['post']['updated_at'])
+      (initial_updated_at.to_i <= current_updated_at.to_i).should eq true
     end
 
     it "is able to create a post on behalf of someone else" do
