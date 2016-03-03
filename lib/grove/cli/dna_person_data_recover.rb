@@ -27,7 +27,7 @@ module Grove
         begin_at = args.empty? ? 0 : args.first.to_i
         done = {}
         # find all deleted posts in time window
-        ids = Post.unscoped.where(klass: 'post.person', realm: 'dna', deleted: true).where('updated_at > ?', Time.new(2016, 2, 18)).order('created_at asc').pluck(:id)
+        ids = Post.unscoped.where(klass: 'post.person', realm: 'dna', deleted: true).where('updated_at > ?', Time.new(2016, 2, 28)).order('created_at asc').pluck(:id)
         ids = ids[begin_at, ids.count]
         num = ids.count
         increment = 0
