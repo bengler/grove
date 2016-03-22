@@ -52,7 +52,7 @@ class Post < ActiveRecord::Base
   before_destroy :invalidate_cache
 
   default_scope do
-    where("not deleted")
+    where(deleted: false)
   end
 
   serialize :document
@@ -103,7 +103,7 @@ class Post < ActiveRecord::Base
   # FIXME: In order to support the "deleted" filter, queries must be performed with default scope disabled.
   scope :filtered_by, lambda { |filters|
     scope = all
-    scope = scope.where("not deleted") unless filters['deleted'] == 'include'
+    scope = scope.where(deleted: false) unless filters['deleted'] == 'include'
     if (since = filters['since'])
       since = Time.parse(since) unless since.is_a?(Time) or since.is_a?(DateTime)
       since = Time.at(since.to_f.floor)  # Truncate to nearest second
