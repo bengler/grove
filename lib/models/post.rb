@@ -63,18 +63,7 @@ class Post < ActiveRecord::Base
   scope :by_path, ->(path) {
     conditions = Pebbles::Path.to_conditions(path)
     if conditions.any?
-      locations = Location.arel_table
-      locations_posts = Arel::Table.new('locations_posts')
-      subquery = locations_posts.project(:post_id).
-        join(locations).on(locations[:id].eq(locations_posts[:location_id]))
-      conditions.each do |column, value|
-        if value.respond_to?(:to_ary)
-          subquery.where(locations[column].in(value))
-        else
-          subquery.where(locations[column].eq(value))
-        end
-      end
-      where(Post.arel_table[:id].in(subquery))
+      joins(:locations).where(locations: conditions)
     else
       nil
     end

@@ -430,7 +430,7 @@ class GroveV1 < Sinatra::Base
 
       klass, path, _ = Pebbles::Uid.parse(uid)
 
-      limit = (params[:limit] || 100).to_i
+      limit = (params[:limit] || 500).to_i
 
       cursor = params[:cursor]
       unless cursor.present?
@@ -445,9 +445,9 @@ class GroveV1 < Sinatra::Base
 
       if cursor == 'start'
         LOGGER.info "Finding start cursor at #{path}"
-        posts = scope.reorder('posts.id').limit(1).to_a
-        if posts.any?
-          cursor = posts.first.id - 1
+        first_id = scope.minimum(:id)
+        if first_id
+          cursor = first_id - 1
         else
           cursor = nil
         end
@@ -457,17 +457,9 @@ class GroveV1 < Sinatra::Base
 
       if cursor
         LOGGER.info "Fetching #{limit} posts @ #{cursor}"
-
-        window = Location.select("distinct post_id").
-          by_path(path).
-          joins("join locations_posts on locations_posts.location_id = locations.id").
-          where("post_id > ?", cursor).
-          order("post_id").
-          limit(limit).pluck(:post_id)
-
-        if window.any?
-          @posts = scope.where("posts.id between ? and ?", window.first, window.last).limit(limit).to_a
-          @next_cursor = @posts.last.try(:id) || window.last
+        @posts = scope.reorder(:id).where("posts.id > ?", cursor).limit(limit)
+        if @posts.any?
+          @next_cursor = @posts.last.id
         end
       end
       @posts ||= []
