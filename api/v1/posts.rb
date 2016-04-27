@@ -457,7 +457,8 @@ class GroveV1 < Sinatra::Base
 
       if cursor
         LOGGER.info "Fetching #{limit} posts @ #{cursor}"
-        @posts = scope.reorder(:id).where("posts.id > ?", cursor).limit(limit)
+        @posts = scope.select("distinct on (posts.id) posts.*").
+          reorder(:id).where("posts.id > ?", cursor).limit(limit)
         if @posts.any?
           @next_cursor = @posts.last.id
         end
