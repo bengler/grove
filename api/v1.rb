@@ -76,7 +76,7 @@ class GroveV1 < Sinatra::Base
           retriable = false
           retry
         end
-        message = "Document with external ID #{e.record.external_id} already exists"
+        message = "Document already exists"
         logger.error(message)
         halt 409, message
       end
