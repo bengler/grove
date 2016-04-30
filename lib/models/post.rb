@@ -388,14 +388,11 @@ class Post < ActiveRecord::Base
   def update_external_id_according_to_deleted_status
     # A deleted post should not lock its external_id but we
     # archive it to post.document in order to make forensics easier.
-    if self.deleted_changed?
-      if self.deleted && self.external_id != nil
-        doc = self.document || {} # TODO: never have posts with nil document
-        doc.merge!('external_id' => self.external_id)
-        self.document = doc
-        self.external_id = nil
-      end
+    if self.deleted_changed? and self.deleted and self.external_id.present?
+      self.document = self.document.merge(external_id: self.external_id)
+      self.external_id = nil
     end
+    nil
   end
 
   private
