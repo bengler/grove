@@ -4,7 +4,9 @@ require_relative '../cache_key'
 
 class Post < ActiveRecord::Base
 
-  class CanonicalPathConflict < StandardError; end
+  class InvalidDataError < StandardError; end
+  class CanonicalPathConflict < InvalidDataError; end
+  class IllegalAttributeAssignment < InvalidDataError; end
 
   SORTABLE_FIELDS = %w(
     id
@@ -255,8 +257,9 @@ class Post < ActiveRecord::Base
   def uid=(value)
     self.klass, self.canonical_path, _oid = Pebbles::Uid.parse(value)
 
-    unless _oid.nil? || _oid == "#{self.id}"
-      raise ArgumentError, "Do not assign oid. It is managed by the model. (omit '...$#{_oid}' from uid)"
+    unless _oid.nil? or "#{_oid}" == "#{self.id}"
+      raise IllegalAttributeAssignment,
+        "Do not assign oid. It is managed by the model. (omit '...$#{_oid}' from uid)"
     end
   end
 

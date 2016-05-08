@@ -127,6 +127,10 @@ class GroveV1 < Sinatra::Base
     halt 409, "Post has been modified; refetch and try again"
   end
 
+  error Post::InvalidDataError do |e|
+    halt 400, e.message
+  end
+
   error Pebbles::River::ConnectionError do |e|
     logger.error("#{e.class}: #{e.message}")
     halt 503, "Internal connection error"
