@@ -13,6 +13,7 @@ class RiverNotifications < ActiveRecord::Observer
     if should_publish?(object)
       prepare_for_publish(object, :create)
     end
+    nil
   end
 
   def after_update(object)
@@ -23,12 +24,14 @@ class RiverNotifications < ActiveRecord::Observer
         prepare_for_publish(object, :update)
       end
     end
+    nil
   end
 
   def after_destroy(object)
     if should_publish?(object)
       prepare_for_publish(object, :delete)
     end
+    nil
   end
 
   def publish!(params)
