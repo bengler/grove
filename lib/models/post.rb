@@ -41,8 +41,8 @@ class Post < ActiveRecord::Base
     :with => /\A[a-zA-Z_-]/,
     :if => lambda { |record| !record.external_id.nil? },
     :message => "must start with a non-digit character"
-  before_validation :assign_realm, :set_default_klass
 
+  before_validation :assign_realm, :set_default_klass
   before_save :ensure_timestamps
   before_save :revert_unmodified_values
   before_save :update_conflicted
@@ -340,6 +340,7 @@ class Post < ActiveRecord::Base
   # Ensures that the post is attached to its canonical path
   def attach_canonical_path
     self.paths |= [self.canonical_path]
+    nil
   end
 
   def canonical_path_must_be_valid
@@ -365,13 +366,14 @@ class Post < ActiveRecord::Base
     # fields are kept in the `document` hash.
     return if document.nil? or external_document.nil?
     document.reject! { |key, value| external_document[key] == value }
+    nil
   end
 
   def update_conflicted
     return if document.nil? or external_document.nil?
     overridden_fields = external_document.keys & document.keys
     self.conflicted = (self.external_document_updated_at > self.document_updated_at and overridden_fields.any?)
-    true
+    nil
   end
 
   def update_readmarks_according_to_deleted_status
@@ -386,6 +388,7 @@ class Post < ActiveRecord::Base
         paths.each { |path| Readmark.post_added(path, self.id)}
       end
     end
+    nil
   end
 
   def update_external_id_according_to_deleted_status
@@ -417,6 +420,7 @@ class Post < ActiveRecord::Base
     def ensure_timestamps
       self.document_updated_at ||= Time.now
       self.external_document_updated_at ||= Time.now
+      nil
     end
 
 end
