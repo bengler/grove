@@ -122,12 +122,7 @@ module Grove
             Post.find(chunk).each do |post|
               begin
                 migrate!(post)
-              rescue MalformedImage => e
-                puts colorize("Post #{post.uid} has unexpected image data", :red, :bright)
-                failures[post.uid] = "#{e.class}"
-                next
-              rescue NonS3Source => e
-                puts colorize("Post #{post.uid} has unexpected image url", :red, :bright)
+              rescue MalformedImage, NonS3Source => e
                 failures[post.uid] = "#{e.class}"
                 next
               end
