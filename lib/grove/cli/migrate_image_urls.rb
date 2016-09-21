@@ -81,19 +81,19 @@ module Grove
       end
 
       def process(args = [], options = {})
-        if args == ['all']
-          migrate_all!
+        if args.first == 'all'
+          limit = (args[1] || 100).to_i
+          migrate_all!(limit)
         else
           count = 0
-          args.each do |uid|
-            puts colorize("Migrating", :yellow, :bright)
-            scope = scope_from_uid(uid)
-            Post.transaction do
-              scope.find_each do |post|
-                puts colorize("Migrating #{post.uid}", :red)
-                migrate!(post)
-                count += 1
-              end
+          uid = args.first
+          puts colorize("Migrating", :yellow, :bright)
+          scope = scope_from_uid(uid)
+          Post.transaction do
+            scope.find_each do |post|
+              puts colorize("Migrating #{post.uid}", :red)
+              migrate!(post)
+              count += 1
             end
           end
           puts if count > 0
@@ -102,7 +102,7 @@ module Grove
       end
 
 
-      def migrate_all!(batch_size = 512)
+      def migrate_all!(limit, batch_size = 512)
         failures = {}
         KLASSES.each do |klass|
           ids = Post
@@ -110,11 +110,11 @@ module Grove
             .where('document LIKE ?', '%http://apps.o5.no.s3%')
             .where(realm: 'apdm')
             .where(klass: klass)
-            .limit(100)
+            .order('created_at desc')
+            .limit(limit)
             .pluck(:id)
 
           num = ids.count
-          puts colorize("Total: #{num}", :red, :bright)
           count = 0
           previous_message = 0
           ids.each_slice(batch_size) do |chunk|
@@ -131,7 +131,7 @@ module Grove
                 next
               end
               count += 1
-              message = "#{klass}: #{format("%.3f", (count * 100.0 / num))}%"
+              message = "#{klass} [#{num}]: #{format("%.3f", (count * 100.0 / num))}%"
               if message != previous_message
                 print "\b" * message.length
                 print colorize(message, :yellow, :bright)
@@ -139,7 +139,7 @@ module Grove
               previous_message = message
             end
           end
-          print colorize(' Done!', :green, :bright)
+          puts ''
         end
         puts ''
         puts colorize("Errors #{pp(failures)}", :red, :bright)
@@ -198,7 +198,6 @@ module Grove
         doc['secure_access'] = true
         post.document = doc
         post.save
-        return post
       end
 
 
