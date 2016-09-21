@@ -117,7 +117,7 @@ module Grove
           num = ids.count
           count = 0
           previous_message = 0
-          puts "\n"
+          puts colorize("#{klass} [#{num}]", :yellow, :bright)
           ids.each_slice(batch_size) do |chunk|
             Post.find(chunk).each do |post|
               begin
@@ -132,7 +132,7 @@ module Grove
                 next
               end
               count += 1
-              message = "#{klass} [#{num}]: #{format("%.3f", (count * 100.0 / num))}%"
+              message = "#{format("%.2f", (count * 100.0 / num))}%"
               if message != previous_message
                 print "\b" * message.length
                 print colorize(message, :yellow, :bright)
