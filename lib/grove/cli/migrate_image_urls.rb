@@ -117,6 +117,7 @@ module Grove
           num = ids.count
           count = 0
           previous_message = 0
+          puts ''
           ids.each_slice(batch_size) do |chunk|
             Post.find(chunk).each do |post|
               begin
@@ -139,7 +140,6 @@ module Grove
               previous_message = message
             end
           end
-          puts ''
         end
         puts ''
         puts colorize("Errors #{pp(failures)}", :red, :bright)
