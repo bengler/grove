@@ -117,7 +117,7 @@ module Grove
           num = ids.count
           count = 0
           previous_message = 0
-          puts ''
+          puts "\n"
           ids.each_slice(batch_size) do |chunk|
             Post.find(chunk).each do |post|
               begin
@@ -159,6 +159,7 @@ module Grove
 
         when 'post.image'
           doc = fix_image(doc)
+
         when 'post.letter'
           author_image = doc['author_details'] && doc['author_details']['author_image']
           if author_image
@@ -173,15 +174,16 @@ module Grove
               return illustration_image if illustration_image['type'] == 'reference'
               fix_image(illustration_image)
             end
+            doc['illustration_images'] = images
           end
-          doc['illustration_images'] = images
 
         when 'post.event'
           if (doc['image_thumb'] && doc['image_thumb'].is_a?(Hash))
             # hack to fix borked image_thumb
             doc['image_thumb'] = doc['image_thumb']['url']
+          else
+            doc['image_thumb'] = fix_url(doc['image_thumb'])
           end
-          doc['image_thumb'] = fix_url(doc['image_thumb'])
           doc['image_full'] = fix_url(doc['image_full'])
 
         when 'post.artist'
@@ -195,6 +197,8 @@ module Grove
         else
           raise "WTF? Klass for post: #{post.uid}"
         end
+
+        # We're all good. Save the post.
         doc['secure_access'] = true
         post.document = doc
         post.save
