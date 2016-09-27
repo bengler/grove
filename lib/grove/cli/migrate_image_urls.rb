@@ -68,7 +68,6 @@ module Grove
       class MalformedImage < StandardError; end
 
       KLASSES = ['post.greeting', 'post.stream_image', 'post.image', 'post.event', 'post.artist', 'post.letter', 'post.story', 'post.track']
-      #KLASSES = ['post.letter']
 
       def self.build(program)
         program.command :migrate_image_urls do |c|
