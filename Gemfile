@@ -3,7 +3,7 @@ source 'https://rubygems.org'
 gem 'sinatra', '~> 1.3.2'
 gem 'sinatra-contrib', '~> 1.3.1', require: false
 gem 'sinatra-activerecord', '~> 2.0'
-gem 'rack-contrib', :git => 'https://github.com/rack/rack-contrib'
+gem 'rack-contrib', '~> 1.4.0'
 gem 'activerecord', '~> 4.1.16', require: 'active_record'
 gem 'rails-observers', '~> 0.1', require: false
 gem 'pg', '~> 0.18.1'

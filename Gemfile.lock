@@ -7,14 +7,6 @@ GIT
       pebblebed
       rack
 
-GIT
-  remote: https://github.com/rack/rack-contrib
-  revision: ea0c82dc3a6353542b7fe0cbd262c43378e28b31
-  specs:
-    rack-contrib (1.4.0)
-      git-version-bump (~> 0.15)
-      rack (~> 1.4)
-
 GEM
   remote: https://rubygems.org/
   specs:
@@ -118,6 +110,9 @@ GEM
       slop (~> 3.4)
     queryparams (0.0.3)
     rack (1.6.4)
+    rack-contrib (1.4.0)
+      git-version-bump (~> 0.15)
+      rack (~> 1.4)
     rack-protection (1.5.3)
       rack
     rack-test (0.6.3)
@@ -206,7 +201,7 @@ DEPENDENCIES
   pg (~> 0.18.1)
   postgres_ext (~> 2.4.1)
   pry (~> 0.10.1)
-  rack-contrib!
+  rack-contrib (~> 1.4.0)
   rails-observers (~> 0.1)
   rake (~> 0.9.2.2)
   rollbar (~> 0.12.15)
@@ -226,4 +221,4 @@ DEPENDENCIES
   yajl-ruby (~> 1.2.1)
 
 BUNDLED WITH
-   1.11.2
+   1.13.2
