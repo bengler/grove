@@ -21,7 +21,6 @@ gem 'sanitize', '~> 2.1.0'
 gem 'curb', '~> 0.8.6'
 gem 'pebbles-path', '~> 0.0.3'
 gem 'pebbles-uid', '~> 0.0.22'
-gem 'its', '~> 0.2.0'
 gem 'pebbles-river', '~> 0.2.0'
 gem 'servolux', '~> 0.10.0'
 gem 'mercenary', '~> 0.3.4'
@@ -42,6 +41,7 @@ group :development, :test do
   gem 'vcr', '~> 2.1.1'
   gem 'webmock', '~> 1.8.7'
   gem 'approvals', '~> 0.0.6'
+  gem 'its', '~> 0.2.0'
 end
 
 group :production do
