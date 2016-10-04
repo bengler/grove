@@ -1,99 +1,92 @@
 GIT
   remote: https://github.com/bengler/pebbles-cors
-  revision: 869d6b6540577b8f598dac9263b82c783513243c
+  revision: 232ecf3dc1512e70db6d89cd5c8a49ba6d058963
   specs:
-    pebbles-cors (0.2.2)
+    pebbles-cors (0.2.3)
       dalli
       pebblebed
       rack
 
 GIT
   remote: https://github.com/rack/rack-contrib
-  revision: 5c12ace4ba2b9e4802e4d948a8ee0114da18760b
+  revision: ea0c82dc3a6353542b7fe0cbd262c43378e28b31
   specs:
-    rack-contrib (1.2.0)
-      rack (>= 0.9.1)
-
-GIT
-  remote: https://github.com/rkh/rack-protection
-  revision: 6cfaeb049587f6d9d62801277637b1695101a9c5
-  specs:
-    rack-protection (1.5.3)
-      rack
+    rack-contrib (1.4.0)
+      git-version-bump (~> 0.15)
+      rack (~> 1.4)
 
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (4.1.4)
-      activesupport (= 4.1.4)
+    activemodel (4.1.16)
+      activesupport (= 4.1.16)
       builder (~> 3.1)
-    activerecord (4.1.4)
-      activemodel (= 4.1.4)
-      activesupport (= 4.1.4)
+    activerecord (4.1.16)
+      activemodel (= 4.1.16)
+      activesupport (= 4.1.16)
       arel (~> 5.0.0)
-    activesupport (4.1.4)
+    activesupport (4.1.16)
       i18n (~> 0.6, >= 0.6.9)
       json (~> 1.7, >= 1.7.7)
       minitest (~> 5.1)
       thread_safe (~> 0.1)
       tzinfo (~> 1.1)
-    addressable (2.2.8)
-    airbrake (3.1.4)
+    addressable (2.4.0)
+    airbrake (3.1.17)
       builder
-      girl_friday
+      multi_json
     amq-protocol (1.9.2)
-    approvals (0.0.6)
-      nokogiri
-      thor
+    approvals (0.0.22)
+      nokogiri (~> 1.6)
+      thor (~> 0.18)
     ar-multidb (0.1.13)
       activerecord (>= 3.0)
       activesupport (>= 3.0)
     arel (5.0.1.20140414130214)
     arrayfields (4.9.2)
-    backports (2.5.3)
+    backports (3.6.8)
     builder (3.2.2)
-    bunny (1.6.0.rc2)
-      amq-protocol (>= 1.9.2)
+    bunny (1.7.1)
+      amq-protocol (~> 1.9.2)
     chronic (0.10.2)
-    coderay (1.1.0)
-    connection_pool (0.9.2)
-    crack (0.4.2)
+    coderay (1.1.1)
+    crack (0.4.3)
       safe_yaml (~> 1.0.0)
-    curb (0.8.6)
-    dalli (2.7.0)
+    curb (0.8.8)
+    dalli (2.7.6)
     deepstruct (0.0.7)
-    diff-lcs (1.2.4)
-    eventmachine (1.0.4)
-    fattr (2.2.2)
+    diff-lcs (1.2.5)
+    eventmachine (1.2.0.1)
+    fattr (2.3.0)
     futurevalue (0.0.2)
-    girl_friday (0.10.0)
-      connection_pool (~> 0.9.0)
+    git-version-bump (0.15.1)
     i18n (0.7.0)
     its (0.2.0)
       rspec-core
     jbuilder (2.3.2)
       activesupport (>= 3.0.0, < 5)
       multi_json (~> 1.2)
-    json (1.8.2)
-    kgio (2.9.2)
+    json (1.8.3)
+    kgio (2.10.0)
     main (6.1.0)
       arrayfields (>= 4.7.4)
       chronic (>= 0.6.2)
       fattr (>= 2.2.0)
       map (>= 5.1.0)
-    map (6.5.5)
-    memcache_mock (0.0.11)
-    mercenary (0.3.4)
+    map (6.6.0)
+    memcache_mock (0.0.14)
+    mercenary (0.3.6)
     method_source (0.8.2)
-    mini_portile (0.6.2)
-    minitest (5.5.1)
-    multi_json (1.10.1)
-    nokogiri (1.6.6.2)
-      mini_portile (~> 0.6.0)
+    mini_portile2 (2.1.0)
+    minitest (5.9.1)
+    multi_json (1.12.1)
+    nokogiri (1.6.8.rc3)
+      mini_portile2 (~> 2.1.0)
+      pkg-config (~> 1.1.7)
     pathbuilder (0.0.2)
-    pebblebed (0.3.2)
+    pebblebed (0.3.8)
       activesupport
-      bunny (= 1.6.0.rc2)
+      bunny
       curb (>= 0.8.4)
       deepstruct (>= 0.0.4)
       futurevalue
@@ -103,43 +96,46 @@ GEM
       yajl-ruby
     pebbles-path (0.0.3)
       pebbles-uid (>= 0.0.6)
-    pebbles-river (0.2.0)
+    pebbles-river (0.2.6)
       activesupport (>= 3.0)
-      bunny (= 1.6.0.rc2)
+      bunny (~> 1.7.0)
       mercenary (~> 0.3.3)
-      pebblebed (~> 0.3.0)
+      pebblebed (>= 0.3.0)
       servolux (~> 0.10)
     pebbles-uid (0.0.22)
     petroglyph (0.0.7)
       tilt
-    pg (0.18.1)
+    pg (0.18.4)
     pg_array_parser (0.0.9)
+    pkg-config (1.1.7)
     postgres_ext (2.4.1)
       activerecord (>= 4.0.0)
       arel (>= 4.0.1)
       pg_array_parser (~> 0.0.9)
-    pry (0.10.1)
+    pry (0.10.4)
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
       slop (~> 3.4)
     queryparams (0.0.3)
-    rack (1.5.2)
-    rack-test (0.6.1)
+    rack (1.6.4)
+    rack-protection (1.5.3)
+      rack
+    rack-test (0.6.3)
       rack (>= 1.0)
     rails-observers (0.1.2)
       activemodel (~> 4.0)
-    raindrops (0.13.0)
+    raindrops (0.17.0)
     rake (0.9.2.2)
-    rollbar (0.12.15)
+    rollbar (0.12.20)
       multi_json (~> 1.3)
-    rspec (2.14.1)
-      rspec-core (~> 2.14.0)
-      rspec-expectations (~> 2.14.0)
-      rspec-mocks (~> 2.14.0)
-    rspec-core (2.14.4)
-    rspec-expectations (2.14.0)
+    rspec (2.99.0)
+      rspec-core (~> 2.99.0)
+      rspec-expectations (~> 2.99.0)
+      rspec-mocks (~> 2.99.0)
+    rspec-core (2.99.2)
+    rspec-expectations (2.99.2)
       diff-lcs (>= 1.1.3, < 2.0)
-    rspec-mocks (2.14.2)
+    rspec-mocks (2.99.4)
     safe_yaml (1.0.4)
     sanitize (2.1.0)
       nokogiri (>= 1.4.4)
@@ -148,14 +144,14 @@ GEM
       multi_json (~> 1.0)
       simplecov-html (~> 0.5.3)
     simplecov-html (0.5.3)
-    sinatra (1.3.2)
-      rack (~> 1.3, >= 1.3.6)
-      rack-protection (~> 1.2)
+    sinatra (1.3.6)
+      rack (~> 1.4)
+      rack-protection (~> 1.3)
       tilt (~> 1.3, >= 1.3.3)
-    sinatra-activerecord (2.0.2)
+    sinatra-activerecord (2.0.10)
       activerecord (>= 3.2)
       sinatra (~> 1.0)
-    sinatra-contrib (1.3.1)
+    sinatra-contrib (1.3.2)
       backports (>= 2.0)
       eventmachine
       rack-protection
@@ -164,9 +160,9 @@ GEM
       tilt (~> 1.3)
     slop (3.6.0)
     thor (0.19.1)
-    thread_safe (0.3.4)
+    thread_safe (0.3.5)
     tilt (1.4.1)
-    tilt-jbuilder (0.7.0)
+    tilt-jbuilder (0.7.1)
       jbuilder
       tilt (>= 1.3.0, < 3)
     timecop (0.3.5)
@@ -178,7 +174,7 @@ GEM
       rack
       raindrops (~> 0.7)
     vcr (2.1.1)
-    webmock (1.8.7)
+    webmock (1.8.11)
       addressable (>= 2.2.7)
       crack (>= 0.1.7)
     yajl-ruby (1.2.1)
@@ -187,45 +183,47 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  activerecord (~> 4.0)
+  activerecord (~> 4.1.16)
   airbrake (~> 3.1.4)
-  approvals
-  ar-multidb
-  crack (>= 0.3.2)
-  curb
-  dalli
-  its
-  jbuilder
-  main
-  memcache_mock
-  mercenary
-  nokogiri (~> 1.6.1)
-  pebblebed (>= 0.2.3)
+  amq-protocol (~> 1.9.2)
+  approvals (~> 0.0.6)
+  ar-multidb (~> 0.1.13)
+  crack (~> 0.4.2)
+  curb (~> 0.8.6)
+  dalli (~> 2.7.0)
+  its (~> 0.2.0)
+  jbuilder (~> 2.3.2)
+  main (~> 6.1.0)
+  memcache_mock (~> 0.0.11)
+  mercenary (~> 0.3.4)
+  nokogiri (= 1.6.8.rc3)
+  pebblebed (~> 0.3.8)
   pebbles-cors!
-  pebbles-path (>= 0.0.3)
+  pebbles-path (~> 0.0.3)
   pebbles-river (~> 0.2.0)
   pebbles-uid (~> 0.0.22)
-  petroglyph
-  pg
-  postgres_ext
-  pry
+  petroglyph (~> 0.0.7)
+  pg (~> 0.18.1)
+  postgres_ext (~> 2.4.1)
+  pry (~> 0.10.1)
   rack-contrib!
-  rack-protection!
-  rack-test
   rails-observers (~> 0.1)
-  rake
-  rollbar
-  rspec (~> 2.8)
+  rake (~> 0.9.2.2)
+  rollbar (~> 0.12.15)
+  rspec (~> 2.9)
   sanitize (~> 2.1.0)
-  servolux
-  simplecov
-  sinatra
+  servolux (~> 0.10.0)
+  simplecov (~> 0.6.4)
+  sinatra (~> 1.3.2)
   sinatra-activerecord (~> 2.0)
-  sinatra-contrib
-  tilt-jbuilder
-  timecop
-  ts_vector_tags
-  unicorn
-  vcr
-  webmock
-  yajl-ruby
+  sinatra-contrib (~> 1.3.1)
+  tilt-jbuilder (~> 0.7.0)
+  timecop (~> 0.3.5)
+  ts_vector_tags (~> 0.0.11)
+  unicorn (~> 4.8.3)
+  vcr (~> 2.1.1)
+  webmock (~> 1.8.7)
+  yajl-ruby (~> 1.2.1)
+
+BUNDLED WITH
+   1.11.2
