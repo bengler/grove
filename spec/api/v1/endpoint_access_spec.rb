@@ -29,7 +29,7 @@ describe "API v1" do
       endpoints.each do |forbidden|
         it "fails to #{forbidden[:method]} #{forbidden[:endpoint]}" do
           self.send(forbidden[:method], forbidden[:endpoint])
-          last_response.status.should eq(403)
+          expect(last_response.status).to eq(403)
         end
       end
     end

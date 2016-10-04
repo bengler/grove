@@ -14,19 +14,19 @@ describe Post::OccurrencesAccessor do
   it "persists occurrences" do
     p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [time]})
     q = Post.find(p.id)
-    q.occurrences['due'].first.should eq(time)
+    expect(q.occurrences['due'].first).to eq(time)
   end
 
   it "ignores occurrences if there are none" do
     p = Post.create!(:uid => "post:a.b.c")
     q = Post.find(p.id)
-    q.merged_document.should eq({})
+    expect(q.merged_document).to eq({})
   end
 
   it "puts occurrences into the merged document" do
     p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [time]})
     q = Post.find(p.id)
-    q.merged_document.should eq({"occurrences" => {"due" => [time]}})
+    expect(q.merged_document).to eq({"occurrences" => {"due" => [time]}})
 
   end
 
@@ -35,39 +35,39 @@ describe Post::OccurrencesAccessor do
     p.occurrences['onlyjson'] = [time]
     json = p.to_json
     q = Post.instantiate(JSON.parse(json)['post'])
-    q.occurrences['onlyjson'].size.should eq 1
-    q.occurrences['due'].size.should eq 1
+    expect(q.occurrences['onlyjson'].size).to eq 1
+    expect(q.occurrences['due'].size).to eq 1
     r = Post.find(p)
-    r.occurrences.keys.should eq ['due']
+    expect(r.occurrences.keys).to eq ['due']
   end
 
   it "deletes occurrences" do
     other_time = time - 1000
     p = Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [time, other_time]})
     q = Post.find(p)
-    q.occurrences['due'].size.should eq 2
+    expect(q.occurrences['due'].size).to eq 2
     q.occurrences['due'].pop
     q.save!
     r = Post.find(p)
-    r.occurrences['due'].size.should eq 1
+    expect(r.occurrences['due'].size).to eq 1
     r.occurrences = {}
     r.save!
     s = Post.find(p)
-    s.occurrences.keys.size.should eq 0
+    expect(s.occurrences.keys.size).to eq 0
   end
 
   it "can select posts with a specific occurrence type" do
     Post.create!(:uid => "post:a.b.c", :occurrences => {:odd => [time]})
     Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [time]})
-    Post.by_occurrence('due').count.should eq 1
-    Post.by_occurrence('strange').count.should eq 0
+    expect(Post.by_occurrence('due').count).to eq 1
+    expect(Post.by_occurrence('strange').count).to eq 0
   end
 
   it "can limit occurrence selection by time range" do
     Post.create!(:uid => "post:a.b.c", :occurrences => {:due => [time]})
-    Post.by_occurrence('due').occurs_before(time-1).count.should eq 0
-    Post.by_occurrence('due').occurs_before(time+1).count.should eq 1
-    Post.by_occurrence('due').occurs_after(time-1).count.should eq 1
-    Post.by_occurrence('due').occurs_after(time+1).count.should eq 0
+    expect(Post.by_occurrence('due').occurs_before(time-1).count).to eq 0
+    expect(Post.by_occurrence('due').occurs_before(time+1).count).to eq 1
+    expect(Post.by_occurrence('due').occurs_after(time-1).count).to eq 1
+    expect(Post.by_occurrence('due').occurs_after(time+1).count).to eq 0
   end
 end

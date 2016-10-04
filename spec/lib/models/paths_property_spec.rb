@@ -5,16 +5,16 @@ describe Post::LocationsAccessor do
     p = Post.create!(:uid => 'post:a.b.c')
     p.paths = ['a.not.persisted']
     q = Post.find(p.id)
-    q.paths.to_a.should eq ["a.b.c"]
+    expect(q.paths.to_a).to eq ["a.b.c"]
   end
 
   it "can put a post in a path persist it" do
     p = Post.create!(:uid => 'post:a.b.c')
-    p.paths.to_a.should eq ['a.b.c']
+    expect(p.paths.to_a).to eq ['a.b.c']
     p.paths << 'a.ping.pong'
     p.save!
     q = Post.find(p.id)
-    p.paths.to_a.should include "a.ping.pong"
+    expect(p.paths.to_a).to include "a.ping.pong"
   end
 
   it "can be instantiatet from json without persisting the paths as a side effect" do
@@ -27,15 +27,15 @@ describe Post::LocationsAccessor do
     p.save!
     # Double check that the new set was persisted
     z = Post.find(p.id)
-    z.paths.to_a.sort.should eq ['a.b.c', 'anton.kaanan', 'ranveig.banan'].sort
+    expect(z.paths.to_a.sort).to eq ['a.b.c', 'anton.kaanan', 'ranveig.banan'].sort
     # Reheat model from json with stale path data
     q = Post.instantiate(JSON.parse(json)['post'])
     # Check that we got the old path in the stale model
-    q.paths.to_a.should eq ['only.in.json']
+    expect(q.paths.to_a).to eq ['only.in.json']
     # Check that reloading or loading the model from scratch will not include the stale path
     r = Post.find(p.id)    
-    r.paths.to_a.sort.should_not include 'only.in.json'
+    expect(r.paths.to_a.sort).not_to include 'only.in.json'
     q.reload
-    q.paths.to_a.sort.should_not include 'only.in.json'
+    expect(q.paths.to_a.sort).not_to include 'only.in.json'
   end
 end

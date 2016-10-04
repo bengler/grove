@@ -35,7 +35,7 @@ describe 'Versioning' do
   it 'returns 200 when attempting to update correct version' do
     post = Post.create!(uid: 'post:a.b.c',
       document: {text: 'I can spel'})
-    expect(post.save).to be_true
+    expect(post.save).to be_truthy
 
     post "/posts/#{post.uid}", post: {
       version: post.version,
@@ -47,7 +47,7 @@ describe 'Versioning' do
     post = Post.create!(uid: 'post:a.b.c',
       document: {text: 'I can spel'})
     original_version = post.version
-    expect(post.save).to be_true
+    expect(post.save).to be_truthy
 
     post "/posts/#{post.uid}", post: {
       version: original_version,

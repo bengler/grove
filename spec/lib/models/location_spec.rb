@@ -8,15 +8,15 @@ describe Location do
     Location.declare!('a')
     Location.declare!('c.b.c')
     Location.declare!('c.b.c')
-    Location.count.should eq 4
+    expect(Location.count).to eq 4
   end
 
   it "can be found by path" do
     Location.declare!('a.b.c')
     Location.declare!('a')
     target = Location.declare!('a.b')
-    Location.by_path('a.b').count.should eq 1
-    Location.by_path('a.b').first.should eq target
+    expect(Location.by_path('a.b').count).to eq 1
+    expect(Location.by_path('a.b').first).to eq target
   end
 
   it "can be found by wildcard path" do
@@ -25,14 +25,14 @@ describe Location do
     Location.declare!('a')
     Location.declare!('c.b.c')
 
-    Location.by_path('a.*').count.should eq 3
-    Location.by_path('c.*').count.should eq 1
-    Location.by_path('*').count.should eq 4
-    Location.by_path('d.*').count.should eq 0
+    expect(Location.by_path('a.*').count).to eq 3
+    expect(Location.by_path('c.*').count).to eq 1
+    expect(Location.by_path('*').count).to eq 4
+    expect(Location.by_path('d.*').count).to eq 0
   end
 
   it "complains about invalid wildcard searches" do
-    ->{ Location.by_path('*.c') }.should raise_error(ArgumentError)
+    expect{ Location.by_path('*.c') }.to raise_error(ArgumentError)
   end
 
   it "can be found by set of paths" do
@@ -42,7 +42,7 @@ describe Location do
     Location.declare!('a.b.c')
     Location.declare!('a.b.d')
 
-    Location.by_path('a.b.a|b|c').count.should eq 3
+    expect(Location.by_path('a.b.a|b|c').count).to eq 3
   end
 
   it "can match superpaths" do
@@ -54,18 +54,18 @@ describe Location do
     bottom = Location.declare!('a.b.c.d.e')
 
     result = Location.by_path("^a.b.c").all
-    result.count.should eq 3
-    result.should_not include(off_path)
+    expect(result.count).to eq 3
+    expect(result).not_to include(off_path)
 
     result = Location.by_path("a.b.^c.d").all
-    result.count.should eq 3
-    result.should_not include(top)
-    result.should_not include(bottom)
+    expect(result.count).to eq 3
+    expect(result).not_to include(top)
+    expect(result).not_to include(bottom)
 
   end
 
   it "won't accept malformed paths" do
-    -> { Location.declare!("some.f@$%&ing.sh*t.characters")}.should raise_error ArgumentError
+    expect { Location.declare!("some.f@$%&ing.sh*t.characters")}.to raise_error ArgumentError
   end
 
 
@@ -76,14 +76,14 @@ describe Location do
 
     accessible_location = Location.declare!('rips.er.tvilsomt')
     GroupLocation.allow_subtree(group_id, 'rips.er.tvilsomt')
-    accessible_location.accessible_by?(identity_id).should be_false
+    expect(accessible_location.accessible_by?(identity_id)).to be_falsey
 
     GroupMembership.declare!(group_id, identity_id)
-    accessible_location.accessible_by?(identity_id).should be_true
+    expect(accessible_location.accessible_by?(identity_id)).to be_truthy
 
     inaccessible_location = Location.declare!('rips.suger')
-    inaccessible_location.accessible_by?(identity_id).should be_false
-    inaccessible_location.accessible_by?(random_visitor_id).should be_false
+    expect(inaccessible_location.accessible_by?(identity_id)).to be_falsey
+    expect(inaccessible_location.accessible_by?(random_visitor_id)).to be_falsey
   end
 
  end
