@@ -1,10 +1,14 @@
 source 'https://rubygems.org'
 
-gem 'sinatra', '~> 1.3.2'
-gem 'sinatra-contrib', '~> 1.3.1', require: false
-gem 'sinatra-activerecord', '~> 2.0'
+gem 'sinatra', '~> 1.4.7'
+gem 'sinatra-contrib', '~> 1.4.7', require: false
+gem 'sinatra-activerecord', '~> 2.0.10'
+gem 'rack', '~> 1.6.4'
 gem 'rack-contrib', '~> 1.4.0'
+
+# tests will fail if you upgrade AR to 4.2.7.1 or beyond
 gem 'activerecord', '~> 4.1.16', require: 'active_record'
+
 gem 'rails-observers', '~> 0.1', require: false
 gem 'pg', '~> 0.18.1'
 gem 'postgres_ext', '~> 2.4.1'
@@ -12,13 +16,16 @@ gem 'jbuilder', '~> 2.3.2'
 gem 'tilt-jbuilder', '~> 0.7.0', require: 'sinatra/jbuilder'
 gem 'yajl-ruby', '~> 1.2.1', :require => "yajl"
 gem 'petroglyph', '~> 0.0.7'
-gem 'pebblebed', '~> 0.3.8'
+
+# 0.3.9 requires AR v4.2.7
+gem 'pebblebed', '= 0.3.8'
+
 gem 'pebbles-cors', :git => 'https://github.com/bengler/pebbles-cors'
 gem 'dalli', '~> 2.7.0'
 gem 'ts_vector_tags', '~> 0.0.11'
 gem 'rake', '~> 0.9.2.2'
 gem 'sanitize', '~> 2.1.0'
-gem 'curb', '~> 0.8.6'
+gem 'curb', '~> 0.9.3'
 gem 'pebbles-path', '~> 0.0.3'
 gem 'pebbles-uid', '~> 0.0.22'
 gem 'pebbles-river', '~> 0.2.0'
