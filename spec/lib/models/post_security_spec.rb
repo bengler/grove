@@ -35,28 +35,28 @@ describe "Post security" do
   it "limits visibility" do
     restricted_post
     invisible_restricted_post
-    Post.with_restrictions(member).count.should eq 0
+    expect(Post.with_restrictions(member).count).to eq 0
     GroupLocation.allow_subtree(1, "norway.oslo")
-    Post.with_restrictions(member).count.should eq 1
-    Post.with_restrictions(non_member).count.should eq 0
-    Post.with_restrictions(nil).count.should eq 0
+    expect(Post.with_restrictions(member).count).to eq 1
+    expect(Post.with_restrictions(non_member).count).to eq 0
+    expect(Post.with_restrictions(nil).count).to eq 0
   end
 
   it "extends visibility for late arriving documents" do
     GroupLocation.allow_subtree(1, "norway.oslo")
     restricted_post
-    Post.with_restrictions(member).count.should eq 1
+    expect(Post.with_restrictions(member).count).to eq 1
   end
 
   it "knows who has write access" do
     restricted_post
     invisible_restricted_post
-    Post.editable_by(member).count.should eq 0
+    expect(Post.editable_by(member).count).to eq 0
     GroupLocation.allow_subtree(1, "norway.oslo")
-    Post.editable_by(member).count.should eq 1
-    Post.editable_by(non_member).count.should eq 0
-    Post.editable_by(nil).count.should eq 0
-    Post.editable_by(god).count.should eq 2
+    expect(Post.editable_by(member).count).to eq 1
+    expect(Post.editable_by(non_member).count).to eq 0
+    expect(Post.editable_by(nil).count).to eq 0
+    expect(Post.editable_by(god).count).to eq 2
   end
 
 end

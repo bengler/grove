@@ -10,9 +10,9 @@ describe GroupLocation do
   it "is able to assign group access recursively" do
     sample_tree
     GroupLocation.allow_subtree(1, "norway.oslo")
-    GroupLocation.is_included?(1,'norway.oslo').should be_true
-    GroupLocation.is_included?(1,'norway.oslo.sagene').should be_true
-    GroupLocation.is_included?(1,'norway.bergen.nordnes').should be_false
+    expect(GroupLocation.is_included?(1,'norway.oslo')).to be_truthy
+    expect(GroupLocation.is_included?(1,'norway.oslo.sagene')).to be_truthy
+    expect(GroupLocation.is_included?(1,'norway.bergen.nordnes')).to be_falsey
   end
 
   it "handles access granting in an idempotent way" do
@@ -20,22 +20,22 @@ describe GroupLocation do
     GroupLocation.allow_subtree(1, "norway.oslo")
     count = GroupLocation.count
     GroupLocation.allow_subtree(1, "norway.oslo")
-    GroupLocation.count.should eq count
+    expect(GroupLocation.count).to eq count
   end
 
   it "is able to extend group access for new locations" do
     sample_tree
     GroupLocation.allow_subtree(1, "norway.oslo")
     Location.declare!("norway.oslo.grefsen")
-    GroupLocation.is_included?(1,'norway.oslo.grefsen').should be_true
+    expect(GroupLocation.is_included?(1,'norway.oslo.grefsen')).to be_truthy
   end
 
   it "is able to deny access recursively" do
     sample_tree
     GroupLocation.allow_subtree(1, "norway.oslo")
-    GroupLocation.is_included?(1,'norway.oslo.sagene').should be_true
+    expect(GroupLocation.is_included?(1,'norway.oslo.sagene')).to be_truthy
     GroupLocation.deny_subtree(1, "norway.oslo")
-    GroupLocation.is_included?(1,'norway.oslo.sagene').should be_false
-    GroupLocation.is_included?(1,'norway.oslo').should be_false
+    expect(GroupLocation.is_included?(1,'norway.oslo.sagene')).to be_falsey
+    expect(GroupLocation.is_included?(1,'norway.oslo')).to be_falsey
   end
 end
