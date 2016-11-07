@@ -10,6 +10,9 @@ class RiverNotifications < ActiveRecord::Observer
   end
 
   def after_create(object)
+    if object.is_a?(Post)
+      LOGGER.info("RIVERNOTF: after_create #{"#{object.klass}:#{object.canonical_path}$#{object.id}"}")
+    end
     if should_publish?(object)
       prepare_for_publish(object, :create)
     end
@@ -17,6 +20,9 @@ class RiverNotifications < ActiveRecord::Observer
   end
 
   def after_update(object)
+    if object.is_a?(Post)
+      LOGGER.info("RIVERNOTF: after_update #{"#{object.klass}:#{object.canonical_path}$#{object.id}"}")
+    end
     if should_publish?(object)
       if object.deleted?
         prepare_for_publish(object, :delete, :soft_deleted => true)
