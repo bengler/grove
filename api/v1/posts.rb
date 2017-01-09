@@ -192,6 +192,7 @@ class GroveV1 < Sinatra::Base
   # @example /api/grove/v1/posts/post:acme.invoices$123
   # @optional [String] uid The uid of the post.
   # @optional [String] external_id The external_id of the post.
+  # @optional [Boolean] delete_multiple_posts Set to true of you're God and want to delete multiple posts. Enables filtered_by which gives you some freedom to tweak the scope.
   # @status 204 Success.
   # @status 404 No such post.
   # @status 403 This is not your post and you are not god!
@@ -200,6 +201,16 @@ class GroveV1 < Sinatra::Base
     require_identity
 
     with_database(uid) do
+      if params[:delete_multiple_posts]
+        halt 403, 'You must be god to delete multiple posts in a single request' unless current_identity.god
+        Post.unscoped.by_uid(uid).filtered_by(params).each do |post|
+          post.deleted = true
+          post.save!
+          LOGGER.info "Deleted #{post.uid}"
+        end
+        halt 204
+      end
+
       if params[:external_id]
         @post = Post.find_by_external_id(params[:external_id])
         halt 404, "No post with external_id #{params[:external_id]}" unless @post
