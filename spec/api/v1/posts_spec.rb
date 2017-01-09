@@ -723,6 +723,59 @@ describe "API v1 posts" do
         delete "/posts/#{post.uid}"
         expect(last_response.status).to be 403
       end
+
+      context 'deleting multiple posts' do
+
+        it "fails unless you're god" do
+          user!(:realm => 'a')
+          delete "/posts/post:a.b.c.*", {delete_multiple_posts: true}
+          expect(last_response.status).to be 403
+        end
+
+        it "deletes multiple documents by path" do
+          god!(:realm => 'a')
+
+          Post.create!(uid: 'post:a.b.c', document: {text: '1'}, created_by: 1)
+          Post.create!(uid: 'post:a.b.c', document: {text: '1'}, created_by: 1)
+          post_to_keep = Post.create!(uid: 'post:a.b.d', document: {text: '1'}, created_by: 1)
+
+          get "/posts/post:a.b.*"
+          result = JSON.parse(last_response.body)
+          expect(result['posts'].count).to eq 3
+          expect(last_response.status).to be 200
+
+          delete "/posts/post:a.b.c.*", {delete_multiple_posts: true}
+          expect(last_response.status).to be 204
+
+          get "/posts/post:a.b.*"
+          result = JSON.parse(last_response.body)
+          expect(result['posts'].count).to eq 1
+          expect(result['posts'][0]['post']['uid']).to eq post_to_keep.uid
+        end
+
+        it "deletes multiple unpublished posts by path" do
+          god!(:realm => 'a')
+
+          Post.create!(uid: 'post:a.b.c', document: {text: '1'}, created_by: 1, published: false)
+          Post.create!(uid: 'post:a.b.c', document: {text: '1'}, created_by: 1, published: false)
+          post_to_keep = Post.create!(uid: 'post:a.b.c', document: {text: '1'}, created_by: 1)
+
+          get "/posts/post:a.b.*", {unpublished: 'include'}
+          result = JSON.parse(last_response.body)
+          expect(result['posts'].count).to eq 3
+          expect(last_response.status).to be 200
+
+          delete "/posts/post:a.b.c.*", {delete_multiple_posts: true, unpublished: 'only'}
+          expect(last_response.status).to be 204
+
+          get "/posts/post:a.b.*", {unpublished: 'include'}
+          result = JSON.parse(last_response.body)
+          expect(result['posts'].count).to eq 1
+          expect(result['posts'][0]['post']['uid']).to eq post_to_keep.uid
+        end
+
+      end
+
     end
 
     describe "POST /posts/:uid/undelete" do
@@ -732,6 +785,7 @@ describe "API v1 posts" do
         post "/posts/#{post.uid}/undelete"
         expect(last_response.status).to be 403
       end
+
       it "cannot undelete a document unless member of a access group" do
         post = Post.create!(:uid => "post:a.b.c", :tags => ["paris", "france"], :document => {'text' => '1'}, :created_by => 1, :deleted => true)
         GroupLocation.allow_subtree(1, "a.b")
