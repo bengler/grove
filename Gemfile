@@ -14,7 +14,7 @@ gem 'pg', '~> 0.18.1'
 gem 'postgres_ext', '~> 2.4.1'
 gem 'jbuilder', '~> 2.3.2'
 gem 'tilt-jbuilder', '~> 0.7.0', require: 'sinatra/jbuilder'
-gem 'yajl-ruby', '~> 1.2.1', :require => "yajl"
+gem 'yajl-ruby', '~> 1.3.0', :require => "yajl"
 gem 'petroglyph', '~> 0.0.7'
 
 # 0.3.9 requires AR v4.2.7
