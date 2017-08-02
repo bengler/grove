@@ -373,7 +373,7 @@ class GroveV1 < Sinatra::Base
           @posts = @posts.editable_by(current_identity) if only_editable
           @posts = apply_occurrence_scope(@posts, params['occurrence'])
           direction = (params[:direction] || 'DESC').downcase == 'asc' ? 'ASC' : 'DESC'
-          @posts = @posts.order("posts.#{sort_field} #{direction}")
+          @posts = @posts.order("posts.#{sort_field} #{direction}, posts.id") # Also sort on ID to avoid Postgres reverse index scan
           if params['occurrence']
             # FIXME: This exposes an unfortunate lack of separation of concerns, but
             #   this scoping logic was never built for that
