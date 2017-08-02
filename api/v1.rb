@@ -61,6 +61,16 @@ class GroveV1 < Sinatra::Base
       end
     end
 
+    def limit_offset_collection(collection, options)
+      limit = (options[:limit] || 20).to_i
+      offset = (options[:offset] || 0).to_i
+      collection = collection.limit(limit+1).offset(offset).to_a
+      last_page = (collection.size <= limit)
+      metadata = {:limit => limit, :offset => offset, :last_page => last_page}
+      collection = collection[0..limit-1]
+      [collection, metadata]
+    end
+
     # Will save_post and retry once if a data race gets in our way.
     def with_data_race_protection(&block)
       retriable = true
