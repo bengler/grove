@@ -21,7 +21,6 @@ unless defined?(LOGGER)
 end
 
 Pebblebed.config do
-  scheme 'http'
   service :checkpoint
 end
 
