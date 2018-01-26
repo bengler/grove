@@ -18,7 +18,7 @@ gem 'yajl-ruby', '~> 1.2.1', :require => "yajl"
 gem 'petroglyph', '~> 0.0.7'
 
 # 0.3.9 requires AR v4.2.7
-gem 'pebblebed', '~> 0.3.25'
+gem 'pebblebed', '~> 0.3.26'
 
 gem 'pebbles-cors', :git => 'https://github.com/bengler/pebbles-cors'
 gem 'dalli', '~> 2.7.0'
