@@ -1,4 +1,21 @@
 GIT
+  remote: https://github.com/bengler/pebblebed
+  revision: 622320f9cb889ec8235af17eb7eb43a9a066ae80
+  branch: http-use-excon
+  specs:
+    pebblebed (0.4.0)
+      absolute_time
+      activesupport
+      bunny
+      deepstruct (>= 0.0.4)
+      excon (>= 0.52.0)
+      futurevalue
+      nokogiri
+      pathbuilder
+      queryparams
+      yajl-ruby
+
+GIT
   remote: https://github.com/bengler/pebbles-cors
   revision: 9bf8ca58e2a7138da0e602f1d57c33202367f854
   specs:
@@ -51,10 +68,11 @@ GEM
     dalli (2.7.6)
     deepstruct (0.0.7)
     diff-lcs (1.3)
+    excon (0.60.0)
     fattr (2.3.0)
     futurevalue (0.0.2)
     git-version-bump (0.15.1)
-    i18n (0.9.3)
+    i18n (0.9.4)
       concurrent-ruby (~> 1.0)
     its (0.2.0)
       rspec-core
@@ -62,7 +80,7 @@ GEM
       activesupport (>= 3.0.0, < 5)
       multi_json (~> 1.2)
     json (1.8.6)
-    kgio (2.11.1)
+    kgio (2.11.2)
     main (6.1.0)
       arrayfields (>= 4.7.4)
       chronic (>= 0.6.2)
@@ -75,20 +93,9 @@ GEM
     mini_portile2 (2.3.0)
     minitest (5.11.3)
     multi_json (1.13.1)
-    nokogiri (1.8.1)
+    nokogiri (1.8.2)
       mini_portile2 (~> 2.3.0)
     pathbuilder (0.0.2)
-    pebblebed (0.3.26)
-      absolute_time
-      activesupport
-      bunny
-      curb (>= 0.8.8)
-      deepstruct (>= 0.0.4)
-      futurevalue
-      nokogiri
-      pathbuilder
-      queryparams
-      yajl-ruby
     pebbles-path (0.0.3)
       pebbles-uid (>= 0.0.6)
     pebbles-river (0.2.6)
@@ -165,7 +172,7 @@ GEM
       tilt (>= 1.3.0, < 3)
     timecop (0.3.5)
     ts_vector_tags (0.0.11)
-    tzinfo (1.2.4)
+    tzinfo (1.2.5)
       thread_safe (~> 0.1)
     unicorn (4.8.3)
       kgio (~> 2.6)
@@ -195,7 +202,7 @@ DEPENDENCIES
   memcache_mock (~> 0.0.11)
   mercenary (~> 0.3.4)
   nokogiri (~> 1.8.1)
-  pebblebed (~> 0.3.26)
+  pebblebed!
   pebbles-cors!
   pebbles-path (~> 0.0.3)
   pebbles-river (~> 0.2.0)
