@@ -17,9 +17,7 @@ gem 'tilt-jbuilder', '~> 0.7.0', require: 'sinatra/jbuilder'
 gem 'yajl-ruby', '~> 1.3.1', :require => "yajl"
 gem 'petroglyph', '~> 0.0.7'
 
-# 0.3.9 requires AR v4.2.7
-#gem 'pebblebed', '~> 0.3.26'
-gem 'pebblebed', :git => "https://github.com/bengler/pebblebed", :branch => 'http-use-excon'
+gem 'pebblebed', '~> 0.4.4'
 
 gem 'pebbles-cors', :git => 'https://github.com/bengler/pebbles-cors'
 gem 'dalli', '~> 2.7.0'
