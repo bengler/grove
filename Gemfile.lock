@@ -55,7 +55,7 @@ GEM
     fattr (2.3.0)
     futurevalue (0.0.2)
     git-version-bump (0.15.1)
-    i18n (0.9.4)
+    i18n (0.9.5)
       concurrent-ruby (~> 1.0)
     its (0.2.0)
       rspec-core
@@ -79,7 +79,7 @@ GEM
     nokogiri (1.8.2)
       mini_portile2 (~> 2.3.0)
     pathbuilder (0.0.2)
-    pebblebed (0.4.4)
+    pebblebed (0.4.5)
       absolute_time
       activesupport
       addressable
@@ -112,7 +112,7 @@ GEM
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
       slop (~> 3.4)
-    public_suffix (3.0.1)
+    public_suffix (3.0.2)
     queryparams (0.0.3)
     rack (1.6.8)
     rack-contrib (1.4.0)
